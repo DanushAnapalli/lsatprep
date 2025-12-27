@@ -880,28 +880,28 @@ export default function DashboardPage() {
               </p>
             </div>
 
-        {/* Guest Sign Up Banner - shows when guest has exhausted free tests */}
+        {/* Guest Upgrade Banner - shows when guest has exhausted free tests */}
         {isGuest && guestExhaustedFreeTests && (
-          <div className="mb-8 rounded-sm border-2 border-red-400 bg-gradient-to-r from-red-50 to-orange-50 p-6 dark:border-red-500/50 dark:from-red-900/20 dark:to-orange-900/20">
+          <div className="mb-8 rounded-sm border-2 border-amber-400 bg-gradient-to-r from-amber-50 to-orange-50 p-6 dark:border-amber-500/50 dark:from-amber-900/20 dark:to-orange-900/20">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <div className="rounded-sm bg-red-100 p-3 dark:bg-red-500/20">
-                  <Lock size={24} className="text-red-600 dark:text-red-400" />
+                <div className="rounded-sm bg-amber-100 p-3 dark:bg-amber-500/20">
+                  <Crown size={24} className="text-amber-600 dark:text-amber-400" />
                 </div>
                 <div>
-                  <div className="font-semibold text-red-900 dark:text-red-100">
-                    Free Trial Complete - Sign Up to Continue
+                  <div className="font-semibold text-amber-900 dark:text-amber-100">
+                    Free Trial Complete - Upgrade to Pro
                   </div>
-                  <p className="text-sm text-red-700 dark:text-red-300">
-                    You've completed your free practice test. Sign up to save your progress and unlock more tests!
+                  <p className="text-sm text-amber-700 dark:text-amber-300">
+                    You've completed your free practice test. Upgrade to Pro for unlimited access!
                   </p>
                 </div>
               </div>
               <Link
-                href="/"
-                className="inline-flex items-center gap-2 rounded-sm bg-[#1a365d] px-6 py-2 text-sm font-semibold text-white transition hover:bg-[#2d4a7c] dark:bg-amber-500 dark:text-stone-900 dark:hover:bg-amber-400"
+                href="/subscription"
+                className="inline-flex items-center gap-2 rounded-sm bg-amber-500 px-6 py-2 text-sm font-semibold text-white transition hover:bg-amber-600"
               >
-                Sign Up Free
+                Upgrade to Pro
                 <ArrowRight size={16} />
               </Link>
             </div>

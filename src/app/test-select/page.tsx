@@ -10,10 +10,8 @@ import {
   Clock,
   Brain,
   BookOpen,
-  RefreshCw,
   Layers,
   CheckCircle2,
-  AlertCircle,
   Sparkles,
   Target,
   ListChecks,
@@ -336,26 +334,6 @@ function TestSelectContent() {
           </p>
         </div>
 
-        {/* Stats Banner */}
-        <div className="mb-8 grid grid-cols-3 gap-4 rounded-sm border-2 border-stone-200 bg-white p-4 dark:border-stone-700 dark:bg-stone-900">
-          <div className="text-center">
-            <div className="text-2xl font-bold text-[#1a365d] dark:text-amber-400">
-              {unseenIds.length}
-            </div>
-            <div className="text-xs text-stone-500">New Questions</div>
-          </div>
-          <div className="text-center border-x border-stone-200 dark:border-stone-700">
-            <div className="text-2xl font-bold text-stone-900 dark:text-stone-100">
-              {progress.seenQuestionIds.length}
-            </div>
-            <div className="text-xs text-stone-500">Questions Seen</div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-amber-600">{wrongAnswerIds.length}</div>
-            <div className="text-xs text-stone-500">To Review</div>
-          </div>
-        </div>
-
         {/* Test Options */}
         <div className="space-y-4">
           {testOptions.map((option) => (
@@ -406,30 +384,6 @@ function TestSelectContent() {
                   Allow Repeats
                 </button>
               </div>
-            </div>
-            {!allowRepeats && unseenIds.length < 20 && (
-              <div className="mt-3 flex items-center gap-2 text-sm text-amber-600 dark:text-amber-400">
-                <AlertCircle size={14} />
-                <span>
-                  Only {unseenIds.length} new questions available. Consider enabling repeats for more practice.
-                </span>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Unseen Questions Notice */}
-        {unseenIds.length < 10 && unseenIds.length > 0 && (
-          <div className="mt-6 flex items-start gap-3 rounded-sm border-2 border-amber-300 bg-amber-50 p-4 dark:border-amber-500/50 dark:bg-amber-500/10">
-            <AlertCircle size={20} className="mt-0.5 text-amber-600 dark:text-amber-400" />
-            <div>
-              <div className="font-medium text-amber-800 dark:text-amber-300">
-                Running low on new questions
-              </div>
-              <p className="text-sm text-amber-700 dark:text-amber-400">
-                You only have {unseenIds.length} unseen questions left. Some questions may repeat.
-                More questions are being added regularly.
-              </p>
             </div>
           </div>
         )}
