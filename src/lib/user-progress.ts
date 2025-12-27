@@ -509,11 +509,12 @@ export function getWeakQuestionTypes(progress: UserProgress): string[] {
 // RESET FUNCTIONS
 // ============================================
 
-export function resetProgress(): void {
+export function resetProgress(userId?: string): void {
   if (typeof window === "undefined") {
     return;
   }
-  localStorage.removeItem(STORAGE_KEYS.PROGRESS);
+  const storageKey = getUserStorageKey(userId);
+  localStorage.removeItem(storageKey);
 }
 
 export function resetSeenQuestions(progress: UserProgress): UserProgress {
