@@ -152,10 +152,11 @@ function SignInModal({
       onClose();
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : "Google sign-in failed";
+      console.error("Google sign-in error:", err);
       if (errorMessage.includes("auth/popup-closed-by-user")) {
         setError(null); // User closed popup, not an error
       } else {
-        setError("Google sign-in failed. Please try again.");
+        setError(`Google sign-in failed: ${errorMessage}`);
       }
     } finally {
       setIsLoading(false);
