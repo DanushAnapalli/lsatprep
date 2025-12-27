@@ -757,9 +757,15 @@ export default function DashboardPage() {
     );
   }
 
-  // Check if guest has exhausted free tests
+  // Check if guest has exhausted free tests (1 LR + 1 RC allowed)
   const isGuest = !user;
-  const guestExhaustedFreeTests = isGuest && progress.completedTests.length >= 1;
+  const guestCompletedLRTests = progress.completedTests.filter(
+    (test) => test.sections.some((s) => s.type === "logical-reasoning")
+  ).length;
+  const guestCompletedRCTests = progress.completedTests.filter(
+    (test) => test.sections.some((s) => s.type === "reading-comprehension")
+  ).length;
+  const guestExhaustedFreeTests = isGuest && guestCompletedLRTests >= 1 && guestCompletedRCTests >= 1;
 
   const wrongAnswerCount = getWrongAnswerQuestionIds(progress).length;
   const weakTopics = getWeakTopics(progress);
@@ -893,7 +899,7 @@ export default function DashboardPage() {
                     Free Trial Complete - Upgrade to Pro
                   </div>
                   <p className="text-sm text-amber-700 dark:text-amber-300">
-                    You've completed your free practice test. Upgrade to Pro for unlimited access!
+                    You've completed your free section practice tests. Upgrade to Pro for unlimited access!
                   </p>
                 </div>
               </div>

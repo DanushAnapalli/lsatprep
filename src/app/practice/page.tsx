@@ -519,34 +519,27 @@ function PracticeContent() {
       (test) => test.sections.some((s) => s.type === "reading-comprehension")
     ).length;
 
-    // Guests get 1 free test total, then must sign up
-    if (isGuest && completedTests >= 1) {
-      setTierBlocked("GUEST_LIMIT");
-      setIsLoading(false);
-      setInitialized(true);
-      return;
-    }
+    // Check tier limits for both guests and free users
+    // Guests and free users get 1 LR section test + 1 RC section test free
+    const tierLimits = TIER_LIMITS.free;
 
-    // Check if free user has exceeded limits
-    if (currentTier === "free" && !isGuest) {
-      const tierLimits = TIER_LIMITS.free;
-
+    if (currentTier === "free" || isGuest) {
       if (testType === "lr-only" && completedLRTests >= tierLimits.lrSetsAllowed) {
-        setTierBlocked("You've reached your free limit of 1 LR practice set. Upgrade to Pro for unlimited practice!");
+        setTierBlocked(isGuest ? "GUEST_LR_LIMIT" : "You've reached your free limit of 1 LR practice set. Upgrade to Pro for unlimited practice!");
         setIsLoading(false);
         setInitialized(true);
         return;
       }
 
       if (testType === "rc-only" && completedRCTests >= tierLimits.rcSetsAllowed) {
-        setTierBlocked("You've reached your free limit of 1 RC practice set. Upgrade to Pro for unlimited practice!");
+        setTierBlocked(isGuest ? "GUEST_RC_LIMIT" : "You've reached your free limit of 1 RC practice set. Upgrade to Pro for unlimited practice!");
         setIsLoading(false);
         setInitialized(true);
         return;
       }
 
       if (testType === "full" && (completedLRTests >= tierLimits.lrSetsAllowed || completedRCTests >= tierLimits.rcSetsAllowed)) {
-        setTierBlocked("You've reached your free practice limit. Upgrade to Pro for unlimited full practice tests!");
+        setTierBlocked(isGuest ? "GUEST_FULL_LIMIT" : "You've reached your free practice limit. Upgrade to Pro for unlimited full practice tests!");
         setIsLoading(false);
         setInitialized(true);
         return;
@@ -833,41 +826,49 @@ function PracticeContent() {
 
   // Show tier blocked message for free users who exceeded limits
   if (tierBlocked) {
-    const isGuestBlock = tierBlocked === "GUEST_LIMIT";
+    const isGuestBlock = tierBlocked.startsWith("GUEST_");
+
+    // Get appropriate message for guest blocks
+    const getGuestBlockMessage = () => {
+      switch (tierBlocked) {
+        case "GUEST_LR_LIMIT":
+          return "You've completed your free Logical Reasoning practice. Upgrade to Pro for unlimited access to all sections!";
+        case "GUEST_RC_LIMIT":
+          return "You've completed your free Reading Comprehension practice. Upgrade to Pro for unlimited access to all sections!";
+        case "GUEST_FULL_LIMIT":
+          return "You've used your free section practice. Upgrade to Pro for unlimited full practice tests!";
+        default:
+          return tierBlocked;
+      }
+    };
 
     return (
       <div className="flex min-h-screen items-center justify-center bg-stone-100 dark:bg-stone-950">
-        <div className={`mx-auto max-w-md rounded-sm border-2 bg-white p-8 text-center shadow-lg dark:bg-stone-900 ${isGuestBlock ? "border-[#1a365d] dark:border-amber-500" : "border-amber-400 dark:border-amber-500"}`}>
-          <div className={`mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full ${isGuestBlock ? "bg-[#1a365d]/10 dark:bg-amber-500/20" : "bg-amber-100 dark:bg-amber-500/20"}`}>
-            {isGuestBlock ? (
-              <CheckCircle2 size={32} className="text-[#1a365d] dark:text-amber-400" />
-            ) : (
-              <Lock size={32} className="text-amber-600 dark:text-amber-400" />
-            )}
+        <div className="mx-auto max-w-md rounded-sm border-2 border-amber-400 bg-white p-8 text-center shadow-lg dark:border-amber-500 dark:bg-stone-900">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-500/20">
+            <Lock size={32} className="text-amber-600 dark:text-amber-400" />
           </div>
           <h2 className="mb-2 font-serif text-2xl font-bold text-stone-900 dark:text-stone-100">
-            {isGuestBlock ? "Free Trial Complete!" : "Free Limit Reached"}
+            Free Limit Reached
           </h2>
           <p className="mb-6 text-stone-600 dark:text-stone-400">
-            {isGuestBlock
-              ? "Great job on your practice test! Sign up for free to save your progress and continue practicing."
-              : tierBlocked}
+            {isGuestBlock ? getGuestBlockMessage() : tierBlocked}
           </p>
           <div className="space-y-3">
             {isGuestBlock ? (
               <>
-                <Link
-                  href="/"
-                  className="flex w-full items-center justify-center gap-2 rounded-sm bg-[#1a365d] px-6 py-3 font-semibold text-white transition hover:bg-[#2d4a7c] dark:bg-amber-500 dark:text-stone-900 dark:hover:bg-amber-400"
+                <a
+                  href="/subscription"
+                  className="flex w-full items-center justify-center gap-2 rounded-sm bg-amber-500 px-6 py-3 font-semibold text-white transition hover:bg-amber-600"
                 >
-                  Sign Up Free
-                  <ArrowRight size={18} />
-                </Link>
+                  <Crown size={18} />
+                  Upgrade to Pro
+                </a>
                 <Link
                   href="/dashboard"
                   className="flex w-full items-center justify-center gap-2 rounded-sm border-2 border-stone-300 px-6 py-3 font-semibold text-stone-700 transition hover:bg-stone-100 dark:border-stone-600 dark:text-stone-300 dark:hover:bg-stone-800"
                 >
-                  View Results
+                  Back to Dashboard
                 </Link>
               </>
             ) : (
