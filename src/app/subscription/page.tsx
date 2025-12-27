@@ -44,22 +44,25 @@ export default function SubscriptionPage() {
         }),
       });
 
-      const { url, error } = await response.json();
+      const data = await response.json();
 
-      if (error) {
-        console.error("Checkout error:", error);
-        alert("Failed to start checkout. Please try again.");
+      if (!response.ok || data.error) {
+        console.error("Checkout error:", data.error || response.statusText);
+        alert(`Failed to start checkout: ${data.error || "Unknown error"}`);
         setCheckoutLoading(false);
         return;
       }
 
       // Redirect to Stripe Checkout
-      if (url) {
-        window.location.href = url;
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        alert("No checkout URL received. Please try again.");
+        setCheckoutLoading(false);
       }
     } catch (error) {
       console.error("Checkout error:", error);
-      alert("Failed to start checkout. Please try again.");
+      alert(`Failed to start checkout: ${error instanceof Error ? error.message : "Unknown error"}`);
       setCheckoutLoading(false);
     }
   };
