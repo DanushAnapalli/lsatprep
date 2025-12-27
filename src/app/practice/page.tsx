@@ -873,7 +873,7 @@ function PracticeContent() {
             ) : (
               <>
                 <a
-                  href="/#pricing"
+                  href="/subscription"
                   className="flex w-full items-center justify-center gap-2 rounded-sm bg-amber-500 px-6 py-3 font-semibold text-white transition hover:bg-amber-600"
                 >
                   <Crown size={18} />

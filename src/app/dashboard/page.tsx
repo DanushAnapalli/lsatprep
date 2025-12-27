@@ -797,7 +797,7 @@ export default function DashboardPage() {
                 </div>
               </div>
               <a
-                href="/#pricing"
+                href="/subscription"
                 className="inline-flex items-center gap-2 rounded-sm bg-amber-500 px-6 py-2 text-sm font-semibold text-white transition hover:bg-amber-600"
               >
                 Upgrade to Pro
@@ -1003,7 +1003,7 @@ export default function DashboardPage() {
                       Upgrade to Pro for detailed analytics
                     </p>
                     <a
-                      href="/#pricing"
+                      href="/subscription"
                       className="mt-2 text-sm font-semibold text-amber-600 hover:underline dark:text-amber-400"
                     >
                       View Plans
@@ -1042,7 +1042,7 @@ export default function DashboardPage() {
                       Upgrade to Pro for detailed analytics
                     </p>
                     <a
-                      href="/#pricing"
+                      href="/subscription"
                       className="mt-2 text-sm font-semibold text-amber-600 hover:underline dark:text-amber-400"
                     >
                       View Plans
