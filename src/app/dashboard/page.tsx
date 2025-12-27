@@ -23,6 +23,8 @@ import {
   Sun,
   Lock,
   Crown,
+  Pencil,
+  Check,
 } from "lucide-react";
 import {
   loadUserProgress,
@@ -42,6 +44,157 @@ import { getUserTier, getTierDisplayInfo, canAccessFeature, SubscriptionTier } f
 
 function cx(...classes: (string | boolean | undefined)[]) {
   return classes.filter(Boolean).join(" ");
+}
+
+// ============================================
+// USERNAME INPUT COMPONENT
+// ============================================
+
+const PLACEHOLDER_TEXTS = [
+  "Future Lawyer",
+  "LSAT Champion",
+  "Legal Eagle",
+  "Top Scorer",
+  "Law Student",
+];
+
+const USERNAME_STORAGE_KEY = "lsatprep-username";
+
+function UsernameInput({ userId }: { userId: string }) {
+  const [username, setUsername] = useState<string>("");
+  const [isEditing, setIsEditing] = useState(false);
+  const [inputValue, setInputValue] = useState("");
+  const [placeholderText, setPlaceholderText] = useState("");
+  const [isTyping, setIsTyping] = useState(true);
+  const [currentTextIndex, setCurrentTextIndex] = useState(0);
+  const [charIndex, setCharIndex] = useState(0);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Load saved username on mount
+  useEffect(() => {
+    const savedUsername = localStorage.getItem(`${USERNAME_STORAGE_KEY}-${userId}`);
+    if (savedUsername) {
+      setUsername(savedUsername);
+      setIsEditing(false);
+    } else {
+      setIsEditing(true);
+    }
+  }, [userId]);
+
+  // Typewriter effect for placeholder
+  useEffect(() => {
+    if (!isEditing || inputValue.length > 0) return;
+
+    const currentText = PLACEHOLDER_TEXTS[currentTextIndex];
+    let timeout: NodeJS.Timeout;
+
+    if (isTyping) {
+      if (charIndex < currentText.length) {
+        timeout = setTimeout(() => {
+          setPlaceholderText(currentText.slice(0, charIndex + 1));
+          setCharIndex(charIndex + 1);
+        }, 100);
+      } else {
+        timeout = setTimeout(() => {
+          setIsTyping(false);
+        }, 1500);
+      }
+    } else {
+      if (charIndex > 0) {
+        timeout = setTimeout(() => {
+          setPlaceholderText(currentText.slice(0, charIndex - 1));
+          setCharIndex(charIndex - 1);
+        }, 50);
+      } else {
+        timeout = setTimeout(() => {
+          setCurrentTextIndex((prev) => (prev + 1) % PLACEHOLDER_TEXTS.length);
+          setIsTyping(true);
+        }, 300);
+      }
+    }
+
+    return () => clearTimeout(timeout);
+  }, [isEditing, inputValue, isTyping, charIndex, currentTextIndex]);
+
+  // Focus input when editing starts
+  useEffect(() => {
+    if (isEditing && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [isEditing]);
+
+  const handleSubmit = () => {
+    const trimmedValue = inputValue.trim();
+    if (trimmedValue) {
+      setUsername(trimmedValue);
+      localStorage.setItem(`${USERNAME_STORAGE_KEY}-${userId}`, trimmedValue);
+      setIsEditing(false);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      handleSubmit();
+    }
+  };
+
+  const handleEdit = () => {
+    setInputValue(username);
+    setIsEditing(true);
+    setCharIndex(0);
+    setPlaceholderText("");
+  };
+
+  if (!isEditing && username) {
+    return (
+      <span className="inline-flex items-center gap-2">
+        <span className="text-amber-600 dark:text-amber-400 font-semibold">{username}</span>
+        <button
+          onClick={handleEdit}
+          className="p-1 rounded-full hover:bg-stone-200 dark:hover:bg-stone-700 transition-colors"
+          aria-label="Edit username"
+        >
+          <Pencil size={14} className="text-stone-400 hover:text-stone-600 dark:hover:text-stone-300" />
+        </button>
+      </span>
+    );
+  }
+
+  return (
+    <span className="inline-flex items-center gap-1">
+      <span className="relative inline-block min-w-[120px]">
+        <input
+          ref={inputRef}
+          type="text"
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
+          onKeyDown={handleKeyDown}
+          onBlur={() => {
+            if (inputValue.trim()) {
+              handleSubmit();
+            }
+          }}
+          className="bg-transparent border-none outline-none text-amber-600 dark:text-amber-400 font-semibold w-full caret-amber-500"
+          style={{ minWidth: "120px" }}
+        />
+        {inputValue.length === 0 && (
+          <span className="absolute left-0 top-0 pointer-events-none text-stone-400 dark:text-stone-500 font-semibold">
+            {placeholderText}
+            <span className="animate-pulse">|</span>
+          </span>
+        )}
+      </span>
+      {inputValue.trim() && (
+        <button
+          onClick={handleSubmit}
+          className="p-1 rounded-full bg-amber-500 hover:bg-amber-600 transition-colors"
+          aria-label="Save username"
+        >
+          <Check size={14} className="text-white" />
+        </button>
+      )}
+    </span>
+  );
 }
 
 // ============================================
@@ -712,9 +865,13 @@ export default function DashboardPage() {
             {/* Welcome Section */}
             <div className="mb-8">
               <h1 className="font-serif text-3xl font-bold text-stone-900 dark:text-stone-100">
-                {user
-                  ? `Welcome back, ${user.displayName?.split(" ")[0] || user.email?.split("@")[0] || "Student"}!`
-                  : "Welcome to LSATprep!"}
+                {user ? (
+                  <>
+                    Welcome back, <UsernameInput userId={user.uid} />!
+                  </>
+                ) : (
+                  "Welcome to LSATprep!"
+                )}
               </h1>
               <p className="mt-2 text-stone-600 dark:text-stone-400">
                 {user
