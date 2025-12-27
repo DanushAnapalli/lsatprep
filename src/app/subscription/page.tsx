@@ -204,7 +204,7 @@ export default function SubscriptionPage() {
                 ) : !user ? (
                   "Sign in to Subscribe"
                 ) : (
-                  "Upgrade to Pro"
+                  "Get Pro"
                 )}
               </button>
             )}
