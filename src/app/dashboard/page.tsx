@@ -36,6 +36,14 @@ import {
   getWeakTopics,
   setCurrentUserId,
 } from "@/lib/user-progress";
+import GoalTracker from "@/components/GoalTracker";
+import {
+  loadStudySchedule,
+  getTodaysTasks,
+  completeTask,
+  saveStudySchedule,
+} from "@/lib/schedule-generator";
+import { StudySchedule, StudyTask, TASK_TYPE_NAMES } from "@/lib/schedule-types";
 import { logicalReasoningQuestions, readingComprehensionQuestions } from "@/lib/sample-questions";
 import { LR_TYPE_DESCRIPTIONS, RC_TYPE_DESCRIPTIONS } from "@/lib/lsat-types";
 import { onAuthChange, logOut, User as FirebaseUser } from "@/lib/firebase";
@@ -677,6 +685,8 @@ export default function DashboardPage() {
   const [authLoading, setAuthLoading] = useState(true);
   const [previousStats, setPreviousStats] = useState<PreviousStats | null>(null);
   const [userTier, setUserTier] = useState<SubscriptionTier>("free");
+  const [schedule, setSchedule] = useState<StudySchedule | null>(null);
+  const [todaysTasks, setTodaysTasks] = useState<StudyTask[]>([]);
 
   // Listen to auth state and set current user ID for storage
   useEffect(() => {
@@ -699,15 +709,25 @@ export default function DashboardPage() {
     }
   }, [user]);
 
-  // Load progress and previous stats when user changes
+  // Load progress, schedule, and previous stats when user changes
   useEffect(() => {
     if (authLoading) return; // Wait for auth to be determined
 
     const userId = user?.uid;
     const loaded = loadUserProgress(userId);
     const prevStats = loadPreviousStats();
+    const loadedSchedule = loadStudySchedule(userId);
+
     setPreviousStats(prevStats);
     setProgress(loaded);
+    setSchedule(loadedSchedule);
+
+    // Get today's tasks if schedule exists
+    if (loadedSchedule) {
+      const tasks = getTodaysTasks(loadedSchedule);
+      setTodaysTasks(tasks);
+    }
+
     setIsLoading(false);
   }, [user, authLoading]);
 
@@ -738,6 +758,16 @@ export default function DashboardPage() {
     } catch (error) {
       console.error("Sign out error:", error);
     }
+  };
+
+  // Handle task completion
+  const handleCompleteTask = (taskId: string) => {
+    if (!schedule) return;
+
+    const updatedSchedule = completeTask(schedule, taskId);
+    saveStudySchedule(updatedSchedule, user?.uid);
+    setSchedule(updatedSchedule);
+    setTodaysTasks(getTodaysTasks(updatedSchedule));
   };
 
   if (authLoading || isLoading || !progress) {
@@ -1009,6 +1039,110 @@ export default function DashboardPage() {
             animateAs="time"
           />
         </div>
+
+        {/* Goal Progress Widget */}
+        <div className="mb-8">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="font-serif text-xl font-bold text-stone-900 dark:text-stone-100">
+              Your Goal
+            </h2>
+            <Link
+              href="/goals"
+              className="text-sm font-medium text-[#1a365d] hover:underline dark:text-amber-400"
+            >
+              View Details
+            </Link>
+          </div>
+          <GoalTracker progress={progress} user={user} compact />
+        </div>
+
+        {/* Today's Tasks Widget */}
+        {todaysTasks.length > 0 && (
+          <div className="mb-8">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="font-serif text-xl font-bold text-stone-900 dark:text-stone-100">
+                Today&apos;s Tasks
+              </h2>
+              <Link
+                href="/schedule"
+                className="text-sm font-medium text-[#1a365d] hover:underline dark:text-amber-400"
+              >
+                View Schedule
+              </Link>
+            </div>
+            <div className="rounded-sm border-2 border-stone-200 bg-white p-4 dark:border-stone-700 dark:bg-stone-900">
+              <div className="space-y-3">
+                {todaysTasks.filter(t => t.type !== "rest").slice(0, 3).map((task) => (
+                  <div
+                    key={task.id}
+                    className={cx(
+                      "flex items-center gap-3 rounded-sm border-2 p-3 transition",
+                      task.completed
+                        ? "border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20"
+                        : "border-stone-200 bg-white dark:border-stone-700 dark:bg-stone-800"
+                    )}
+                  >
+                    <button
+                      onClick={() => !task.completed && handleCompleteTask(task.id)}
+                      className={cx(
+                        "flex-shrink-0 rounded-full p-1 transition",
+                        task.completed
+                          ? "text-green-600 dark:text-green-400"
+                          : "text-stone-300 hover:text-[#1a365d] dark:text-stone-600 dark:hover:text-amber-400"
+                      )}
+                    >
+                      {task.completed ? <CheckCircle2 size={20} /> : <Target size={20} />}
+                    </button>
+                    <div className="flex-1 min-w-0">
+                      <div className={cx(
+                        "font-medium",
+                        task.completed
+                          ? "text-stone-500 line-through"
+                          : "text-stone-900 dark:text-stone-100"
+                      )}>
+                        {task.title}
+                      </div>
+                      <div className="text-xs text-stone-500">
+                        {task.estimatedMinutes} min
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {todaysTasks.filter(t => t.type !== "rest").length > 3 && (
+                  <Link
+                    href="/schedule"
+                    className="block text-center text-sm text-[#1a365d] hover:underline dark:text-amber-400"
+                  >
+                    +{todaysTasks.filter(t => t.type !== "rest").length - 3} more tasks
+                  </Link>
+                )}
+              </div>
+              {todaysTasks.every(t => t.completed || t.type === "rest") && todaysTasks.some(t => t.type !== "rest") && (
+                <div className="mt-4 rounded-sm bg-green-50 p-3 text-center text-sm font-medium text-green-700 dark:bg-green-900/20 dark:text-green-400">
+                  All tasks complete for today!
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Create Schedule CTA (if no schedule) */}
+        {!schedule && user && (
+          <div className="mb-8">
+            <Link
+              href="/schedule"
+              className="block rounded-sm border-2 border-dashed border-[#1a365d] bg-[#1a365d]/5 p-6 text-center transition hover:bg-[#1a365d]/10 dark:border-amber-500 dark:bg-amber-500/5 dark:hover:bg-amber-500/10"
+            >
+              <Calendar size={32} className="mx-auto mb-2 text-[#1a365d] dark:text-amber-400" />
+              <div className="font-semibold text-stone-900 dark:text-stone-100">
+                Create Your Study Schedule
+              </div>
+              <p className="mt-1 text-sm text-stone-500">
+                Get a personalized plan to reach your target score
+              </p>
+            </Link>
+          </div>
+        )}
 
         {/* Quick Actions */}
         <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

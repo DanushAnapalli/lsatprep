@@ -54,6 +54,8 @@ import {
 } from "@/lib/user-progress";
 import { onAuthChange, User as FirebaseUser } from "@/lib/firebase";
 import { getUserTier, canStartLRTest, canStartRCTest, TIER_LIMITS, SubscriptionTier } from "@/lib/subscription";
+import BlindReviewPhase from "@/components/BlindReviewPhase";
+import { BlindReviewResult } from "@/lib/blind-review";
 
 const cx = (...classes: (string | false | null | undefined)[]) =>
   classes.filter(Boolean).join(" ");
@@ -456,6 +458,12 @@ function PracticeContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [initialized, setInitialized] = useState(false);
 
+  // Blind review state
+  const [showBlindReviewPrompt, setShowBlindReviewPrompt] = useState(false);
+  const [blindReviewInProgress, setBlindReviewInProgress] = useState(false);
+  const [blindReviewResult, setBlindReviewResult] = useState<BlindReviewResult | null>(null);
+  const [blindReviewSkipped, setBlindReviewSkipped] = useState(false);
+
   // Subscription tier state
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [userTier, setUserTier] = useState<SubscriptionTier>("free");
@@ -629,7 +637,16 @@ function PracticeContent() {
       setTimeRemaining(nextSection.timeLimit);
       timeRemainingRef.current = nextSection.timeLimit;
     } else {
-      setTestCompleted(true);
+      // Check for flagged questions before completing
+      const allAnswers = answersRef.current;
+      const flaggedCount = Array.from(allAnswers.values()).filter(a => a.flagged).length;
+
+      if (flaggedCount > 0) {
+        // Show blind review prompt
+        setShowBlindReviewPrompt(true);
+      } else {
+        setTestCompleted(true);
+      }
     }
   }, []);
 
@@ -921,6 +938,63 @@ function PracticeContent() {
             <Home size={18} />
             Go to Dashboard
           </Link>
+        </div>
+      </div>
+    );
+  }
+
+  // Get flagged questions for blind review
+  const flaggedQuestions = useMemo(() => {
+    const allQuestions = sections.flatMap(s => s.questions);
+    return allQuestions.filter(q => answers.get(q.id)?.flagged);
+  }, [sections, answers]);
+
+  // Get timed answers for blind review
+  const timedAnswersForReview = useMemo((): AnsweredQuestion[] => {
+    return sections.flatMap(section =>
+      section.questions.map(q => {
+        const answer = answers.get(q.id);
+        return {
+          questionId: q.id,
+          selectedAnswer: answer?.selectedAnswer || null,
+          correctAnswer: q.correctAnswer,
+          isCorrect: answer?.selectedAnswer === q.correctAnswer,
+          timeSpent: answer?.timeSpent || 0,
+          questionType: q.type,
+          sectionType: q.sectionType,
+        };
+      })
+    );
+  }, [sections, answers]);
+
+  // Handle blind review completion
+  const handleBlindReviewComplete = useCallback((result: BlindReviewResult) => {
+    setBlindReviewResult(result);
+    setBlindReviewInProgress(false);
+    setShowBlindReviewPrompt(false);
+    setTestCompleted(true);
+  }, []);
+
+  // Handle blind review skip
+  const handleBlindReviewSkip = useCallback(() => {
+    setBlindReviewSkipped(true);
+    setShowBlindReviewPrompt(false);
+    setTestCompleted(true);
+  }, []);
+
+  // Blind Review Prompt/Phase Screen
+  if (showBlindReviewPrompt || blindReviewInProgress) {
+    return (
+      <div className="min-h-screen bg-stone-100 dark:bg-stone-950">
+        <div className="mx-auto max-w-4xl px-6 py-12">
+          <BlindReviewPhase
+            testId={testId}
+            flaggedQuestions={flaggedQuestions}
+            timedAnswers={timedAnswersForReview}
+            userId={user?.uid}
+            onComplete={handleBlindReviewComplete}
+            onSkip={handleBlindReviewSkip}
+          />
         </div>
       </div>
     );
