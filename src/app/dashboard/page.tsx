@@ -508,12 +508,12 @@ function QuestionTypePerformance({
   sectionType,
   baseDelay = 0,
 }: {
-  stats: Map<string, { correct: number; total: number; percentage: number }>;
+  stats: Record<string, { correct: number; total: number; percentage: number }>;
   sectionType: "lr" | "rc";
   baseDelay?: number;
 }) {
   const descriptions = sectionType === "lr" ? LR_TYPE_DESCRIPTIONS : RC_TYPE_DESCRIPTIONS;
-  const entries = Array.from(stats.entries()).filter(([key]) => {
+  const entries = Object.entries(stats).filter(([key]) => {
     if (sectionType === "lr") {
       return key in LR_TYPE_DESCRIPTIONS;
     }
@@ -1354,13 +1354,13 @@ export default function DashboardPage() {
         )}
 
         {/* Section Performance Summary */}
-        {hasCompletedTests && sectionStats.size > 0 && (
+        {hasCompletedTests && Object.keys(sectionStats).length > 0 && (
           <div className="mt-6 rounded-sm border-2 border-stone-200 bg-white p-6 dark:border-stone-700 dark:bg-stone-900">
             <h3 className="mb-4 font-serif text-lg font-bold text-stone-900 dark:text-stone-100">
               Section Summary
             </h3>
             <div className="grid gap-4 sm:grid-cols-2">
-              {Array.from(sectionStats.entries()).map(([type, stat], index) => (
+              {Object.entries(sectionStats).map(([type, stat], index) => (
                 <SectionSummaryCard
                   key={type}
                   type={type}

@@ -24,7 +24,7 @@ import { RotateCcw, Users } from "lucide-react";
 
 interface GroupingBoardProps {
   setup: GameSetup;
-  onBoardChange?: (groups: Map<string, string[]>) => void;
+  onBoardChange?: (groups: Record<string, string[]>) => void;
   readOnly?: boolean;
 }
 
@@ -98,10 +98,10 @@ export function GroupingBoard({
   const groups = setup.groups || [];
 
   // Initialize groups mapping: groupId -> entityIds
-  const [groupAssignments, setGroupAssignments] = useState<Map<string, string[]>>(
+  const [groupAssignments, setGroupAssignments] = useState<Record<string, string[]>>(
     () => {
-      const initial = new Map<string, string[]>();
-      groups.forEach((g) => initial.set(g.id, []));
+      const initial: Record<string, string[]> = {};
+      groups.forEach((g) => { initial[g.id] = []; });
       return initial;
     }
   );
@@ -109,7 +109,7 @@ export function GroupingBoard({
   const [activeId, setActiveId] = useState<string | null>(null);
 
   // Get unassigned entities
-  const assignedEntityIds = Array.from(groupAssignments.values()).flat();
+  const assignedEntityIds = Object.values(groupAssignments).flat();
   const unassignedEntities = setup.entities.filter(
     (e) => !assignedEntityIds.includes(e.id)
   );
@@ -141,41 +141,35 @@ export function GroupingBoard({
     // Check if dropping on a group
     if (overId.startsWith("group-")) {
       const targetGroupId = overId.replace("group-", "");
-      const newAssignments = new Map(groupAssignments);
+      const newAssignments = { ...groupAssignments };
 
       // Remove from current group if assigned
-      newAssignments.forEach((entityIds, groupId) => {
+      Object.entries(newAssignments).forEach(([groupId, entityIds]) => {
         if (entityIds.includes(activeId)) {
-          newAssignments.set(
-            groupId,
-            entityIds.filter((id) => id !== activeId)
-          );
+          newAssignments[groupId] = entityIds.filter((id) => id !== activeId);
         }
       });
 
       // Check group capacity
       const targetGroup = groups.find((g) => g.id === targetGroupId);
-      const currentGroupEntities = newAssignments.get(targetGroupId) || [];
+      const currentGroupEntities = newAssignments[targetGroupId] || [];
       if (targetGroup?.maxSize && currentGroupEntities.length >= targetGroup.maxSize) {
         return; // Group is full
       }
 
       // Add to target group
-      newAssignments.set(targetGroupId, [...currentGroupEntities, activeId]);
+      newAssignments[targetGroupId] = [...currentGroupEntities, activeId];
       setGroupAssignments(newAssignments);
       onBoardChange?.(newAssignments);
     }
     // Dropping on unassigned area
     else if (overId === "unassigned") {
-      const newAssignments = new Map(groupAssignments);
+      const newAssignments = { ...groupAssignments };
 
       // Remove from current group
-      newAssignments.forEach((entityIds, groupId) => {
+      Object.entries(newAssignments).forEach(([groupId, entityIds]) => {
         if (entityIds.includes(activeId)) {
-          newAssignments.set(
-            groupId,
-            entityIds.filter((id) => id !== activeId)
-          );
+          newAssignments[groupId] = entityIds.filter((id) => id !== activeId);
         }
       });
 
@@ -185,14 +179,14 @@ export function GroupingBoard({
   };
 
   const handleReset = () => {
-    const empty = new Map<string, string[]>();
-    groups.forEach((g) => empty.set(g.id, []));
+    const empty: Record<string, string[]> = {};
+    groups.forEach((g) => { empty[g.id] = []; });
     setGroupAssignments(empty);
     onBoardChange?.(empty);
   };
 
   const getEntitiesInGroup = (groupId: string): GameEntity[] => {
-    const entityIds = groupAssignments.get(groupId) || [];
+    const entityIds = groupAssignments[groupId] || [];
     return entityIds.map((id) => setup.entities.find((e) => e.id === id)!).filter(Boolean);
   };
 

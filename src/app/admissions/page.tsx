@@ -56,7 +56,7 @@ export default function AdmissionsPage() {
   const [hasCalculated, setHasCalculated] = useState(false);
   const [sortBy, setSortBy] = useState<SortBy>("chance");
   const [showTimeline, setShowTimeline] = useState(false);
-  const [savedSchools, setSavedSchools] = useState<Set<string>>(new Set());
+  const [savedSchools, setSavedSchools] = useState<Record<string, boolean>>({});
 
   // Calculated profile
   const profile = useMemo(() => {
@@ -95,7 +95,10 @@ export default function AdmissionsPage() {
     if (saved) {
       setLsat(saved.lsat);
       setGpa(saved.gpa);
-      setSavedSchools(new Set(saved.targetSchools));
+      setSavedSchools(saved.targetSchools.reduce((acc: Record<string, boolean>, id: string) => {
+        acc[id] = true;
+        return acc;
+      }, {}));
       setHasCalculated(true);
     }
   }, [user]);
@@ -106,7 +109,7 @@ export default function AdmissionsPage() {
       {
         lsat,
         gpa,
-        targetSchools: Array.from(savedSchools),
+        targetSchools: Object.keys(savedSchools),
         savedAt: new Date(),
       },
       user?.uid
@@ -114,11 +117,11 @@ export default function AdmissionsPage() {
   };
 
   const toggleSavedSchool = (schoolId: string) => {
-    const newSaved = new Set(savedSchools);
-    if (newSaved.has(schoolId)) {
-      newSaved.delete(schoolId);
+    const newSaved = { ...savedSchools };
+    if (newSaved[schoolId]) {
+      delete newSaved[schoolId];
     } else {
-      newSaved.add(schoolId);
+      newSaved[schoolId] = true;
     }
     setSavedSchools(newSaved);
 
@@ -126,7 +129,7 @@ export default function AdmissionsPage() {
       {
         lsat,
         gpa,
-        targetSchools: Array.from(newSaved),
+        targetSchools: Object.keys(newSaved),
         savedAt: new Date(),
       },
       user?.uid
@@ -337,7 +340,7 @@ export default function AdmissionsPage() {
                 {sortedChances.map((chance, i) => {
                   const school = chance.school;
                   const colors = CATEGORY_COLORS[chance.category];
-                  const isSaved = savedSchools.has(school.id);
+                  const isSaved = !!savedSchools[school.id];
 
                   return (
                     <motion.div

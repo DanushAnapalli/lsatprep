@@ -510,16 +510,10 @@ export default function BlindReviewPhase({
 }: BlindReviewPhaseProps) {
   const [phase, setPhase] = useState<"prompt" | "review" | "results">("prompt");
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [answers, setAnswers] = useState<Map<string, BlindReviewAnswer>>(
-    new Map()
-  );
-  const [confidences, setConfidences] = useState<
-    Map<string, "low" | "medium" | "high">
-  >(new Map());
+  const [answers, setAnswers] = useState<Record<string, BlindReviewAnswer>>({});
+  const [confidences, setConfidences] = useState<Record<string, "low" | "medium" | "high">>({});
   const [startTime, setStartTime] = useState<number | null>(null);
-  const [questionStartTimes, setQuestionStartTimes] = useState<Map<string, number>>(
-    new Map()
-  );
+  const [questionStartTimes, setQuestionStartTimes] = useState<Record<string, number>>({});
   const [elapsedTime, setElapsedTime] = useState(0);
   const [result, setResult] = useState<BlindReviewResult | null>(null);
 
@@ -538,53 +532,53 @@ export default function BlindReviewPhase({
 
   const currentQuestion = flaggedQuestions[currentIndex];
   const timedAnswerMap = useMemo(
-    () => new Map(timedAnswers.map((a) => [a.questionId, a])),
+    () => timedAnswers.reduce((acc, a) => {
+      acc[a.questionId] = a;
+      return acc;
+    }, {} as Record<string, AnsweredQuestion>),
     [timedAnswers]
   );
 
   const handleStartReview = () => {
     setPhase("review");
     setStartTime(Date.now());
-    setQuestionStartTimes(new Map([[currentQuestion.id, Date.now()]]));
+    setQuestionStartTimes({ [currentQuestion.id]: Date.now() });
   };
 
   const handleSelectAnswer = (answer: "A" | "B" | "C" | "D" | "E") => {
-    const timedAnswer = timedAnswerMap.get(currentQuestion.id);
-    const questionStartTime = questionStartTimes.get(currentQuestion.id) || Date.now();
+    const timedAnswer = timedAnswerMap[currentQuestion.id];
+    const questionStartTime = questionStartTimes[currentQuestion.id] || Date.now();
     const timeSpent = Math.floor((Date.now() - questionStartTime) / 1000);
 
-    setAnswers((prev) => {
-      const newMap = new Map(prev);
-      newMap.set(currentQuestion.id, {
+    setAnswers((prev) => ({
+      ...prev,
+      [currentQuestion.id]: {
         questionId: currentQuestion.id,
         selectedAnswer: answer,
         correctAnswer: currentQuestion.correctAnswer,
         isCorrect: answer === currentQuestion.correctAnswer,
         timeSpent,
-        confidence: confidences.get(currentQuestion.id) || "medium",
-      });
-      return newMap;
-    });
+        confidence: confidences[currentQuestion.id] || "medium",
+      },
+    }));
   };
 
   const handleSetConfidence = (confidence: "low" | "medium" | "high") => {
-    setConfidences((prev) => {
-      const newMap = new Map(prev);
-      newMap.set(currentQuestion.id, confidence);
-      return newMap;
-    });
+    setConfidences((prev) => ({
+      ...prev,
+      [currentQuestion.id]: confidence,
+    }));
 
     // Update answer if already set
-    const existingAnswer = answers.get(currentQuestion.id);
+    const existingAnswer = answers[currentQuestion.id];
     if (existingAnswer) {
-      setAnswers((prev) => {
-        const newMap = new Map(prev);
-        newMap.set(currentQuestion.id, {
+      setAnswers((prev) => ({
+        ...prev,
+        [currentQuestion.id]: {
           ...existingAnswer,
           confidence,
-        });
-        return newMap;
-      });
+        },
+      }));
     }
   };
 
@@ -599,18 +593,17 @@ export default function BlindReviewPhase({
       setCurrentIndex(currentIndex + 1);
       // Track start time for new question
       const nextQuestion = flaggedQuestions[currentIndex + 1];
-      if (!questionStartTimes.has(nextQuestion.id)) {
-        setQuestionStartTimes((prev) => {
-          const newMap = new Map(prev);
-          newMap.set(nextQuestion.id, Date.now());
-          return newMap;
-        });
+      if (!questionStartTimes[nextQuestion.id]) {
+        setQuestionStartTimes((prev) => ({
+          ...prev,
+          [nextQuestion.id]: Date.now(),
+        }));
       }
     }
   };
 
   const handleSubmit = () => {
-    const blindReviewAnswers = Array.from(answers.values());
+    const blindReviewAnswers = Object.values(answers);
     const flaggedIds = flaggedQuestions.map((q) => q.id);
 
     const reviewResult = createBlindReviewResult(
@@ -663,7 +656,7 @@ export default function BlindReviewPhase({
     );
   }
 
-  const timedAnswer = timedAnswerMap.get(currentQuestion.id);
+  const timedAnswer = timedAnswerMap[currentQuestion.id];
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -672,8 +665,8 @@ export default function BlindReviewPhase({
         questionNumber={currentIndex + 1}
         totalQuestions={flaggedQuestions.length}
         timedAnswer={timedAnswer?.selectedAnswer || null}
-        selectedAnswer={answers.get(currentQuestion.id)?.selectedAnswer || null}
-        confidence={confidences.get(currentQuestion.id) || "medium"}
+        selectedAnswer={answers[currentQuestion.id]?.selectedAnswer || null}
+        confidence={confidences[currentQuestion.id] || "medium"}
         onSelectAnswer={handleSelectAnswer}
         onSetConfidence={handleSetConfidence}
         onPrevious={handlePrevious}

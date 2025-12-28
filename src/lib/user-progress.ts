@@ -377,30 +377,34 @@ export function getQuestionsByType(
 // STATISTICS HELPERS
 // ============================================
 
+// Type for performance stats
+export type PerformanceStats = { correct: number; total: number; percentage: number };
+
 export function getPerformanceByQuestionType(
   progress: UserProgress
-): Map<string, { correct: number; total: number; percentage: number }> {
-  const stats = new Map<string, { correct: number; total: number; percentage: number }>();
+): Record<string, PerformanceStats> {
+  const stats: Record<string, PerformanceStats> = {};
 
   progress.completedTests.forEach((test) => {
     test.sections.forEach((section) => {
       section.questions.forEach((q) => {
-        const current = stats.get(q.questionType) || { correct: 0, total: 0, percentage: 0 };
-        stats.set(q.questionType, {
+        const current = stats[q.questionType] || { correct: 0, total: 0, percentage: 0 };
+        stats[q.questionType] = {
           correct: current.correct + (q.isCorrect ? 1 : 0),
           total: current.total + 1,
           percentage: 0,
-        });
+        };
       });
     });
   });
 
   // Calculate percentages
-  stats.forEach((value, key) => {
-    stats.set(key, {
+  Object.keys(stats).forEach((key) => {
+    const value = stats[key];
+    stats[key] = {
       ...value,
       percentage: Math.round((value.correct / value.total) * 100),
-    });
+    };
   });
 
   return stats;
@@ -408,26 +412,27 @@ export function getPerformanceByQuestionType(
 
 export function getPerformanceBySectionType(
   progress: UserProgress
-): Map<SectionType, { correct: number; total: number; percentage: number }> {
-  const stats = new Map<SectionType, { correct: number; total: number; percentage: number }>();
+): Record<string, PerformanceStats> {
+  const stats: Record<string, PerformanceStats> = {};
 
   progress.completedTests.forEach((test) => {
     test.sections.forEach((section) => {
-      const current = stats.get(section.type) || { correct: 0, total: 0, percentage: 0 };
-      stats.set(section.type, {
+      const current = stats[section.type] || { correct: 0, total: 0, percentage: 0 };
+      stats[section.type] = {
         correct: current.correct + section.correctCount,
         total: current.total + section.totalCount,
         percentage: 0,
-      });
+      };
     });
   });
 
   // Calculate percentages
-  stats.forEach((value, key) => {
-    stats.set(key, {
+  Object.keys(stats).forEach((key) => {
+    const value = stats[key];
+    stats[key] = {
       ...value,
       percentage: Math.round((value.correct / value.total) * 100),
-    });
+    };
   });
 
   return stats;

@@ -312,14 +312,14 @@ function QuestionNavigator({
 }: {
   questions: Question[];
   currentIndex: number;
-  answers: Map<string, UserAnswer>;
+  answers: Record<string, UserAnswer>;
   onSelect: (index: number) => void;
   showResults?: boolean;
 }) {
   return (
     <div className="flex flex-wrap gap-2">
       {questions.map((q, i) => {
-        const answer = answers.get(q.id);
+        const answer = answers[q.id];
         const isAnswered = answer?.selectedAnswer !== null && answer?.selectedAnswer !== undefined;
         const isFlagged = answer?.flagged;
         const isCurrent = i === currentIndex;
@@ -447,7 +447,7 @@ function PracticeContent() {
   const [testId] = useState(generateTestId);
   const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [answers, setAnswers] = useState<Map<string, UserAnswer>>(new Map());
+  const [answers, setAnswers] = useState<Record<string, UserAnswer>>({});
   const [timeRemaining, setTimeRemaining] = useState(2100);
   const [isPaused, setIsPaused] = useState(false);
   const [isReviewMode, setIsReviewMode] = useState(false);
@@ -473,7 +473,7 @@ function PracticeContent() {
   // Use refs to avoid stale closure issues in timer
   const sectionsRef = useRef<Section[]>([]);
   const currentSectionIndexRef = useRef(0);
-  const answersRef = useRef<Map<string, UserAnswer>>(new Map());
+  const answersRef = useRef<Record<string, UserAnswer>>({});
   const timeRemainingRef = useRef(2100);
 
   // Listen to auth state and check tier
@@ -604,7 +604,7 @@ function PracticeContent() {
     const sectionAnswers: UserAnswer[] = [];
 
     sectionQuestions.forEach((q) => {
-      const answer = ans.get(q.id);
+      const answer = ans[q.id];
       if (answer?.selectedAnswer === q.correctAnswer) {
         rawScore++;
       }
@@ -639,7 +639,7 @@ function PracticeContent() {
     } else {
       // Check for flagged questions before completing
       const allAnswers = answersRef.current;
-      const flaggedCount = Array.from(allAnswers.values()).filter(a => a.flagged).length;
+      const flaggedCount = Object.values(allAnswers).filter(a => a.flagged).length;
 
       if (flaggedCount > 0) {
         // Show blind review prompt
@@ -683,15 +683,16 @@ function PracticeContent() {
       if (!currentQuestion || isReviewMode) return;
 
       setAnswers((prev) => {
-        const newAnswers = new Map(prev);
-        const existing = newAnswers.get(currentQuestion.id);
-        newAnswers.set(currentQuestion.id, {
-          questionId: currentQuestion.id,
-          selectedAnswer: answer,
-          timeSpent: existing?.timeSpent || 0,
-          flagged: existing?.flagged || false,
-        });
-        return newAnswers;
+        const existing = prev[currentQuestion.id];
+        return {
+          ...prev,
+          [currentQuestion.id]: {
+            questionId: currentQuestion.id,
+            selectedAnswer: answer,
+            timeSpent: existing?.timeSpent || 0,
+            flagged: existing?.flagged || false,
+          },
+        };
       });
     },
     [currentQuestion?.id, isReviewMode]
@@ -702,15 +703,16 @@ function PracticeContent() {
     if (!currentQuestion) return;
 
     setAnswers((prev) => {
-      const newAnswers = new Map(prev);
-      const existing = newAnswers.get(currentQuestion.id);
-      newAnswers.set(currentQuestion.id, {
-        questionId: currentQuestion.id,
-        selectedAnswer: existing?.selectedAnswer || null,
-        timeSpent: existing?.timeSpent || 0,
-        flagged: !existing?.flagged,
-      });
-      return newAnswers;
+      const existing = prev[currentQuestion.id];
+      return {
+        ...prev,
+        [currentQuestion.id]: {
+          questionId: currentQuestion.id,
+          selectedAnswer: existing?.selectedAnswer || null,
+          timeSpent: existing?.timeSpent || 0,
+          flagged: !existing?.flagged,
+        },
+      };
     });
   }, [currentQuestion?.id]);
 
@@ -741,7 +743,7 @@ function PracticeContent() {
       const questions = section?.questions || [];
 
       const answeredQuestions: AnsweredQuestion[] = questions.map((q) => {
-        const answer = answers.get(q.id);
+        const answer = answers[q.id];
         const isCorrect = answer?.selectedAnswer === q.correctAnswer;
         if (isCorrect) totalRaw++;
         totalQuestions++;
@@ -946,14 +948,14 @@ function PracticeContent() {
   // Get flagged questions for blind review
   const flaggedQuestions = useMemo(() => {
     const allQuestions = sections.flatMap(s => s.questions);
-    return allQuestions.filter(q => answers.get(q.id)?.flagged);
+    return allQuestions.filter(q => answers[q.id]?.flagged);
   }, [sections, answers]);
 
   // Get timed answers for blind review
   const timedAnswersForReview = useMemo((): AnsweredQuestion[] => {
     return sections.flatMap(section =>
       section.questions.map(q => {
-        const answer = answers.get(q.id);
+        const answer = answers[q.id];
         return {
           questionId: q.id,
           selectedAnswer: answer?.selectedAnswer || null,
@@ -1130,7 +1132,7 @@ function PracticeContent() {
     );
   }
 
-  const currentAnswer = answers.get(currentQuestion.id);
+  const currentAnswer = answers[currentQuestion.id];
   const questionTypeInfo =
     currentQuestion.sectionType === "logical-reasoning"
       ? LR_TYPE_DESCRIPTIONS[currentQuestion.type as LogicalReasoningQuestionType]
@@ -1476,7 +1478,7 @@ function PracticeContent() {
                   <span className="text-stone-600 dark:text-stone-400">Answered</span>
                   <span className="font-semibold text-stone-900 dark:text-stone-100">
                     {
-                      Array.from(answers.values()).filter(
+                      Object.values(answers).filter(
                         (a) => currentSection?.questions?.some((q) => q.id === a.questionId) && a.selectedAnswer
                       ).length
                     }{" "}
@@ -1487,7 +1489,7 @@ function PracticeContent() {
                   <span className="text-stone-600 dark:text-stone-400">Flagged</span>
                   <span className="font-semibold text-amber-600 dark:text-amber-400">
                     {
-                      Array.from(answers.values()).filter(
+                      Object.values(answers).filter(
                         (a) => currentSection?.questions?.some((q) => q.id === a.questionId) && a.flagged
                       ).length
                     }
@@ -1500,7 +1502,7 @@ function PracticeContent() {
                   style={{
                     width: `${
                       currentSection?.questions?.length
-                        ? (Array.from(answers.values()).filter(
+                        ? (Object.values(answers).filter(
                             (a) => currentSection.questions.some((q) => q.id === a.questionId) && a.selectedAnswer
                           ).length /
                             currentSection.questions.length) *

@@ -201,7 +201,7 @@ export default function TestReviewPage() {
 
   const [test, setTest] = useState<CompletedTest | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [expandedQuestions, setExpandedQuestions] = useState<Set<string>>(new Set());
+  const [expandedQuestions, setExpandedQuestions] = useState<Record<string, boolean>>({});
   const [filter, setFilter] = useState<"all" | "correct" | "incorrect">("all");
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
@@ -227,24 +227,26 @@ export default function TestReviewPage() {
 
   const toggleQuestion = (questionId: string) => {
     setExpandedQuestions((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(questionId)) {
-        newSet.delete(questionId);
+      const newState = { ...prev };
+      if (newState[questionId]) {
+        delete newState[questionId];
       } else {
-        newSet.add(questionId);
+        newState[questionId] = true;
       }
-      return newSet;
+      return newState;
     });
   };
 
   const expandAll = () => {
     if (!test) return;
     const allIds = test.sections.flatMap((s) => s.questions.map((q) => q.questionId));
-    setExpandedQuestions(new Set(allIds));
+    const expanded: Record<string, boolean> = {};
+    allIds.forEach(id => { expanded[id] = true; });
+    setExpandedQuestions(expanded);
   };
 
   const collapseAll = () => {
-    setExpandedQuestions(new Set());
+    setExpandedQuestions({});
   };
 
   if (isLoading) {
@@ -445,7 +447,7 @@ export default function TestReviewPage() {
                 key={question.questionId}
                 answeredQuestion={question}
                 questionNumber={index + 1}
-                isExpanded={expandedQuestions.has(question.questionId)}
+                isExpanded={!!expandedQuestions[question.questionId]}
                 onToggle={() => toggleQuestion(question.questionId)}
               />
             ))

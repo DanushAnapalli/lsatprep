@@ -235,8 +235,8 @@ export function calculateImprovementsNeeded(
   const typePerformance = getPerformanceByQuestionType(progress);
   const improvements: ImprovementArea[] = [];
 
-  // Convert Map to array and filter for weak areas
-  typePerformance.forEach((stats, questionType) => {
+  // Convert object to entries and filter for weak areas
+  Object.entries(typePerformance).forEach(([questionType, stats]) => {
     if (stats.total < 2) return; // Need at least 2 attempts
 
     const currentAccuracy = stats.percentage;

@@ -64,7 +64,7 @@ export function GameBoard({ game, onComplete, showTimer = true }: GameBoardProps
     }));
   };
 
-  const handleBoardChange = (state: (string | null)[] | Map<string, string[]>) => {
+  const handleBoardChange = (state: (string | null)[] | Record<string, string[]>) => {
     if (Array.isArray(state)) {
       setBoardState({
         type: "linear",

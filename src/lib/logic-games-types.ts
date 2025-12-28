@@ -90,12 +90,12 @@ export interface LinearBoardState {
 
 export interface GroupingBoardState {
   type: "grouping";
-  groups: Map<string, string[]>; // Group ID -> Entity IDs
+  groups: Record<string, string[]>; // Group ID -> Entity IDs
 }
 
 export interface MatchingBoardState {
   type: "matching";
-  matches: Map<string, Map<string, boolean>>; // Row entity -> Column entity -> matched
+  matches: Record<string, Record<string, boolean>>; // Row entity -> Column entity -> matched
 }
 
 export type BoardState = LinearBoardState | GroupingBoardState | MatchingBoardState;
