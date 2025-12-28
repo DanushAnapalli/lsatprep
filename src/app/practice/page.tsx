@@ -460,6 +460,7 @@ function PracticeContent() {
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [userTier, setUserTier] = useState<SubscriptionTier>("free");
   const [tierBlocked, setTierBlocked] = useState<string | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
 
   // Use refs to avoid stale closure issues in timer
   const sectionsRef = useRef<Section[]>([]);
@@ -477,6 +478,7 @@ function PracticeContent() {
         const tier = getUserTier(firebaseUser);
         setUserTier(tier);
       }
+      setAuthLoading(false);
     });
     return () => unsubscribe();
   }, []);
@@ -498,9 +500,9 @@ function PracticeContent() {
     timeRemainingRef.current = timeRemaining;
   }, [timeRemaining]);
 
-  // Initialize test ONCE
+  // Initialize test ONCE (after auth is loaded)
   useEffect(() => {
-    if (initialized) return;
+    if (initialized || authLoading) return;
 
     const userId = user?.uid;
     const loadedProgress = loadUserProgress(userId);
@@ -510,20 +512,22 @@ function PracticeContent() {
     const currentTier = user ? getUserTier(user) : "free";
     const isGuest = !user;
 
-    // Count completed tests
-    const completedTests = loadedProgress.completedTests.length;
-    const completedLRTests = loadedProgress.completedTests.filter(
-      (test) => test.sections.some((s) => s.type === "logical-reasoning")
-    ).length;
-    const completedRCTests = loadedProgress.completedTests.filter(
-      (test) => test.sections.some((s) => s.type === "reading-comprehension")
-    ).length;
+    // Founders and Pro users bypass ALL limits - skip tier check entirely
+    if (currentTier === "founder" || currentTier === "pro") {
+      // No limits - proceed directly to building sections
+    } else {
+      // Count completed tests for free users only
+      const completedLRTests = loadedProgress.completedTests.filter(
+        (test) => test.sections.some((s) => s.type === "logical-reasoning")
+      ).length;
+      const completedRCTests = loadedProgress.completedTests.filter(
+        (test) => test.sections.some((s) => s.type === "reading-comprehension")
+      ).length;
 
-    // Check tier limits for both guests and free users
-    // Guests and free users get 1 LR section test + 1 RC section test free
-    const tierLimits = TIER_LIMITS.free;
+      // Check tier limits for both guests and free users
+      // Guests and free users get 1 LR section test + 1 RC section test free
+      const tierLimits = TIER_LIMITS.free;
 
-    if (currentTier === "free" || isGuest) {
       if (testType === "lr-only" && completedLRTests >= tierLimits.lrSetsAllowed) {
         setTierBlocked(isGuest ? "GUEST_LR_LIMIT" : "You've reached your free limit of 1 LR practice set. Upgrade to Pro for unlimited practice!");
         setIsLoading(false);
@@ -572,7 +576,7 @@ function PracticeContent() {
 
     setIsLoading(false);
     setInitialized(true);
-  }, [testType, specificQuestionIds, allowRepeatsParam, weakTypes, initialized, user]);
+  }, [testType, specificQuestionIds, allowRepeatsParam, weakTypes, initialized, user, authLoading]);
 
   const currentSection = sections[currentSectionIndex];
   const currentQuestion = currentSection?.questions[currentQuestionIndex];
@@ -814,7 +818,7 @@ function PracticeContent() {
     setCurrentQuestionIndex(0);
   };
 
-  if (isLoading) {
+  if (isLoading || authLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-stone-100 dark:bg-stone-950">
         <div className="text-center">
