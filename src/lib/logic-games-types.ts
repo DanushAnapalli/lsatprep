@@ -110,7 +110,7 @@ export interface GameSession {
   startedAt: Date;
   completedAt?: Date;
   currentQuestionIndex: number;
-  answers: Map<string, "A" | "B" | "C" | "D" | "E">;
+  answers: Record<string, "A" | "B" | "C" | "D" | "E">;
   boardState?: BoardState;
   timeSpent: number;       // In seconds
   flaggedQuestions: string[];

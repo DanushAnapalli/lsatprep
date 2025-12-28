@@ -730,6 +730,21 @@ function PracticeContent() {
   const goToPrevious = () => goToQuestion(currentQuestionIndex - 1);
   const goToNext = () => goToQuestion(currentQuestionIndex + 1);
 
+  // Handle blind review completion (must be before early returns for Rules of Hooks)
+  const handleBlindReviewComplete = useCallback((result: BlindReviewResult) => {
+    setBlindReviewResult(result);
+    setBlindReviewInProgress(false);
+    setShowBlindReviewPrompt(false);
+    setTestCompleted(true);
+  }, []);
+
+  // Handle blind review skip (must be before early returns for Rules of Hooks)
+  const handleBlindReviewSkip = useCallback(() => {
+    setBlindReviewSkipped(true);
+    setShowBlindReviewPrompt(false);
+    setTestCompleted(true);
+  }, []);
+
   // Save results when test completes
   useEffect(() => {
     if (!testCompleted || !progress || sectionResults.length === 0) return;
@@ -829,6 +844,30 @@ function PracticeContent() {
 
     return { rawScore: totalRaw, totalQuestions, scaledScore, percentile };
   }, [testCompleted, sectionResults, sections]);
+
+  // Get flagged questions for blind review (must be before early returns for Rules of Hooks)
+  const flaggedQuestions = useMemo(() => {
+    const allQuestions = sections.flatMap(s => s.questions);
+    return allQuestions.filter(q => answers[q.id]?.flagged);
+  }, [sections, answers]);
+
+  // Get timed answers for blind review (must be before early returns for Rules of Hooks)
+  const timedAnswersForReview = useMemo((): AnsweredQuestion[] => {
+    return sections.flatMap(section =>
+      section.questions.map(q => {
+        const answer = answers[q.id];
+        return {
+          questionId: q.id,
+          selectedAnswer: answer?.selectedAnswer || null,
+          correctAnswer: q.correctAnswer,
+          isCorrect: answer?.selectedAnswer === q.correctAnswer,
+          timeSpent: answer?.timeSpent || 0,
+          questionType: q.type,
+          sectionType: q.sectionType,
+        };
+      })
+    );
+  }, [sections, answers]);
 
   // Enter review mode
   const enterReviewMode = () => {
@@ -944,45 +983,6 @@ function PracticeContent() {
       </div>
     );
   }
-
-  // Get flagged questions for blind review
-  const flaggedQuestions = useMemo(() => {
-    const allQuestions = sections.flatMap(s => s.questions);
-    return allQuestions.filter(q => answers[q.id]?.flagged);
-  }, [sections, answers]);
-
-  // Get timed answers for blind review
-  const timedAnswersForReview = useMemo((): AnsweredQuestion[] => {
-    return sections.flatMap(section =>
-      section.questions.map(q => {
-        const answer = answers[q.id];
-        return {
-          questionId: q.id,
-          selectedAnswer: answer?.selectedAnswer || null,
-          correctAnswer: q.correctAnswer,
-          isCorrect: answer?.selectedAnswer === q.correctAnswer,
-          timeSpent: answer?.timeSpent || 0,
-          questionType: q.type,
-          sectionType: q.sectionType,
-        };
-      })
-    );
-  }, [sections, answers]);
-
-  // Handle blind review completion
-  const handleBlindReviewComplete = useCallback((result: BlindReviewResult) => {
-    setBlindReviewResult(result);
-    setBlindReviewInProgress(false);
-    setShowBlindReviewPrompt(false);
-    setTestCompleted(true);
-  }, []);
-
-  // Handle blind review skip
-  const handleBlindReviewSkip = useCallback(() => {
-    setBlindReviewSkipped(true);
-    setShowBlindReviewPrompt(false);
-    setTestCompleted(true);
-  }, []);
 
   // Blind Review Prompt/Phase Screen
   if (showBlindReviewPrompt || blindReviewInProgress) {

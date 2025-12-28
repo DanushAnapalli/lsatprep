@@ -59,16 +59,16 @@ function createTask(type: TaskType, overrides?: Partial<StudyTask>): StudyTask {
 function distributeWeeklyTime(
   hoursPerWeek: number,
   studyDays: DayOfWeek[]
-): Map<DayOfWeek, number> {
-  const distribution = new Map<DayOfWeek, number>();
+): Record<DayOfWeek, number> {
+  const distribution: Record<string, number> = {};
   const minutesPerWeek = hoursPerWeek * 60;
   const minutesPerDay = Math.floor(minutesPerWeek / studyDays.length);
 
   for (const day of studyDays) {
-    distribution.set(day, minutesPerDay);
+    distribution[day] = minutesPerDay;
   }
 
-  return distribution;
+  return distribution as Record<DayOfWeek, number>;
 }
 
 /**
@@ -296,7 +296,7 @@ export function generateStudySchedule(
           description: "Rest and prepare mentally for test day",
         }));
       } else {
-        const availableMinutes = timeDistribution.get(dayOfWeek) || 60;
+        const availableMinutes = timeDistribution[dayOfWeek] || 60;
         tasks = generateDayTasks(
           availableMinutes,
           phase,
