@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import {
@@ -10,9 +11,21 @@ import {
   GAME_TYPE_DESCRIPTIONS,
 } from "@/lib/logic-games-types";
 import { getAllGames } from "@/lib/logic-games-questions";
-import { GameBoard } from "@/components/games/GameBoard";
 import { onAuthChange, User as FirebaseUser } from "@/lib/firebase";
 import { getUserTier, SubscriptionTier } from "@/lib/subscription";
+
+// Dynamic import to avoid SSR issues with dnd-kit
+const GameBoard = dynamic(
+  () => import("@/components/games/GameBoard").then((mod) => mod.GameBoard),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex items-center justify-center py-12">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-stone-300 border-t-[#1a365d]" />
+      </div>
+    ),
+  }
+);
 import {
   ArrowLeft,
   Layers,
