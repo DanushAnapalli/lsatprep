@@ -35,7 +35,7 @@ interface GameBoardProps {
 interface GameResult {
   correctCount: number;
   totalQuestions: number;
-  answers: Map<string, string>;
+  answers: Record<string, string>;
   timeSpent: number;
 }
 
@@ -43,8 +43,9 @@ export function GameBoard({ game, onComplete, showTimer = true }: GameBoardProps
   const { setup, questions } = game;
 
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [answers, setAnswers] = useState<Map<string, string>>(new Map());
-  const [flaggedQuestions, setFlaggedQuestions] = useState<Set<string>>(new Set());
+  // Use plain objects instead of Map/Set to avoid potential React serialization issues
+  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [flaggedQuestions, setFlaggedQuestions] = useState<Record<string, boolean>>({});
   const [showRules, setShowRules] = useState(true);
   const [isComplete, setIsComplete] = useState(false);
   const [startTime] = useState(Date.now());
@@ -53,19 +54,14 @@ export function GameBoard({ game, onComplete, showTimer = true }: GameBoardProps
   const currentQuestion = questions[currentQuestionIndex];
 
   const handleAnswerSelect = (questionId: string, answer: string) => {
-    setAnswers((prev) => new Map(prev).set(questionId, answer));
+    setAnswers((prev) => ({ ...prev, [questionId]: answer }));
   };
 
   const handleFlagToggle = (questionId: string) => {
-    setFlaggedQuestions((prev) => {
-      const next = new Set(prev);
-      if (next.has(questionId)) {
-        next.delete(questionId);
-      } else {
-        next.add(questionId);
-      }
-      return next;
-    });
+    setFlaggedQuestions((prev) => ({
+      ...prev,
+      [questionId]: !prev[questionId],
+    }));
   };
 
   const handleBoardChange = (state: (string | null)[] | Map<string, string[]>) => {
@@ -87,7 +83,7 @@ export function GameBoard({ game, onComplete, showTimer = true }: GameBoardProps
     let correctCount = 0;
 
     questions.forEach((q) => {
-      const userAnswer = answers.get(q.id);
+      const userAnswer = answers[q.id];
       if (userAnswer === q.correctAnswer) {
         correctCount++;
       }
@@ -110,7 +106,7 @@ export function GameBoard({ game, onComplete, showTimer = true }: GameBoardProps
     }
   };
 
-  const answeredCount = answers.size;
+  const answeredCount = Object.keys(answers).length;
   const progressPercent = (answeredCount / questions.length) * 100;
 
   if (isComplete) {
@@ -200,9 +196,9 @@ export function GameBoard({ game, onComplete, showTimer = true }: GameBoardProps
             {/* Question dots */}
             <div className="mt-3 flex flex-wrap gap-1">
               {questions.map((q, i) => {
-                const isAnswered = answers.has(q.id);
+                const isAnswered = q.id in answers;
                 const isCurrent = i === currentQuestionIndex;
-                const isFlagged = flaggedQuestions.has(q.id);
+                const isFlagged = flaggedQuestions[q.id];
 
                 return (
                   <button
@@ -274,14 +270,14 @@ export function GameBoard({ game, onComplete, showTimer = true }: GameBoardProps
               onClick={() => handleFlagToggle(currentQuestion.id)}
               className={`
                 flex items-center gap-1 rounded-sm px-2 py-1 text-xs transition-colors
-                ${flaggedQuestions.has(currentQuestion.id)
+                ${flaggedQuestions[currentQuestion.id]
                   ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
                   : "text-stone-500 hover:bg-stone-100 dark:text-stone-400 dark:hover:bg-stone-800"
                 }
               `}
             >
               <Flag className="h-3 w-3" />
-              {flaggedQuestions.has(currentQuestion.id) ? "Flagged" : "Flag"}
+              {flaggedQuestions[currentQuestion.id] ? "Flagged" : "Flag"}
             </button>
           </div>
 
@@ -301,7 +297,7 @@ export function GameBoard({ game, onComplete, showTimer = true }: GameBoardProps
           {/* Answer choices */}
           <div className="space-y-2">
             {currentQuestion.answerChoices.map((choice) => {
-              const isSelected = answers.get(currentQuestion.id) === choice.letter;
+              const isSelected = answers[currentQuestion.id] === choice.letter;
 
               return (
                 <button
@@ -373,7 +369,7 @@ export function GameBoard({ game, onComplete, showTimer = true }: GameBoardProps
 // Results component
 interface GameResultsProps {
   game: LogicGame;
-  answers: Map<string, string>;
+  answers: Record<string, string>;
   onReview: () => void;
 }
 
@@ -382,7 +378,7 @@ function GameResults({ game, answers, onReview }: GameResultsProps) {
 
   let correctCount = 0;
   questions.forEach((q) => {
-    if (answers.get(q.id) === q.correctAnswer) {
+    if (answers[q.id] === q.correctAnswer) {
       correctCount++;
     }
   });
@@ -425,7 +421,7 @@ function GameResults({ game, answers, onReview }: GameResultsProps) {
         </h3>
 
         {questions.map((q) => {
-          const userAnswer = answers.get(q.id);
+          const userAnswer = answers[q.id];
           const isCorrect = userAnswer === q.correctAnswer;
 
           return (

@@ -49,7 +49,8 @@ export default function GamesPage() {
   const [selectedGame, setSelectedGame] = useState<LogicGame | null>(null);
   const [typeFilter, setTypeFilter] = useState<GameFilter>("all");
   const [difficultyFilter, setDifficultyFilter] = useState<DifficultyFilter>("all");
-  const [completedGames, setCompletedGames] = useState<Set<string>>(new Set());
+  // Use plain object instead of Set to avoid potential React serialization issues
+  const [completedGames, setCompletedGames] = useState<Record<string, boolean>>({});
   const [freeGamesUsed, setFreeGamesUsed] = useState(0);
 
   const FREE_GAME_LIMIT = 2;
@@ -83,7 +84,11 @@ export default function GamesPage() {
       const key = user ? `lsat-games-completed-${user.uid}` : "lsat-games-completed";
       const stored = localStorage.getItem(key);
       if (stored) {
-        setCompletedGames(new Set(JSON.parse(stored)));
+        // Convert array of IDs to object
+        const completedIds = JSON.parse(stored) as string[];
+        const completedObj: Record<string, boolean> = {};
+        completedIds.forEach(id => { completedObj[id] = true; });
+        setCompletedGames(completedObj);
       }
 
       const freeKey = user ? `lsat-games-free-used-${user.uid}` : "lsat-games-free-used";
@@ -104,7 +109,7 @@ export default function GamesPage() {
 
   const canPlayGame = (gameId: string): boolean => {
     if (subscription === "pro" || subscription === "founder") return true;
-    if (completedGames.has(gameId)) return true; // Can replay completed games
+    if (completedGames[gameId]) return true; // Can replay completed games
     return freeGamesUsed < FREE_GAME_LIMIT;
   };
 
@@ -112,7 +117,7 @@ export default function GamesPage() {
     if (!canPlayGame(game.setup.id)) return;
 
     // Track free game usage
-    if (subscription === "free" && !completedGames.has(game.setup.id)) {
+    if (subscription === "free" && !completedGames[game.setup.id]) {
       const newCount = freeGamesUsed + 1;
       setFreeGamesUsed(newCount);
       if (typeof window !== "undefined") {
@@ -131,12 +136,13 @@ export default function GamesPage() {
     if (!selectedGame) return;
 
     const gameId = selectedGame.setup.id;
-    const newCompleted = new Set(completedGames).add(gameId);
+    const newCompleted = { ...completedGames, [gameId]: true };
     setCompletedGames(newCompleted);
 
     if (typeof window !== "undefined") {
       const key = user ? `lsat-games-completed-${user.uid}` : "lsat-games-completed";
-      localStorage.setItem(key, JSON.stringify(Array.from(newCompleted)));
+      // Convert object keys to array for storage
+      localStorage.setItem(key, JSON.stringify(Object.keys(newCompleted)));
     }
   };
 
@@ -307,7 +313,7 @@ export default function GamesPage() {
         {/* Games grid */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {filteredGames.map((game) => {
-            const isCompleted = completedGames.has(game.setup.id);
+            const isCompleted = completedGames[game.setup.id];
             const canPlay = canPlayGame(game.setup.id);
 
             return (
