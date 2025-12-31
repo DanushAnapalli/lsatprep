@@ -16,9 +16,6 @@ import {
   ArrowRight,
   Clock,
   Sparkles,
-  RefreshCw,
-  Search,
-  Layers,
 } from "lucide-react";
 import { UserProgress } from "@/lib/user-progress";
 import {
@@ -46,35 +43,12 @@ import {
   saveGameProgress,
   updateGameProgress,
 } from "@/lib/lr-games";
-import {
-  VocabCategory,
-  VocabWord,
-  VocabProgress,
-  VOCAB_CATEGORIES,
-  MatchingGameQuestion,
-  generateMatchingQuestions,
-  loadVocabProgress,
-  saveVocabProgress,
-  updateVocabProgress,
-} from "@/lib/lsat-vocab";
 import { logicalReasoningQuestions, readingComprehensionQuestions } from "@/lib/sample-questions";
 import { Question } from "@/lib/lsat-types";
 
 function cx(...classes: (string | boolean | undefined)[]) {
   return classes.filter(Boolean).join(" ");
 }
-
-// Icon mapping for game types
-const GameIcon = ({ type, size = 20, className }: { type: string; size?: number; className?: string }) => {
-  const iconProps = { size, className };
-  switch (type) {
-    case "target": return <Target {...iconProps} />;
-    case "refresh": return <RefreshCw {...iconProps} />;
-    case "search": return <Search {...iconProps} />;
-    case "layers": return <Layers {...iconProps} />;
-    default: return <Target {...iconProps} />;
-  }
-};
 
 // ============================================
 // TYPES
@@ -86,7 +60,7 @@ interface DailyDrillsProps {
   compact?: boolean;
 }
 
-type DrillMode = "menu" | "review" | "game" | "vocab";
+type DrillMode = "menu" | "review" | "game";
 
 // ============================================
 // SPACED REPETITION REVIEW COMPONENT
@@ -200,7 +174,7 @@ function ReviewMode({ cards, userId, onComplete, onExit }: ReviewModeProps) {
           </span>
         </div>
 
-        <div className="mb-6 text-stone-800 dark:text-stone-200 whitespace-pre-wrap leading-relaxed">
+        <div className="mb-6 text-stone-800 dark:text-stone-200 whitespace-pre-wrap">
           {currentQuestion.stimulus}
         </div>
 
@@ -355,7 +329,7 @@ function GameMode({ gameType, userId, onComplete, onExit }: GameModeProps) {
           ← Exit Game
         </button>
         <div className="flex items-center gap-3">
-          <GameIcon type={gameInfo.iconType} size={20} className="text-[#1a365d] dark:text-amber-400" />
+          <span className="text-lg">{gameInfo.icon}</span>
           <span className="font-medium text-stone-900 dark:text-stone-100">
             {gameInfo.name}
           </span>
@@ -478,189 +452,6 @@ function GameMode({ gameType, userId, onComplete, onExit }: GameModeProps) {
 }
 
 // ============================================
-// VOCABULARY MODE COMPONENT
-// ============================================
-
-interface VocabModeProps {
-  userId?: string;
-  onComplete: (correct: number, total: number) => void;
-  onExit: () => void;
-}
-
-function VocabMode({ userId, onComplete, onExit }: VocabModeProps) {
-  const [questions, setQuestions] = useState<MatchingGameQuestion[]>([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
-  const [showResult, setShowResult] = useState(false);
-  const [correctCount, setCorrectCount] = useState(0);
-
-  useEffect(() => {
-    setQuestions(generateMatchingQuestions(5));
-  }, []);
-
-  if (questions.length === 0) return null;
-
-  const currentQ = questions[currentIndex];
-  const isLastQuestion = currentIndex === questions.length - 1;
-
-  const handleAnswer = (index: number) => {
-    if (showResult) return;
-    setSelectedAnswer(index);
-    setShowResult(true);
-
-    const isCorrect = index === currentQ.correctIndex;
-    if (isCorrect) {
-      setCorrectCount(c => c + 1);
-    }
-
-    // Update vocab progress
-    const vocabProgress = loadVocabProgress(userId);
-    const updatedProgress = updateVocabProgress(vocabProgress, currentQ.word.id, isCorrect);
-    saveVocabProgress(updatedProgress, userId);
-  };
-
-  const handleNext = () => {
-    if (isLastQuestion) {
-      const finalCorrect = correctCount + (selectedAnswer === currentQ.correctIndex ? 1 : 0);
-      onComplete(finalCorrect, questions.length);
-    } else {
-      setCurrentIndex(i => i + 1);
-      setSelectedAnswer(null);
-      setShowResult(false);
-    }
-  };
-
-  const categoryInfo = VOCAB_CATEGORIES[currentQ.word.category];
-
-  return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <button
-          onClick={onExit}
-          className="text-sm text-stone-500 hover:text-stone-700 dark:hover:text-stone-300"
-        >
-          ← Exit Vocab
-        </button>
-        <div className="flex items-center gap-3">
-          <BookOpen size={20} className="text-[#1a365d] dark:text-amber-400" />
-          <span className="font-medium text-stone-900 dark:text-stone-100">
-            Vocabulary
-          </span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-stone-600 dark:text-stone-400">
-            {currentIndex + 1} / {questions.length}
-          </span>
-        </div>
-      </div>
-
-      {/* Progress dots */}
-      <div className="flex justify-center gap-2 mb-4">
-        {questions.map((_, i) => (
-          <div
-            key={i}
-            className={cx(
-              "w-3 h-3 rounded-full transition",
-              i < currentIndex && selectedAnswer !== null && questions[i] && selectedAnswer === questions[i].correctIndex && "bg-green-500",
-              i < currentIndex && selectedAnswer !== null && questions[i] && selectedAnswer !== questions[i].correctIndex && "bg-red-500",
-              i === currentIndex && "bg-[#1a365d] dark:bg-amber-500",
-              i > currentIndex && "bg-stone-200 dark:bg-stone-700"
-            )}
-          />
-        ))}
-      </div>
-
-      {/* Question card */}
-      <div className="rounded-sm border-2 border-stone-200 bg-white p-6 dark:border-stone-700 dark:bg-stone-800">
-        {/* Category badge */}
-        <div className="mb-4">
-          <span className="inline-block rounded-sm bg-stone-100 px-2 py-1 text-xs font-medium text-stone-600 dark:bg-stone-700 dark:text-stone-400">
-            {categoryInfo.name}
-          </span>
-        </div>
-
-        {/* Word display */}
-        <div className="mb-6 text-center">
-          <div className="text-3xl font-bold text-[#1a365d] dark:text-amber-400 mb-2">
-            {currentQ.word.word}
-          </div>
-          <div className="text-sm text-stone-500">
-            Match the word to its correct definition
-          </div>
-        </div>
-
-        {/* Definition options */}
-        <div className="space-y-2">
-          {currentQ.options.map((option, index) => {
-            const isSelected = selectedAnswer === index;
-            const isCorrect = index === currentQ.correctIndex;
-
-            return (
-              <button
-                key={index}
-                onClick={() => handleAnswer(index)}
-                disabled={showResult}
-                className={cx(
-                  "w-full text-left rounded-sm border-2 p-4 transition",
-                  !showResult && "hover:border-[#1a365d] dark:hover:border-amber-500",
-                  !showResult && "border-stone-200 dark:border-stone-700",
-                  showResult && isCorrect && "border-green-500 bg-green-50 dark:bg-green-900/20",
-                  showResult && isSelected && !isCorrect && "border-red-500 bg-red-50 dark:bg-red-900/20",
-                  showResult && !isSelected && !isCorrect && "border-stone-200 opacity-50 dark:border-stone-700"
-                )}
-              >
-                <div className="flex items-start gap-3">
-                  <span className={cx(
-                    "flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold flex-shrink-0",
-                    showResult && isCorrect && "bg-green-500 text-white",
-                    showResult && isSelected && !isCorrect && "bg-red-500 text-white",
-                    !showResult && "bg-stone-200 text-stone-600 dark:bg-stone-700 dark:text-stone-400"
-                  )}>
-                    {showResult && isCorrect ? <Check size={14} /> : showResult && isSelected && !isCorrect ? <X size={14} /> : String.fromCharCode(65 + index)}
-                  </span>
-                  <span className="text-sm text-stone-700 dark:text-stone-300">
-                    {option}
-                  </span>
-                </div>
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Example sentence */}
-        {showResult && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            className="mt-4 rounded-sm bg-stone-50 p-4 dark:bg-stone-900"
-          >
-            <div className="font-medium text-stone-900 dark:text-stone-100 mb-2">
-              Example Usage
-            </div>
-            <p className="text-sm text-stone-600 dark:text-stone-400 italic">
-              &ldquo;{currentQ.word.example}&rdquo;
-            </p>
-          </motion.div>
-        )}
-      </div>
-
-      {/* Next button */}
-      {showResult && (
-        <motion.button
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          onClick={handleNext}
-          className="w-full rounded-sm bg-[#1a365d] py-3 font-semibold text-white transition hover:bg-[#2d4a7c] dark:bg-amber-500 dark:text-stone-900 dark:hover:bg-amber-400"
-        >
-          {isLastQuestion ? "See Results" : "Next Word"}
-        </motion.button>
-      )}
-    </div>
-  );
-}
-
-// ============================================
 // MAIN COMPONENT
 // ============================================
 
@@ -669,9 +460,8 @@ export default function DailyDrills({ progress, userId, compact = false }: Daily
   const [selectedGame, setSelectedGame] = useState<GameType | null>(null);
   const [srData, setSrData] = useState<SpacedRepetitionData | null>(null);
   const [gameProgress, setGameProgress] = useState<GameProgress | null>(null);
-  const [vocabProgress, setVocabProgress] = useState<VocabProgress | null>(null);
   const [dueCards, setDueCards] = useState<ReviewCard[]>([]);
-  const [showCompletionMessage, setShowCompletionMessage] = useState<{ type: "review" | "game" | "vocab"; correct?: number; total?: number } | null>(null);
+  const [showCompletionMessage, setShowCompletionMessage] = useState<{ type: "review" | "game"; correct?: number; total?: number } | null>(null);
 
   // Load data on mount
   useEffect(() => {
@@ -683,9 +473,6 @@ export default function DailyDrills({ progress, userId, compact = false }: Daily
 
     const gp = loadGameProgress(userId);
     setGameProgress(gp);
-
-    const vp = loadVocabProgress(userId);
-    setVocabProgress(vp);
   }, [userId, progress]);
 
   const handleStartReview = () => {
@@ -713,18 +500,6 @@ export default function DailyDrills({ progress, userId, compact = false }: Daily
     // Reload game progress
     const gp = loadGameProgress(userId);
     setGameProgress(gp);
-  };
-
-  const handleStartVocab = () => {
-    setMode("vocab");
-  };
-
-  const handleVocabComplete = (correct: number, total: number) => {
-    setShowCompletionMessage({ type: "vocab", correct, total });
-    setMode("menu");
-    // Reload vocab progress
-    const vp = loadVocabProgress(userId);
-    setVocabProgress(vp);
   };
 
   const handleExit = () => {
@@ -755,54 +530,39 @@ export default function DailyDrills({ progress, userId, compact = false }: Daily
           )}
         </div>
 
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 gap-3">
           {/* Review Queue */}
           <button
             onClick={handleStartReview}
             disabled={dueCount === 0}
             className={cx(
-              "rounded-sm border-2 p-3 text-left transition",
+              "rounded-sm border-2 p-4 text-left transition",
               dueCount > 0
                 ? "border-[#1a365d] bg-[#1a365d]/5 hover:bg-[#1a365d]/10 dark:border-amber-500 dark:bg-amber-500/10"
                 : "border-stone-200 bg-stone-50 dark:border-stone-700 dark:bg-stone-800 opacity-60"
             )}
           >
             <div className="flex items-center gap-2 mb-1">
-              <RotateCcw size={14} className="text-[#1a365d] dark:text-amber-400" />
-              <span className="text-sm font-medium text-stone-900 dark:text-stone-100">Review</span>
+              <RotateCcw size={16} className="text-[#1a365d] dark:text-amber-400" />
+              <span className="font-medium text-stone-900 dark:text-stone-100">Review</span>
             </div>
-            <div className="text-xl font-bold text-[#1a365d] dark:text-amber-400">
+            <div className="text-2xl font-bold text-[#1a365d] dark:text-amber-400">
               {dueCount}
             </div>
-            <div className="text-xs text-stone-500">due</div>
+            <div className="text-xs text-stone-500">cards due</div>
           </button>
 
           {/* Quick Game */}
           <button
             onClick={() => handleStartGame("find-conclusion")}
-            className="rounded-sm border-2 border-stone-200 bg-white p-3 text-left transition hover:border-[#1a365d] dark:border-stone-700 dark:bg-stone-800 dark:hover:border-amber-500"
+            className="rounded-sm border-2 border-stone-200 bg-white p-4 text-left transition hover:border-[#1a365d] dark:border-stone-700 dark:bg-stone-800 dark:hover:border-amber-500"
           >
             <div className="flex items-center gap-2 mb-1">
-              <Target size={14} className="text-[#1a365d] dark:text-amber-400" />
-              <span className="text-sm font-medium text-stone-900 dark:text-stone-100">Logic</span>
+              <Target size={16} className="text-[#1a365d] dark:text-amber-400" />
+              <span className="font-medium text-stone-900 dark:text-stone-100">Quick Game</span>
             </div>
-            <div className="text-xs text-stone-600 dark:text-stone-400">
-              5 Qs
-            </div>
-            <div className="text-xs text-stone-500">~2 min</div>
-          </button>
-
-          {/* Vocab */}
-          <button
-            onClick={handleStartVocab}
-            className="rounded-sm border-2 border-stone-200 bg-white p-3 text-left transition hover:border-[#1a365d] dark:border-stone-700 dark:bg-stone-800 dark:hover:border-amber-500"
-          >
-            <div className="flex items-center gap-2 mb-1">
-              <BookOpen size={14} className="text-[#1a365d] dark:text-amber-400" />
-              <span className="text-sm font-medium text-stone-900 dark:text-stone-100">Vocab</span>
-            </div>
-            <div className="text-xs text-stone-600 dark:text-stone-400">
-              5 words
+            <div className="text-sm text-stone-600 dark:text-stone-400">
+              5 questions
             </div>
             <div className="text-xs text-stone-500">~2 min</div>
           </button>
@@ -866,13 +626,6 @@ export default function DailyDrills({ progress, userId, compact = false }: Daily
                     onExit={handleExit}
                   />
                 )}
-                {mode === "vocab" && (
-                  <VocabMode
-                    userId={userId}
-                    onComplete={handleVocabComplete}
-                    onExit={handleExit}
-                  />
-                )}
               </motion.div>
             </motion.div>
           )}
@@ -922,10 +675,10 @@ export default function DailyDrills({ progress, userId, compact = false }: Daily
         {dueCount > 0 ? (
           <div className="flex items-center justify-between">
             <div>
-              <div className="text-lg font-semibold text-[#1a365d] dark:text-amber-400">
-                {dueCount} cards due
+              <div className="text-3xl font-bold text-[#1a365d] dark:text-amber-400">
+                {dueCount}
               </div>
-              <div className="text-sm text-stone-500">Ready for review</div>
+              <div className="text-stone-600 dark:text-stone-400">cards due for review</div>
             </div>
             <button
               onClick={handleStartReview}
@@ -946,15 +699,15 @@ export default function DailyDrills({ progress, userId, compact = false }: Daily
         {stats && stats.totalCards > 0 && (
           <div className="mt-4 grid grid-cols-3 gap-4 border-t border-stone-200 pt-4 dark:border-stone-700">
             <div className="text-center">
-              <div className="text-sm font-medium text-stone-900 dark:text-stone-100">{stats.masteredCards}</div>
+              <div className="font-semibold text-stone-900 dark:text-stone-100">{stats.masteredCards}</div>
               <div className="text-xs text-stone-500">Mastered</div>
             </div>
             <div className="text-center">
-              <div className="text-sm font-medium text-stone-900 dark:text-stone-100">{stats.learningCards}</div>
+              <div className="font-semibold text-stone-900 dark:text-stone-100">{stats.learningCards}</div>
               <div className="text-xs text-stone-500">Learning</div>
             </div>
             <div className="text-center">
-              <div className="text-sm font-medium text-stone-900 dark:text-stone-100">{stats.newCards}</div>
+              <div className="font-semibold text-stone-900 dark:text-stone-100">{stats.newCards}</div>
               <div className="text-xs text-stone-500">New</div>
             </div>
           </div>
@@ -982,9 +735,7 @@ export default function DailyDrills({ progress, userId, compact = false }: Daily
               onClick={() => handleStartGame(type)}
               className="flex items-center gap-4 rounded-sm border-2 border-stone-200 bg-white p-4 text-left transition hover:border-[#1a365d] dark:border-stone-700 dark:bg-stone-800 dark:hover:border-amber-500"
             >
-              <div className="flex h-10 w-10 items-center justify-center rounded-sm bg-stone-100 dark:bg-stone-700">
-                <GameIcon type={info.iconType} size={20} className="text-[#1a365d] dark:text-amber-400" />
-              </div>
+              <div className="text-2xl">{info.icon}</div>
               <div className="flex-1">
                 <div className="font-medium text-stone-900 dark:text-stone-100">
                   {info.name}
@@ -1001,11 +752,11 @@ export default function DailyDrills({ progress, userId, compact = false }: Daily
         {gameProgress && gameProgress.gamesPlayed > 0 && (
           <div className="mt-4 grid grid-cols-2 gap-4 border-t border-stone-200 pt-4 dark:border-stone-700">
             <div className="text-center">
-              <div className="text-sm font-medium text-stone-900 dark:text-stone-100">{gameProgress.gamesPlayed}</div>
+              <div className="font-semibold text-stone-900 dark:text-stone-100">{gameProgress.gamesPlayed}</div>
               <div className="text-xs text-stone-500">Games Played</div>
             </div>
             <div className="text-center">
-              <div className="text-sm font-medium text-stone-900 dark:text-stone-100">
+              <div className="font-semibold text-stone-900 dark:text-stone-100">
                 {gameProgress.totalQuestions > 0
                   ? Math.round((gameProgress.totalCorrect / gameProgress.totalQuestions) * 100)
                   : 0}%
@@ -1016,66 +767,7 @@ export default function DailyDrills({ progress, userId, compact = false }: Daily
         )}
       </div>
 
-      {/* Vocabulary Section */}
-      <div className="rounded-sm border-2 border-stone-200 bg-white p-6 dark:border-stone-700 dark:bg-stone-900">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <BookOpen size={20} className="text-[#1a365d] dark:text-amber-400" />
-            <h3 className="font-semibold text-stone-900 dark:text-stone-100">
-              LSAT Vocabulary
-            </h3>
-          </div>
-          <span className="text-sm text-stone-500">
-            Master key terms and definitions
-          </span>
-        </div>
-
-        <div className="grid gap-3 sm:grid-cols-2">
-          {(Object.entries(VOCAB_CATEGORIES) as [VocabCategory, typeof VOCAB_CATEGORIES[VocabCategory]][]).map(([category, info]) => (
-            <button
-              key={category}
-              onClick={handleStartVocab}
-              className="flex items-center gap-4 rounded-sm border-2 border-stone-200 bg-white p-4 text-left transition hover:border-[#1a365d] dark:border-stone-700 dark:bg-stone-800 dark:hover:border-amber-500"
-            >
-              <div className="flex h-10 w-10 items-center justify-center rounded-sm bg-stone-100 dark:bg-stone-700">
-                <BookOpen size={20} className="text-[#1a365d] dark:text-amber-400" />
-              </div>
-              <div className="flex-1">
-                <div className="font-medium text-stone-900 dark:text-stone-100">
-                  {info.name}
-                </div>
-                <div className="text-sm text-stone-500">
-                  {info.description}
-                </div>
-              </div>
-              <ChevronRight size={20} className="text-stone-400" />
-            </button>
-          ))}
-        </div>
-
-        {vocabProgress && vocabProgress.cardsReviewed > 0 && (
-          <div className="mt-4 grid grid-cols-3 gap-4 border-t border-stone-200 pt-4 dark:border-stone-700">
-            <div className="text-center">
-              <div className="text-sm font-medium text-stone-900 dark:text-stone-100">{vocabProgress.cardsReviewed}</div>
-              <div className="text-xs text-stone-500">Reviewed</div>
-            </div>
-            <div className="text-center">
-              <div className="text-sm font-medium text-stone-900 dark:text-stone-100">
-                {vocabProgress.cardsReviewed > 0
-                  ? Math.round((vocabProgress.correctCount / vocabProgress.cardsReviewed) * 100)
-                  : 0}%
-              </div>
-              <div className="text-xs text-stone-500">Accuracy</div>
-            </div>
-            <div className="text-center">
-              <div className="text-sm font-medium text-stone-900 dark:text-stone-100">{vocabProgress.masteredWords.length}</div>
-              <div className="text-xs text-stone-500">Mastered</div>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Modal for review/game/vocab */}
+      {/* Modal for review/game */}
       <AnimatePresence>
         {mode !== "menu" && (
           <motion.div
@@ -1103,13 +795,6 @@ export default function DailyDrills({ progress, userId, compact = false }: Daily
                   gameType={selectedGame}
                   userId={userId}
                   onComplete={handleGameComplete}
-                  onExit={handleExit}
-                />
-              )}
-              {mode === "vocab" && (
-                <VocabMode
-                  userId={userId}
-                  onComplete={handleVocabComplete}
                   onExit={handleExit}
                 />
               )}
