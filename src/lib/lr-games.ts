@@ -48,26 +48,26 @@ export interface GameProgress {
 // GAME METADATA
 // ============================================
 
-export const GAME_INFO: Record<GameType, { name: string; description: string; icon: string }> = {
+export const GAME_INFO: Record<GameType, { name: string; description: string; iconType: "target" | "refresh" | "search" | "layers" }> = {
   "find-conclusion": {
     name: "Find the Conclusion",
     description: "Identify the main conclusion in each argument",
-    icon: "🎯",
+    iconType: "target",
   },
   "contrapositive": {
     name: "Contrapositive Quiz",
     description: "Master conditional logic by finding contrapositives",
-    icon: "🔄",
+    iconType: "refresh",
   },
   "spot-flaw": {
     name: "Spot the Flaw",
     description: "Identify the logical fallacy in each argument",
-    icon: "🔍",
+    iconType: "search",
   },
   "argument-parts": {
     name: "Argument Anatomy",
     description: "Identify premises, conclusions, and assumptions",
-    icon: "🧩",
+    iconType: "layers",
   },
 };
 
