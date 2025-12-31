@@ -639,7 +639,7 @@ function SectionSummaryCard({
       <div className="text-right">
         <div
           className={cx(
-            "text-2xl font-bold tabular-nums",
+            "text-sm font-semibold tabular-nums",
             stat.percentage >= 80
               ? "text-green-600"
               : stat.percentage >= 60
