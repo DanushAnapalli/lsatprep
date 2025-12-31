@@ -174,7 +174,7 @@ function ReviewMode({ cards, userId, onComplete, onExit }: ReviewModeProps) {
           </span>
         </div>
 
-        <div className="mb-6 text-stone-800 dark:text-stone-200 whitespace-pre-wrap">
+        <div className="mb-6 text-stone-800 dark:text-stone-200 whitespace-pre-wrap leading-relaxed">
           {currentQuestion.stimulus}
         </div>
 

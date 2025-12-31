@@ -121,7 +121,7 @@ function QuestionReviewCard({
           {/* Stimulus */}
           <div>
             <div className="text-xs font-semibold text-stone-500 uppercase mb-2">Passage</div>
-            <div className="text-sm text-stone-700 dark:text-stone-300 bg-white dark:bg-stone-800 p-3 rounded border border-stone-200 dark:border-stone-700">
+            <div className="text-sm leading-relaxed whitespace-pre-wrap text-stone-700 dark:text-stone-300 bg-white dark:bg-stone-800 p-4 rounded border border-stone-200 dark:border-stone-700">
               {question.stimulus}
             </div>
           </div>
