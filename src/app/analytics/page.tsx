@@ -209,99 +209,150 @@ function FadeInStagger({
 // CHART COMPONENTS
 // ============================================
 
-// Score Trend Bar Chart - modern, clean bar visualization
-function ScoreTrendBars({
+// Modern Point-to-Point Line Graph
+function ScoreTrendGraph({
   data,
 }: {
   data: { score: number; date: string }[];
 }) {
-  const [animatedHeights, setAnimatedHeights] = useState<number[]>(data.map(() => 0));
-
-  // LSAT scores range from 120-180
-  const MIN_LSAT = 120;
-  const MAX_LSAT = 180;
+  const [progress, setProgress] = useState(0);
 
   useEffect(() => {
     const timeout = setTimeout(() => {
-      const scores = data.map(d => d.score);
-      // Scale based on full LSAT range so bars have meaningful height
-      setAnimatedHeights(scores.map(score => ((score - MIN_LSAT) / (MAX_LSAT - MIN_LSAT)) * 100));
-    }, 100);
+      const startTime = Date.now();
+      const duration = 1200;
+
+      const animate = () => {
+        const elapsed = Date.now() - startTime;
+        const p = Math.min(elapsed / duration, 1);
+        const easeOut = 1 - Math.pow(1 - p, 3);
+        setProgress(easeOut);
+
+        if (p < 1) {
+          requestAnimationFrame(animate);
+        }
+      };
+
+      requestAnimationFrame(animate);
+    }, 150);
+
     return () => clearTimeout(timeout);
-  }, [data]);
+  }, []);
 
   if (data.length < 2) return null;
 
   const scores = data.map(d => d.score);
+  const minScore = Math.min(...scores) - 3;
+  const maxScore = Math.max(...scores) + 3;
+  const range = maxScore - minScore || 1;
+
   const latestScore = scores[scores.length - 1];
   const previousScore = scores[scores.length - 2];
   const scoreDiff = latestScore - previousScore;
 
-  return (
-    <div className="space-y-3">
-      {/* Bar chart */}
-      <div className="flex items-end gap-1.5 h-16">
-        {data.map((d, i) => {
-          const isLatest = i === data.length - 1;
-          const isPrevious = i === data.length - 2;
-          const improved = isLatest && scoreDiff > 0;
-          const declined = isLatest && scoreDiff < 0;
+  // Chart dimensions
+  const width = 100;
+  const height = 50;
+  const paddingX = 8;
+  const paddingY = 6;
 
-          return (
-            <div key={i} className="flex-1 flex flex-col items-center gap-1">
-              <div className="relative w-full flex justify-center">
-                {/* Score label on hover/latest */}
-                {isLatest && (
-                  <span className="absolute -top-5 text-xs font-bold text-stone-900 dark:text-stone-100 tabular-nums">
-                    {d.score}
-                  </span>
-                )}
-                {/* Bar */}
-                <div
-                  className={cx(
-                    "w-full max-w-[32px] rounded-t-sm transition-all duration-700 ease-out",
-                    isLatest
-                      ? improved
-                        ? "bg-gradient-to-t from-emerald-500 to-emerald-400"
-                        : declined
-                        ? "bg-gradient-to-t from-red-500 to-red-400"
-                        : "bg-gradient-to-t from-[#1a365d] to-[#2d4a7c] dark:from-amber-500 dark:to-amber-400"
-                      : isPrevious
-                      ? "bg-stone-300 dark:bg-stone-600"
-                      : "bg-stone-200 dark:bg-stone-700"
-                  )}
-                  style={{
-                    height: `${animatedHeights[i]}%`,
-                    minHeight: animatedHeights[i] > 0 ? '4px' : '0px'
-                  }}
-                />
-              </div>
-            </div>
-          );
-        })}
+  const getX = (i: number) => paddingX + (i / (data.length - 1)) * (width - paddingX * 2);
+  const getY = (score: number) => paddingY + (1 - (score - minScore) / range) * (height - paddingY * 2);
+
+  // Create smooth path
+  const points = data.map((d, i) => ({ x: getX(i), y: getY(d.score) }));
+
+  let pathD = `M ${points[0].x} ${points[0].y}`;
+  for (let i = 1; i < points.length; i++) {
+    const prev = points[i - 1];
+    const curr = points[i];
+    const cpX = (prev.x + curr.x) / 2;
+    pathD += ` C ${cpX} ${prev.y}, ${cpX} ${curr.y}, ${curr.x} ${curr.y}`;
+  }
+
+  // Area path
+  const areaD = pathD + ` L ${points[points.length - 1].x} ${height - paddingY} L ${points[0].x} ${height - paddingY} Z`;
+
+  return (
+    <div className="space-y-4">
+      {/* Graph */}
+      <div className="relative h-32 bg-stone-50 dark:bg-stone-800/50 rounded-lg p-4">
+        <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-full" preserveAspectRatio="none">
+          {/* Gradient */}
+          <defs>
+            <linearGradient id="lineGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" className="text-[#1a365d] dark:text-amber-400" stopColor="currentColor" stopOpacity="0.2" />
+              <stop offset="100%" className="text-[#1a365d] dark:text-amber-400" stopColor="currentColor" stopOpacity="0" />
+            </linearGradient>
+          </defs>
+
+          {/* Area fill */}
+          <path
+            d={areaD}
+            fill="url(#lineGradient)"
+            style={{ opacity: progress }}
+          />
+
+          {/* Line */}
+          <path
+            d={pathD}
+            fill="none"
+            className="stroke-[#1a365d] dark:stroke-amber-400"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            vectorEffect="non-scaling-stroke"
+            style={{
+              strokeDasharray: 500,
+              strokeDashoffset: 500 - progress * 500,
+            }}
+          />
+
+          {/* Points */}
+          {points.map((point, i) => (
+            <circle
+              key={i}
+              cx={point.x}
+              cy={point.y}
+              r={i === points.length - 1 ? 4 : 3}
+              className={cx(
+                "transition-all duration-300",
+                i === points.length - 1
+                  ? "fill-[#1a365d] dark:fill-amber-400"
+                  : "fill-white dark:fill-stone-800 stroke-[#1a365d] dark:stroke-amber-400"
+              )}
+              strokeWidth={i === points.length - 1 ? 0 : 1.5}
+              vectorEffect="non-scaling-stroke"
+              style={{
+                opacity: progress > i / points.length ? 1 : 0,
+                transform: `scale(${progress > i / points.length ? 1 : 0})`,
+                transformOrigin: `${point.x}px ${point.y}px`,
+              }}
+            />
+          ))}
+        </svg>
+
+        {/* Score labels */}
+        <div className="absolute top-2 right-3 text-right">
+          <div className="text-lg font-bold tabular-nums text-stone-900 dark:text-stone-100">
+            {latestScore}
+          </div>
+          <div className={cx(
+            "text-xs font-medium flex items-center justify-end gap-1",
+            scoreDiff > 0 ? "text-emerald-600 dark:text-emerald-400" :
+            scoreDiff < 0 ? "text-red-600 dark:text-red-400" :
+            "text-stone-500"
+          )}>
+            {scoreDiff > 0 ? <TrendingUp size={12} /> : scoreDiff < 0 ? <TrendingDown size={12} /> : null}
+            {scoreDiff > 0 ? "+" : ""}{scoreDiff}
+          </div>
+        </div>
       </div>
 
-      {/* Legend row */}
-      <div className="flex items-center justify-between text-xs">
-        <span className="text-stone-400 dark:text-stone-500">
-          {data[0]?.date}
-        </span>
-        <div className={cx(
-          "flex items-center gap-1 font-medium",
-          scoreDiff > 0 ? "text-emerald-600 dark:text-emerald-400" :
-          scoreDiff < 0 ? "text-red-600 dark:text-red-400" :
-          "text-stone-500"
-        )}>
-          {scoreDiff > 0 ? (
-            <TrendingUp size={12} />
-          ) : scoreDiff < 0 ? (
-            <TrendingDown size={12} />
-          ) : null}
-          <span>{scoreDiff > 0 ? "+" : ""}{scoreDiff} from last</span>
-        </div>
-        <span className="text-stone-400 dark:text-stone-500">
-          {data[data.length - 1]?.date}
-        </span>
+      {/* Date labels */}
+      <div className="flex justify-between text-xs text-stone-400 dark:text-stone-500 px-1">
+        <span>{data[0]?.date}</span>
+        <span>{data[data.length - 1]?.date}</span>
       </div>
     </div>
   );
@@ -401,26 +452,26 @@ function AnimatedDonutChart({
         {paths}
         <text
           x={centerX}
-          y={centerY - 4}
+          y={centerY - 6}
           textAnchor="middle"
           alignmentBaseline="middle"
           className="fill-stone-900 dark:fill-stone-100"
-          style={{ fontSize: "20px", fontWeight: 600, fontFamily: "system-ui, -apple-system, sans-serif" }}
+          style={{ fontSize: "26px", fontWeight: 700, fontFamily: "system-ui, -apple-system, sans-serif" }}
         >
           {total}
         </text>
         <text
           x={centerX}
-          y={centerY + 12}
+          y={centerY + 16}
           textAnchor="middle"
           alignmentBaseline="middle"
           className="fill-stone-500 dark:fill-stone-400"
-          style={{ fontSize: "9px", fontFamily: "system-ui, -apple-system, sans-serif" }}
+          style={{ fontSize: "11px", fontFamily: "system-ui, -apple-system, sans-serif" }}
         >
           questions
         </text>
       </svg>
-      <div className="space-y-1.5">
+      <div className="space-y-2.5">
         {data.map((d, i) => {
           const colorMap: Record<string, string> = {
             "bg-red-400": "bg-red-400",
@@ -431,11 +482,11 @@ function AnimatedDonutChart({
           };
           const percentage = total > 0 ? Math.round((d.count / total) * 100) : 0;
           return (
-            <div key={i} className="flex items-center gap-2 text-xs">
-              <div className={cx("w-2.5 h-2.5 rounded-sm", colorMap[d.color])} />
-              <span className="text-stone-500 dark:text-stone-400 min-w-[60px]">{d.label}</span>
-              <span className="font-medium text-stone-700 dark:text-stone-300 tabular-nums">{d.count}</span>
-              <span className="text-stone-400 dark:text-stone-500 text-[10px]">({percentage}%)</span>
+            <div key={i} className="flex items-center gap-3 text-sm">
+              <div className={cx("w-3 h-3 rounded-sm flex-shrink-0", colorMap[d.color])} />
+              <span className="text-stone-600 dark:text-stone-400 min-w-[80px]">{d.label}</span>
+              <span className="font-semibold text-stone-800 dark:text-stone-200 tabular-nums">{d.count}</span>
+              <span className="text-stone-400 dark:text-stone-500 text-xs">({percentage}%)</span>
             </div>
           );
         })}
@@ -1303,12 +1354,12 @@ function TimeAnalyticsSection({
             </div>
 
             {/* Time Distribution - Donut Chart */}
-            <div>
-              <h4 className="mb-3 text-sm font-medium text-stone-600 dark:text-stone-400">
+            <div className="flex flex-col">
+              <h4 className="mb-4 text-sm font-semibold text-stone-700 dark:text-stone-300">
                 Time Distribution
               </h4>
-              <div className="flex justify-center">
-                <AnimatedDonutChart data={distributionData} size={130} />
+              <div className="flex justify-center items-center flex-1">
+                <AnimatedDonutChart data={distributionData} size={180} />
               </div>
             </div>
           </div>
@@ -1424,7 +1475,7 @@ function ScoreTrendSection({
             <h4 className="text-sm font-medium text-stone-600 dark:text-stone-400 mb-4">
               Recent Scores
             </h4>
-            <ScoreTrendBars data={analysis.trends.slice(-8)} />
+            <ScoreTrendGraph data={analysis.trends.slice(-8)} />
           </div>
         )}
       </div>
