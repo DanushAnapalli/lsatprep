@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useRouter } from "next/navigation";
 import {
   Brain,
   Flame,
@@ -665,6 +666,7 @@ function VocabMode({ userId, onComplete, onExit }: VocabModeProps) {
 // ============================================
 
 export default function DailyDrills({ progress, userId, compact = false }: DailyDrillsProps) {
+  const router = useRouter();
   const [mode, setMode] = useState<DrillMode>("menu");
   const [selectedGame, setSelectedGame] = useState<GameType | null>(null);
   const [srData, setSrData] = useState<SpacedRepetitionData | null>(null);
@@ -736,7 +738,7 @@ export default function DailyDrills({ progress, userId, compact = false }: Daily
   const dueCount = stats?.dueToday || 0;
   const streak = stats?.currentStreak || 0;
 
-  // Compact view for dashboard widget
+  // Compact view for dashboard widget - navigates to dedicated pages
   if (compact) {
     return (
       <div className="rounded-sm border-2 border-stone-200 bg-white p-6 dark:border-stone-700 dark:bg-stone-900">
@@ -756,9 +758,9 @@ export default function DailyDrills({ progress, userId, compact = false }: Daily
         </div>
 
         <div className="grid grid-cols-3 gap-3">
-          {/* Review Queue */}
+          {/* Review Queue - navigates to /drills/review */}
           <button
-            onClick={handleStartReview}
+            onClick={() => dueCount > 0 && router.push('/drills/review')}
             disabled={dueCount === 0}
             className={cx(
               "rounded-sm border-2 p-3 text-left transition",
@@ -777,9 +779,9 @@ export default function DailyDrills({ progress, userId, compact = false }: Daily
             <div className="text-xs text-stone-500">due</div>
           </button>
 
-          {/* Quick Game */}
+          {/* Quick Game - navigates to /drills/games */}
           <button
-            onClick={() => handleStartGame("find-conclusion")}
+            onClick={() => router.push('/drills/games')}
             className="rounded-sm border-2 border-stone-200 bg-white p-3 text-left transition hover:border-[#1a365d] dark:border-stone-700 dark:bg-stone-800 dark:hover:border-amber-500"
           >
             <div className="flex items-center gap-2 mb-1">
@@ -792,9 +794,9 @@ export default function DailyDrills({ progress, userId, compact = false }: Daily
             <div className="text-xs text-stone-500">~2 min</div>
           </button>
 
-          {/* Vocab */}
+          {/* Vocab - navigates to /drills/vocab (swipe flashcards) */}
           <button
-            onClick={handleStartVocab}
+            onClick={() => router.push('/drills/vocab')}
             className="rounded-sm border-2 border-stone-200 bg-white p-3 text-left transition hover:border-[#1a365d] dark:border-stone-700 dark:bg-stone-800 dark:hover:border-amber-500"
           >
             <div className="flex items-center gap-2 mb-1">
@@ -802,81 +804,20 @@ export default function DailyDrills({ progress, userId, compact = false }: Daily
               <span className="text-sm font-medium text-stone-900 dark:text-stone-100">Vocab</span>
             </div>
             <div className="text-xs text-stone-600 dark:text-stone-400">
-              5 words
+              Flashcards
             </div>
-            <div className="text-xs text-stone-500">~2 min</div>
+            <div className="text-xs text-stone-500">Swipe</div>
           </button>
         </div>
 
-        {/* Completion message */}
-        <AnimatePresence>
-          {showCompletionMessage && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              className="mt-4 rounded-sm bg-green-50 p-3 text-center dark:bg-green-900/20"
-            >
-              <div className="flex items-center justify-center gap-2 text-green-700 dark:text-green-400">
-                <Trophy size={16} />
-                <span className="font-medium">
-                  {showCompletionMessage.type === "review"
-                    ? "Review Complete!"
-                    : `${showCompletionMessage.correct}/${showCompletionMessage.total} Correct!`}
-                </span>
-              </div>
-              <button
-                onClick={() => setShowCompletionMessage(null)}
-                className="mt-1 text-xs text-green-600 hover:underline dark:text-green-500"
-              >
-                Dismiss
-              </button>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Review/Game Modal */}
-        <AnimatePresence>
-          {mode !== "menu" && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-            >
-              <motion.div
-                initial={{ scale: 0.95, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.95, opacity: 0 }}
-                className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-sm bg-white p-6 dark:bg-stone-900"
-              >
-                {mode === "review" && (
-                  <ReviewMode
-                    cards={dueCards}
-                    userId={userId}
-                    onComplete={handleReviewComplete}
-                    onExit={handleExit}
-                  />
-                )}
-                {mode === "game" && selectedGame && (
-                  <GameMode
-                    gameType={selectedGame}
-                    userId={userId}
-                    onComplete={handleGameComplete}
-                    onExit={handleExit}
-                  />
-                )}
-                {mode === "vocab" && (
-                  <VocabMode
-                    userId={userId}
-                    onComplete={handleVocabComplete}
-                    onExit={handleExit}
-                  />
-                )}
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {/* View all drills link */}
+        <button
+          onClick={() => router.push('/drills')}
+          className="mt-4 w-full flex items-center justify-center gap-2 rounded-sm border-2 border-stone-200 py-2 text-sm font-medium text-stone-600 transition hover:border-[#1a365d] hover:text-[#1a365d] dark:border-stone-700 dark:text-stone-400 dark:hover:border-amber-500 dark:hover:text-amber-400"
+        >
+          View All Drills
+          <ChevronRight size={16} />
+        </button>
       </div>
     );
   }
