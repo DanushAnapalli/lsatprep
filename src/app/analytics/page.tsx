@@ -864,6 +864,184 @@ function DifficultyProgressionSection({
   );
 }
 
+// Animated bar chart for question type performance
+function AnimatedQuestionTypeBar({
+  name,
+  correct,
+  total,
+  percentage,
+  delay = 0,
+}: {
+  name: string;
+  correct: number;
+  total: number;
+  percentage: number;
+  delay?: number;
+}) {
+  const [progress, setProgress] = useState(0);
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    const visibilityTimeout = setTimeout(() => setIsVisible(true), delay);
+    const animationTimeout = setTimeout(() => {
+      const startTime = Date.now();
+      const duration = 1000;
+
+      const animate = () => {
+        const elapsed = Date.now() - startTime;
+        const p = Math.min(elapsed / duration, 1);
+        const easeOut = 1 - Math.pow(1 - p, 3);
+        setProgress(easeOut);
+
+        if (p < 1) {
+          requestAnimationFrame(animate);
+        }
+      };
+
+      requestAnimationFrame(animate);
+    }, delay + 200);
+
+    return () => {
+      clearTimeout(visibilityTimeout);
+      clearTimeout(animationTimeout);
+    };
+  }, [delay]);
+
+  const barColor =
+    percentage >= 80
+      ? "bg-emerald-500"
+      : percentage >= 60
+      ? "bg-amber-500"
+      : "bg-red-500";
+
+  const animatedPercentage = percentage * progress;
+
+  return (
+    <div
+      className={cx(
+        "space-y-1 transition-all duration-500",
+        isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
+      )}
+    >
+      <div className="flex items-center justify-between text-sm">
+        <span className="font-medium text-stone-700 dark:text-stone-300">
+          {name}
+        </span>
+        <span className="flex items-center gap-2">
+          <span className="text-stone-500">{correct}/{total}</span>
+          <span className={cx(
+            "font-semibold tabular-nums",
+            percentage >= 80 ? "text-emerald-600 dark:text-emerald-400" :
+            percentage >= 60 ? "text-amber-600 dark:text-amber-400" :
+            "text-red-600 dark:text-red-400"
+          )}>
+            {Math.round(animatedPercentage)}%
+          </span>
+        </span>
+      </div>
+      <div className="h-2 w-full rounded-full bg-stone-200 dark:bg-stone-700 overflow-hidden">
+        <div
+          className={cx("h-full rounded-full transition-all duration-1000 ease-out", barColor)}
+          style={{ width: `${animatedPercentage}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
+function QuestionTypePerformanceSection({
+  stats,
+  isLocked,
+}: {
+  stats: QuestionTypeStats[];
+  isLocked: boolean;
+}) {
+  const lrStats = stats.filter((s) => s.sectionType === "logical-reasoning");
+  const rcStats = stats.filter((s) => s.sectionType === "reading-comprehension");
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    const timeout = setTimeout(() => setIsVisible(true), 100);
+    return () => clearTimeout(timeout);
+  }, []);
+
+  return (
+    <div
+      className={cx(
+        "relative rounded-sm border-2 border-stone-200 bg-white p-6 dark:border-stone-700 dark:bg-stone-900",
+        "transition-all duration-700 ease-out",
+        isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"
+      )}
+    >
+      {isLocked && <ProLockOverlay />}
+      <div className={isLocked ? "opacity-30 blur-sm pointer-events-none" : ""}>
+        <div className="mb-4 flex items-center gap-2">
+          <BarChart3 size={20} className="text-[#1a365d] dark:text-amber-400" />
+          <h3 className="font-serif text-lg font-bold text-stone-900 dark:text-stone-100">
+            Question Type Performance
+          </h3>
+        </div>
+
+        {stats.length === 0 ? (
+          <div className="py-8 text-center text-stone-500">
+            Complete some practice tests to see your performance breakdown.
+          </div>
+        ) : (
+          <div className="grid gap-6 lg:grid-cols-2">
+            {/* LR Section */}
+            <div>
+              <h4 className="mb-4 flex items-center gap-2 text-sm font-semibold text-stone-700 dark:text-stone-300">
+                <Brain size={16} className="text-[#1a365d] dark:text-amber-400" />
+                Logical Reasoning
+              </h4>
+              {lrStats.length === 0 ? (
+                <p className="text-sm text-stone-500">No LR data yet</p>
+              ) : (
+                <div className="space-y-3">
+                  {lrStats.map((s, i) => (
+                    <AnimatedQuestionTypeBar
+                      key={s.type}
+                      name={s.displayName}
+                      correct={s.correct}
+                      total={s.total}
+                      percentage={s.accuracy}
+                      delay={i * 100}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* RC Section */}
+            <div>
+              <h4 className="mb-4 flex items-center gap-2 text-sm font-semibold text-stone-700 dark:text-stone-300">
+                <Target size={16} className="text-[#1a365d] dark:text-amber-400" />
+                Reading Comprehension
+              </h4>
+              {rcStats.length === 0 ? (
+                <p className="text-sm text-stone-500">No RC data yet</p>
+              ) : (
+                <div className="space-y-3">
+                  {rcStats.map((s, i) => (
+                    <AnimatedQuestionTypeBar
+                      key={s.type}
+                      name={s.displayName}
+                      correct={s.correct}
+                      total={s.total}
+                      percentage={s.accuracy}
+                      delay={i * 100}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function TimeAnalyticsSection({
   analytics,
   isLocked,
@@ -1693,6 +1871,11 @@ export default function AdvancedAnalyticsPage() {
 
           <DifficultyProgressionSection
             analytics={difficultyAnalytics}
+            isLocked={!isProOrFounder}
+          />
+
+          <QuestionTypePerformanceSection
+            stats={questionTypeStats}
             isLocked={!isProOrFounder}
           />
 

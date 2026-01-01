@@ -1433,91 +1433,9 @@ export default function DashboardPage() {
             </div>
           </Link>
 
-          <div className="grid gap-6 lg:grid-cols-2">
-            {/* LR Performance */}
-            <div className="relative rounded-sm border-2 border-stone-200 bg-white p-6 dark:border-stone-700 dark:bg-stone-900">
-              <div className="mb-4 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <BarChart3 size={20} className="text-[#1a365d] dark:text-amber-400" />
-                  <h3 className="font-serif text-lg font-bold text-stone-900 dark:text-stone-100">
-                    Logical Reasoning Performance
-                  </h3>
-                </div>
-                {userTier === "free" && (
-                  <span className="flex items-center gap-1 text-xs font-medium text-amber-600 dark:text-amber-400">
-                    <Lock size={12} />
-                    Pro
-                  </span>
-                )}
-              </div>
-              {userTier === "free" ? (
-                <div className="relative">
-                  <div className="pointer-events-none blur-sm opacity-50">
-                    <QuestionTypePerformance stats={typeStats} sectionType="lr" baseDelay={200} />
-                  </div>
-                  <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <Lock size={32} className="mb-2 text-stone-400" />
-                    <p className="text-sm font-medium text-stone-600 dark:text-stone-400">
-                      Upgrade to Pro for detailed analytics
-                    </p>
-                    <a
-                      href="/subscription"
-                      className="mt-2 text-sm font-semibold text-amber-600 hover:underline dark:text-amber-400"
-                    >
-                      View Plans
-                    </a>
-                  </div>
-                </div>
-              ) : (
-                <QuestionTypePerformance stats={typeStats} sectionType="lr" baseDelay={200} />
-              )}
-            </div>
-
-            {/* RC Performance */}
-            <div className="relative rounded-sm border-2 border-stone-200 bg-white p-6 dark:border-stone-700 dark:bg-stone-900">
-              <div className="mb-4 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <BarChart3 size={20} className="text-[#1a365d] dark:text-amber-400" />
-                  <h3 className="font-serif text-lg font-bold text-stone-900 dark:text-stone-100">
-                    Reading Comprehension Performance
-                  </h3>
-                </div>
-                {userTier === "free" && (
-                  <span className="flex items-center gap-1 text-xs font-medium text-amber-600 dark:text-amber-400">
-                    <Lock size={12} />
-                    Pro
-                  </span>
-                )}
-              </div>
-              {userTier === "free" ? (
-                <div className="relative">
-                  <div className="pointer-events-none blur-sm opacity-50">
-                    <QuestionTypePerformance stats={typeStats} sectionType="rc" baseDelay={400} />
-                  </div>
-                  <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <Lock size={32} className="mb-2 text-stone-400" />
-                    <p className="text-sm font-medium text-stone-600 dark:text-stone-400">
-                      Upgrade to Pro for detailed analytics
-                    </p>
-                    <a
-                      href="/subscription"
-                      className="mt-2 text-sm font-semibold text-amber-600 hover:underline dark:text-amber-400"
-                    >
-                      View Plans
-                    </a>
-                  </div>
-                </div>
-              ) : (
-                <QuestionTypePerformance stats={typeStats} sectionType="rc" baseDelay={400} />
-              )}
-            </div>
-          </div>
-          </>
-        )}
-
-        {/* Section Performance Summary */}
-        {hasCompletedTests && Object.keys(sectionStats).length > 0 && (
-          <div className="mt-6 rounded-sm border-2 border-stone-200 bg-white p-6 dark:border-stone-700 dark:bg-stone-900">
+          {/* Section Performance Summary */}
+          {Object.keys(sectionStats).length > 0 && (
+          <div className="rounded-sm border-2 border-stone-200 bg-white p-6 dark:border-stone-700 dark:bg-stone-900">
             <h3 className="mb-4 font-serif text-lg font-bold text-stone-900 dark:text-stone-100">
               Section Summary
             </h3>
@@ -1532,6 +1450,8 @@ export default function DashboardPage() {
               ))}
             </div>
           </div>
+          )}
+          </>
         )}
 
         {/* Improvement Suggestions Alert */}
