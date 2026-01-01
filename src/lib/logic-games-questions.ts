@@ -1,5 +1,5 @@
 // Logic Games Question Bank
-// Sample logic games for practice
+// Sample logic games for practice + Expanded game sets
 
 import {
   LogicGame,
@@ -9,6 +9,9 @@ import {
   GameRule,
   getEntityColor,
 } from "./logic-games-types";
+
+// Import all expanded game sets
+import { allExpandedLogicGames, expandedLogicGamesStats } from "./games";
 
 // ============================================
 // GAME 1: LINEAR - CONCERT SCHEDULE
@@ -303,11 +306,37 @@ const deliveryRouteGame: LogicGame = {
 // EXPORT ALL GAMES
 // ============================================
 
-export const logicGames: LogicGame[] = [
+// Original sample games
+const sampleGames: LogicGame[] = [
   concertScheduleGame,
   committeeSelectionGame,
   deliveryRouteGame,
 ];
+
+// Combine sample games with all expanded game sets (100+ games total)
+export const logicGames: LogicGame[] = [
+  ...sampleGames,
+  ...allExpandedLogicGames,
+];
+
+// Export stats for dashboard/analytics
+export const logicGamesStats = {
+  sampleGames: sampleGames.length,
+  expandedGames: allExpandedLogicGames.length,
+  totalGames: logicGames.length,
+  totalQuestions: logicGames.reduce((sum, game) => sum + game.questions.length, 0),
+  byType: {
+    linear: logicGames.filter((g) => g.setup.type === "linear").length,
+    grouping: logicGames.filter((g) => g.setup.type === "grouping").length,
+    matching: logicGames.filter((g) => g.setup.type === "matching").length,
+    hybrid: logicGames.filter((g) => g.setup.type === "hybrid").length,
+  },
+  byDifficulty: {
+    easy: logicGames.filter((g) => g.setup.difficulty === "easy").length,
+    medium: logicGames.filter((g) => g.setup.difficulty === "medium").length,
+    hard: logicGames.filter((g) => g.setup.difficulty === "hard").length,
+  },
+};
 
 export function getAllGames(): LogicGame[] {
   return logicGames;
@@ -324,3 +353,6 @@ export function getGamesByType(type: GameSetup["type"]): LogicGame[] {
 export function getGamesByDifficulty(difficulty: GameSetup["difficulty"]): LogicGame[] {
   return logicGames.filter(g => g.setup.difficulty === difficulty);
 }
+
+// Re-export expanded games stats for more detailed breakdowns
+export { expandedLogicGamesStats };
