@@ -1124,6 +1124,7 @@ export default function DashboardPage() {
           </a>
         </div>
 
+
         {/* Test History */}
         <div className="mb-8">
           <div className="mb-4 flex items-center justify-between">
@@ -1166,6 +1167,50 @@ export default function DashboardPage() {
 
         {/* Performance Breakdown */}
         {hasCompletedTests && (
+          <>
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="font-serif text-xl font-bold text-stone-900 dark:text-stone-100">
+              Performance Breakdown
+            </h2>
+          </div>
+
+          {/* Advanced Insights Banner */}
+          <Link
+            href="/analytics"
+            className="group mb-6 block overflow-hidden rounded-sm border-2 border-purple-200 bg-gradient-to-r from-purple-50 via-indigo-50 to-violet-50 transition-all duration-300 hover:border-purple-400 hover:shadow-xl dark:border-purple-600/40 dark:from-purple-900/20 dark:via-indigo-900/20 dark:to-violet-900/20 dark:hover:border-purple-500"
+          >
+            <div className="flex items-center justify-between p-5">
+              <div className="flex items-center gap-4">
+                <div className="relative">
+                  <div className="absolute inset-0 animate-pulse rounded-lg bg-purple-400/30 blur-md" />
+                  <div className="relative rounded-lg bg-gradient-to-br from-purple-500 via-indigo-500 to-violet-600 p-3 shadow-lg">
+                    <BarChart3 size={24} className="text-white" />
+                  </div>
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg font-bold text-purple-900 dark:text-purple-100">
+                      Advanced Insights
+                    </span>
+                    {userTier === "free" && (
+                      <span className="flex items-center gap-1 rounded-full bg-gradient-to-r from-amber-400 to-orange-400 px-2 py-0.5 text-xs font-bold text-white shadow-sm">
+                        <Crown size={10} />
+                        PRO
+                      </span>
+                    )}
+                  </div>
+                  <p className="mt-0.5 text-sm text-purple-600 dark:text-purple-300">
+                    Score projections, error patterns, fatigue analysis & more
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 rounded-full bg-purple-100 px-4 py-2 text-purple-700 transition-all duration-300 group-hover:bg-purple-200 group-hover:gap-3 dark:bg-purple-800/50 dark:text-purple-300 dark:group-hover:bg-purple-700/50">
+                <span className="text-sm font-semibold">Explore</span>
+                <ArrowRight size={16} className="transition-transform duration-300 group-hover:translate-x-1" />
+              </div>
+            </div>
+          </Link>
+
           <div className="grid gap-6 lg:grid-cols-2">
             {/* LR Performance */}
             <div className="relative rounded-sm border-2 border-stone-200 bg-white p-6 dark:border-stone-700 dark:bg-stone-900">
@@ -1245,6 +1290,7 @@ export default function DashboardPage() {
               )}
             </div>
           </div>
+          </>
         )}
 
         {/* Section Performance Summary */}
