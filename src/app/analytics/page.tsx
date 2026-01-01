@@ -259,27 +259,47 @@ function ScoreTrendGraph({
   const getX = (i: number) => paddingX + (i / (data.length - 1)) * (width - paddingX * 2);
   const getY = (score: number) => paddingY + (1 - (score - minScore) / range) * (height - paddingY * 2);
 
-  // Create points
+  // Create points and path
   const points = data.map((d, i) => ({ x: getX(i), y: getY(d.score) }));
+
+  let pathD = `M ${points[0].x} ${points[0].y}`;
+  for (let i = 1; i < points.length; i++) {
+    const prev = points[i - 1];
+    const curr = points[i];
+    const cpX = (prev.x + curr.x) / 2;
+    pathD += ` C ${cpX} ${prev.y}, ${cpX} ${curr.y}, ${curr.x} ${curr.y}`;
+  }
 
   return (
     <div className="space-y-4">
       {/* Graph */}
       <div className="relative h-32 bg-stone-50 dark:bg-stone-800/50 rounded-lg p-4">
         <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-full" preserveAspectRatio="none">
-          {/* Points only */}
+          {/* Line */}
+          <path
+            d={pathD}
+            fill="none"
+            className="stroke-[#1a365d] dark:stroke-amber-400"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            vectorEffect="non-scaling-stroke"
+            style={{
+              strokeDasharray: 500,
+              strokeDashoffset: 500 - progress * 500,
+            }}
+          />
+
+          {/* Small dots */}
           {points.map((point, i) => (
             <circle
               key={i}
               cx={point.x}
               cy={point.y}
-              r={i === points.length - 1 ? 5 : 4}
+              r={1.5}
               className="fill-[#1a365d] dark:fill-amber-400"
               style={{
                 opacity: progress > i / points.length ? 1 : 0,
-                transform: `scale(${progress > i / points.length ? 1 : 0})`,
-                transformOrigin: `${point.x}px ${point.y}px`,
-                transition: 'opacity 0.3s, transform 0.3s',
               }}
             />
           ))}
