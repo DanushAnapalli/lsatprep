@@ -209,88 +209,84 @@ function FadeInStagger({
 // CHART COMPONENTS
 // ============================================
 
-// Mini Score Trend Line - compact, inline sparkline style
-function MiniScoreTrend({
+// Score Trend Bar Chart - modern, clean bar visualization
+function ScoreTrendBars({
   data,
 }: {
   data: { score: number; date: string }[];
 }) {
-  const [isVisible, setIsVisible] = useState(false);
+  const [animatedHeights, setAnimatedHeights] = useState<number[]>(data.map(() => 0));
 
   useEffect(() => {
-    const timeout = setTimeout(() => setIsVisible(true), 200);
+    const timeout = setTimeout(() => {
+      const scores = data.map(d => d.score);
+      const minScore = Math.min(...scores) - 5;
+      const maxScore = Math.max(...scores) + 5;
+      const range = maxScore - minScore || 1;
+
+      setAnimatedHeights(scores.map(score => ((score - minScore) / range) * 100));
+    }, 100);
     return () => clearTimeout(timeout);
-  }, []);
+  }, [data]);
 
   if (data.length < 2) return null;
 
   const scores = data.map(d => d.score);
-  const minScore = Math.min(...scores) - 2;
-  const maxScore = Math.max(...scores) + 2;
-  const range = maxScore - minScore || 1;
-
-  // Create points for the polyline
-  const points = data.map((d, i) => {
-    const x = (i / (data.length - 1)) * 100;
-    const y = 100 - ((d.score - minScore) / range) * 100;
-    return `${x},${y}`;
-  }).join(' ');
-
-  const latestScore = data[data.length - 1].score;
-  const previousScore = data[data.length - 2].score;
+  const latestScore = scores[scores.length - 1];
+  const previousScore = scores[scores.length - 2];
   const scoreDiff = latestScore - previousScore;
 
   return (
-    <div className={cx(
-      "flex items-center gap-4 transition-all duration-500",
-      isVisible ? "opacity-100" : "opacity-0"
-    )}>
-      {/* Mini sparkline */}
-      <div className="flex-1 h-12 max-w-[200px]">
-        <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="w-full h-full">
-          {/* Subtle gradient background */}
-          <defs>
-            <linearGradient id="sparklineGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" className="text-[#1a365d] dark:text-amber-400" stopColor="currentColor" stopOpacity="0.1" />
-              <stop offset="100%" className="text-[#1a365d] dark:text-amber-400" stopColor="currentColor" stopOpacity="0" />
-            </linearGradient>
-          </defs>
+    <div className="space-y-3">
+      {/* Bar chart */}
+      <div className="flex items-end gap-1.5 h-16">
+        {data.map((d, i) => {
+          const isLatest = i === data.length - 1;
+          const isPrevious = i === data.length - 2;
+          const improved = isLatest && scoreDiff > 0;
+          const declined = isLatest && scoreDiff < 0;
 
-          {/* Area fill */}
-          <polygon
-            points={`0,100 ${points} 100,100`}
-            fill="url(#sparklineGradient)"
-          />
-
-          {/* Line */}
-          <polyline
-            points={points}
-            fill="none"
-            className="stroke-[#1a365d] dark:stroke-amber-400"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            vectorEffect="non-scaling-stroke"
-          />
-
-          {/* End point dot */}
-          <circle
-            cx="100"
-            cy={100 - ((latestScore - minScore) / range) * 100}
-            r="4"
-            className="fill-[#1a365d] dark:fill-amber-400"
-            vectorEffect="non-scaling-stroke"
-          />
-        </svg>
+          return (
+            <div key={i} className="flex-1 flex flex-col items-center gap-1">
+              <div className="relative w-full flex justify-center">
+                {/* Score label on hover/latest */}
+                {isLatest && (
+                  <span className="absolute -top-5 text-xs font-bold text-stone-900 dark:text-stone-100 tabular-nums">
+                    {d.score}
+                  </span>
+                )}
+                {/* Bar */}
+                <div
+                  className={cx(
+                    "w-full max-w-[32px] rounded-t-sm transition-all duration-700 ease-out",
+                    isLatest
+                      ? improved
+                        ? "bg-gradient-to-t from-emerald-500 to-emerald-400"
+                        : declined
+                        ? "bg-gradient-to-t from-red-500 to-red-400"
+                        : "bg-gradient-to-t from-[#1a365d] to-[#2d4a7c] dark:from-amber-500 dark:to-amber-400"
+                      : isPrevious
+                      ? "bg-stone-300 dark:bg-stone-600"
+                      : "bg-stone-200 dark:bg-stone-700"
+                  )}
+                  style={{
+                    height: `${animatedHeights[i]}%`,
+                    minHeight: animatedHeights[i] > 0 ? '4px' : '0px'
+                  }}
+                />
+              </div>
+            </div>
+          );
+        })}
       </div>
 
-      {/* Score info */}
-      <div className="flex flex-col items-end">
-        <div className="text-lg font-bold tabular-nums text-stone-900 dark:text-stone-100">
-          {latestScore}
-        </div>
+      {/* Legend row */}
+      <div className="flex items-center justify-between text-xs">
+        <span className="text-stone-400 dark:text-stone-500">
+          {data[0]?.date}
+        </span>
         <div className={cx(
-          "text-xs font-medium tabular-nums flex items-center gap-1",
+          "flex items-center gap-1 font-medium",
           scoreDiff > 0 ? "text-emerald-600 dark:text-emerald-400" :
           scoreDiff < 0 ? "text-red-600 dark:text-red-400" :
           "text-stone-500"
@@ -300,8 +296,11 @@ function MiniScoreTrend({
           ) : scoreDiff < 0 ? (
             <TrendingDown size={12} />
           ) : null}
-          {scoreDiff > 0 ? "+" : ""}{scoreDiff} pts
+          <span>{scoreDiff > 0 ? "+" : ""}{scoreDiff} from last</span>
         </div>
+        <span className="text-stone-400 dark:text-stone-500">
+          {data[data.length - 1]?.date}
+        </span>
       </div>
     </div>
   );
@@ -1421,12 +1420,10 @@ function ScoreTrendSection({
         {/* Score Trend */}
         {analysis.trends.length > 1 && (
           <div className="mt-6 pt-4 border-t border-stone-200 dark:border-stone-700">
-            <div className="flex items-center justify-between">
-              <h4 className="text-sm font-medium text-stone-600 dark:text-stone-400">
-                Recent Trend
-              </h4>
-              <MiniScoreTrend data={analysis.trends.slice(-8)} />
-            </div>
+            <h4 className="text-sm font-medium text-stone-600 dark:text-stone-400 mb-4">
+              Recent Scores
+            </h4>
+            <ScoreTrendBars data={analysis.trends.slice(-8)} />
           </div>
         )}
       </div>
