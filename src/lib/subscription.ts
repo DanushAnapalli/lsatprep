@@ -4,6 +4,16 @@ import { User } from "firebase/auth";
 
 export type SubscriptionTier = "free" | "pro" | "founder";
 
+// Trial configuration
+export const TRIAL_PERIOD_DAYS = 5;
+
+export interface TrialInfo {
+  isTrialing: boolean;
+  trialStartDate: string | null;
+  trialEndDate: string | null;
+  daysLeft: number;
+}
+
 // Founder emails - add your email here for unlimited access
 const FOUNDER_EMAILS: string[] = [
   "adigamesacc12@gmail.com",
@@ -147,4 +157,85 @@ export function addFounderEmail(email: string): void {
   if (!FOUNDER_EMAILS.includes(email.toLowerCase())) {
     FOUNDER_EMAILS.push(email.toLowerCase());
   }
+}
+
+// ============================================
+// TRIAL MANAGEMENT
+// ============================================
+
+const TRIAL_STORAGE_KEY = "lsatprep-trial-info";
+
+// Start a trial for the user
+export function startTrial(): void {
+  if (typeof window === "undefined") return;
+
+  const now = new Date();
+  const endDate = new Date(now);
+  endDate.setDate(endDate.getDate() + TRIAL_PERIOD_DAYS);
+
+  const trialData = {
+    startDate: now.toISOString(),
+    endDate: endDate.toISOString(),
+  };
+
+  localStorage.setItem(TRIAL_STORAGE_KEY, JSON.stringify(trialData));
+  setSubscriptionTier("pro"); // Grant pro access during trial
+}
+
+// Get trial information
+export function getTrialInfo(): TrialInfo {
+  if (typeof window === "undefined") {
+    return { isTrialing: false, trialStartDate: null, trialEndDate: null, daysLeft: 0 };
+  }
+
+  const stored = localStorage.getItem(TRIAL_STORAGE_KEY);
+  if (!stored) {
+    return { isTrialing: false, trialStartDate: null, trialEndDate: null, daysLeft: 0 };
+  }
+
+  try {
+    const trialData = JSON.parse(stored);
+    const endDate = new Date(trialData.endDate);
+    const now = new Date();
+
+    if (now >= endDate) {
+      // Trial has expired
+      return {
+        isTrialing: false,
+        trialStartDate: trialData.startDate,
+        trialEndDate: trialData.endDate,
+        daysLeft: 0,
+      };
+    }
+
+    // Calculate days left
+    const msLeft = endDate.getTime() - now.getTime();
+    const daysLeft = Math.ceil(msLeft / (1000 * 60 * 60 * 24));
+
+    return {
+      isTrialing: true,
+      trialStartDate: trialData.startDate,
+      trialEndDate: trialData.endDate,
+      daysLeft,
+    };
+  } catch {
+    return { isTrialing: false, trialStartDate: null, trialEndDate: null, daysLeft: 0 };
+  }
+}
+
+// Check if user is currently in trial period
+export function isInTrialPeriod(): boolean {
+  return getTrialInfo().isTrialing;
+}
+
+// Clear trial info (used when trial converts to paid or is cancelled)
+export function clearTrialInfo(): void {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem(TRIAL_STORAGE_KEY);
+}
+
+// Check if user has ever had a trial (to prevent multiple trials)
+export function hasHadTrial(): boolean {
+  if (typeof window === "undefined") return false;
+  return localStorage.getItem(TRIAL_STORAGE_KEY) !== null;
 }

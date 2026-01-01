@@ -4,8 +4,10 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import { getUserTier, getTierDisplayInfo } from "@/lib/subscription";
-import { Check, Crown, Loader2, ArrowLeft } from "lucide-react";
+import { getUserTier, getTierDisplayInfo, getTrialInfo } from "@/lib/subscription";
+import { Check, Crown, Loader2, ArrowLeft, Gift, Calendar } from "lucide-react";
+
+const TRIAL_DAYS = 5;
 
 export default function SubscriptionPage() {
   const router = useRouter();
@@ -13,12 +15,14 @@ export default function SubscriptionPage() {
   const [loading, setLoading] = useState(true);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [currentTier, setCurrentTier] = useState<"free" | "pro" | "founder">("free");
+  const [trialInfo, setTrialInfo] = useState<{ isTrialing: boolean; daysLeft: number } | null>(null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
       if (user) {
         setCurrentTier(getUserTier(user));
+        setTrialInfo(getTrialInfo());
       }
       setLoading(false);
     });
@@ -161,8 +165,9 @@ export default function SubscriptionPage() {
             <div className="absolute top-4 right-4">
               <Crown className="w-6 h-6 text-amber-500" />
             </div>
-            <div className="absolute top-0 right-0 bg-amber-500 text-white text-xs font-bold px-3 py-1 rounded-bl-lg">
-              POPULAR
+            <div className="absolute top-0 right-0 bg-gradient-to-r from-green-500 to-emerald-500 text-white text-xs font-bold px-3 py-1 rounded-bl-lg flex items-center gap-1">
+              <Gift className="w-3 h-3" />
+              {TRIAL_DAYS}-DAY FREE TRIAL
             </div>
             <h2 className="text-xl font-bold text-stone-900 dark:text-stone-100 mb-2">
               Pro
@@ -170,10 +175,29 @@ export default function SubscriptionPage() {
             <p className="text-stone-600 dark:text-stone-400 mb-4">
               Everything you need to ace the LSAT
             </p>
-            <div className="mb-6">
-              <span className="text-4xl font-bold text-stone-900 dark:text-stone-100">$15</span>
-              <span className="text-stone-600 dark:text-stone-400">/month</span>
+            <div className="mb-2">
+              <span className="text-4xl font-bold text-stone-900 dark:text-stone-100">$0</span>
+              <span className="text-stone-600 dark:text-stone-400"> for {TRIAL_DAYS} days</span>
             </div>
+            <div className="mb-6 text-sm text-stone-500 dark:text-stone-400">
+              then <span className="font-semibold text-stone-700 dark:text-stone-300">$15/month</span> · Cancel anytime
+            </div>
+
+            {/* Trial info box */}
+            <div className="mb-6 p-4 rounded-xl bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200 dark:border-green-800">
+              <div className="flex items-start gap-3">
+                <Calendar className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-green-800 dark:text-green-300">
+                    Try Pro free for {TRIAL_DAYS} days
+                  </p>
+                  <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                    Card required. You won&apos;t be charged until your trial ends.
+                  </p>
+                </div>
+              </div>
+            </div>
+
             <ul className="space-y-3 mb-8">
               {features.filter(f => f.pro).map((feature, i) => (
                 <li key={i} className="flex items-center gap-3 text-stone-600 dark:text-stone-400">
@@ -183,18 +207,30 @@ export default function SubscriptionPage() {
               ))}
             </ul>
             {isPro ? (
-              <button
-                disabled
-                className="w-full py-3 px-6 rounded-xl font-medium bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 cursor-not-allowed"
-              >
-                <Check className="w-5 h-5 inline mr-2" />
-                Subscribed
-              </button>
+              trialInfo?.isTrialing ? (
+                <div className="space-y-3">
+                  <div className="w-full py-3 px-6 rounded-xl font-medium bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 text-center">
+                    <Gift className="w-5 h-5 inline mr-2" />
+                    Trial Active · {trialInfo.daysLeft} days left
+                  </div>
+                  <p className="text-xs text-center text-stone-500">
+                    Your card will be charged $15 when the trial ends
+                  </p>
+                </div>
+              ) : (
+                <button
+                  disabled
+                  className="w-full py-3 px-6 rounded-xl font-medium bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 cursor-not-allowed"
+                >
+                  <Check className="w-5 h-5 inline mr-2" />
+                  Subscribed
+                </button>
+              )
             ) : (
               <button
                 onClick={handleUpgrade}
                 disabled={checkoutLoading || !user}
-                className="w-full py-3 px-6 rounded-xl font-medium bg-amber-500 hover:bg-amber-600 text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="w-full py-3 px-6 rounded-xl font-medium bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-amber-500/25"
               >
                 {checkoutLoading ? (
                   <>
@@ -202,9 +238,12 @@ export default function SubscriptionPage() {
                     Processing...
                   </>
                 ) : !user ? (
-                  "Sign in to Subscribe"
+                  "Sign in to Start Trial"
                 ) : (
-                  "Get Pro"
+                  <>
+                    <Gift className="w-5 h-5" />
+                    Start Free Trial
+                  </>
                 )}
               </button>
             )}

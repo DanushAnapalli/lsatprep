@@ -14,14 +14,33 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const session = await stripe.checkout.sessions.retrieve(sessionId);
+    const session = await stripe.checkout.sessions.retrieve(sessionId, {
+      expand: ["subscription"],
+    });
 
-    if (session.payment_status === "paid") {
+    // For trial subscriptions, payment_status is "no_payment_required"
+    // For regular subscriptions, payment_status is "paid"
+    const isValidPayment =
+      session.payment_status === "paid" ||
+      session.payment_status === "no_payment_required";
+
+    if (isValidPayment) {
+      // Check if this is a trial subscription
+      const subscription = session.subscription as Stripe.Subscription | null;
+      const isTrialing = subscription?.status === "trialing";
+      const trialEnd = subscription?.trial_end;
+
       return NextResponse.json({
         success: true,
         userId: session.metadata?.userId,
         customerEmail: session.customer_email,
-        subscriptionId: session.subscription,
+        subscriptionId:
+          typeof session.subscription === "string"
+            ? session.subscription
+            : session.subscription?.id,
+        isTrialing,
+        trialEnd,
+        subscriptionStatus: subscription?.status,
       });
     }
 

@@ -2,14 +2,16 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { CheckCircle, Loader2 } from "lucide-react";
-import { setSubscriptionTier } from "@/lib/subscription";
+import { CheckCircle, Loader2, Gift, Calendar } from "lucide-react";
+import { setSubscriptionTier, startTrial, TRIAL_PERIOD_DAYS } from "@/lib/subscription";
 
 function SuccessContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [verifying, setVerifying] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isTrialStart, setIsTrialStart] = useState(false);
+  const [trialEndDate, setTrialEndDate] = useState<string>("");
 
   useEffect(() => {
     const sessionId = searchParams.get("session_id");
@@ -31,8 +33,21 @@ function SuccessContent() {
         const data = await response.json();
 
         if (data.success) {
-          // Update local subscription status
-          setSubscriptionTier("pro");
+          // Check if this is a trial subscription
+          if (data.isTrialing) {
+            setIsTrialStart(true);
+            startTrial(); // Start local trial tracking
+            if (data.trialEnd) {
+              const endDate = new Date(data.trialEnd * 1000);
+              setTrialEndDate(endDate.toLocaleDateString('en-US', {
+                weekday: 'long',
+                month: 'long',
+                day: 'numeric',
+              }));
+            }
+          } else {
+            setSubscriptionTier("pro");
+          }
           setVerifying(false);
         } else {
           setError(data.error || "Verification failed");
@@ -81,6 +96,54 @@ function SuccessContent() {
     );
   }
 
+  // Trial success view
+  if (isTrialStart) {
+    return (
+      <div className="min-h-screen bg-stone-50 dark:bg-stone-950 flex items-center justify-center p-4">
+        <div className="bg-white dark:bg-stone-900 rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
+          <div className="w-16 h-16 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Gift className="w-10 h-10 text-white" />
+          </div>
+          <h1 className="text-2xl font-bold text-stone-900 dark:text-stone-100 mb-2">
+            Your Free Trial Has Started!
+          </h1>
+          <p className="text-stone-600 dark:text-stone-400 mb-4">
+            Enjoy {TRIAL_PERIOD_DAYS} days of unlimited access to all Pro features.
+          </p>
+
+          {/* Trial info box */}
+          <div className="mb-6 p-4 rounded-xl bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 border border-amber-200 dark:border-amber-800">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <Calendar className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+              <span className="font-medium text-amber-800 dark:text-amber-300">
+                Trial ends {trialEndDate || `in ${TRIAL_PERIOD_DAYS} days`}
+              </span>
+            </div>
+            <p className="text-xs text-amber-600 dark:text-amber-400">
+              You&apos;ll be charged $15/month after your trial ends. Cancel anytime.
+            </p>
+          </div>
+
+          <div className="space-y-3">
+            <button
+              onClick={() => router.push("/practice")}
+              className="w-full px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white rounded-xl font-medium transition-colors shadow-lg shadow-amber-500/25"
+            >
+              Start Practicing Now
+            </button>
+            <button
+              onClick={() => router.push("/dashboard")}
+              className="w-full px-6 py-3 bg-stone-200 dark:bg-stone-800 text-stone-900 dark:text-stone-100 rounded-xl font-medium hover:opacity-90 transition-opacity"
+            >
+              Go to Dashboard
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Regular subscription success view
   return (
     <div className="min-h-screen bg-stone-50 dark:bg-stone-950 flex items-center justify-center p-4">
       <div className="bg-white dark:bg-stone-900 rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
