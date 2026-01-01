@@ -217,14 +217,15 @@ function ScoreTrendBars({
 }) {
   const [animatedHeights, setAnimatedHeights] = useState<number[]>(data.map(() => 0));
 
+  // LSAT scores range from 120-180
+  const MIN_LSAT = 120;
+  const MAX_LSAT = 180;
+
   useEffect(() => {
     const timeout = setTimeout(() => {
       const scores = data.map(d => d.score);
-      const minScore = Math.min(...scores) - 5;
-      const maxScore = Math.max(...scores) + 5;
-      const range = maxScore - minScore || 1;
-
-      setAnimatedHeights(scores.map(score => ((score - minScore) / range) * 100));
+      // Scale based on full LSAT range so bars have meaningful height
+      setAnimatedHeights(scores.map(score => ((score - MIN_LSAT) / (MAX_LSAT - MIN_LSAT)) * 100));
     }, 100);
     return () => clearTimeout(timeout);
   }, [data]);
