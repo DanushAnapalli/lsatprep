@@ -585,6 +585,87 @@ export function analyzeFatigue(progress: UserProgress): FatigueAnalysis {
 }
 
 // ============================================
+// DIFFICULTY PROGRESSION ANALYTICS
+// ============================================
+
+export interface DifficultyStats {
+  difficulty: "easy" | "medium" | "hard";
+  correct: number;
+  total: number;
+  accuracy: number;
+  avgTimeSeconds: number;
+}
+
+export interface DifficultyAnalytics {
+  byDifficulty: DifficultyStats[];
+  totalQuestions: number;
+  overallPattern: "improving" | "consistent" | "struggling-with-hard";
+}
+
+export function getDifficultyAnalytics(progress: UserProgress): DifficultyAnalytics {
+  const stats: Record<"easy" | "medium" | "hard", { correct: number; total: number; totalTime: number }> = {
+    easy: { correct: 0, total: 0, totalTime: 0 },
+    medium: { correct: 0, total: 0, totalTime: 0 },
+    hard: { correct: 0, total: 0, totalTime: 0 },
+  };
+
+  // Aggregate from all completed tests
+  for (const test of progress.completedTests) {
+    for (const section of test.sections) {
+      for (const q of section.questions) {
+        const difficulty = (q as unknown as { difficulty?: "easy" | "medium" | "hard" }).difficulty;
+        if (difficulty && stats[difficulty]) {
+          stats[difficulty].total++;
+          if (q.isCorrect) stats[difficulty].correct++;
+          stats[difficulty].totalTime += q.timeSpent || 0;
+        }
+      }
+    }
+  }
+
+  const byDifficulty: DifficultyStats[] = (["easy", "medium", "hard"] as const).map((difficulty) => {
+    const data = stats[difficulty];
+    return {
+      difficulty,
+      correct: data.correct,
+      total: data.total,
+      accuracy: data.total > 0 ? (data.correct / data.total) * 100 : 0,
+      avgTimeSeconds: data.total > 0 ? data.totalTime / data.total : 0,
+    };
+  });
+
+  const totalQuestions = byDifficulty.reduce((sum, d) => sum + d.total, 0);
+
+  // Determine overall pattern
+  const easyAcc = byDifficulty[0].accuracy;
+  const mediumAcc = byDifficulty[1].accuracy;
+  const hardAcc = byDifficulty[2].accuracy;
+
+  let overallPattern: "improving" | "consistent" | "struggling-with-hard" = "consistent";
+
+  if (totalQuestions >= 10) {
+    // If accuracy drops significantly for hard questions
+    if (easyAcc - hardAcc > 20 && hardAcc < 60) {
+      overallPattern = "struggling-with-hard";
+    }
+    // If performance is relatively consistent across difficulties
+    else if (Math.abs(easyAcc - hardAcc) < 15) {
+      overallPattern = "consistent";
+    }
+    // If doing well across the board
+    else if (easyAcc >= 70 && mediumAcc >= 60 && hardAcc >= 50) {
+      overallPattern = "improving";
+    }
+  }
+
+  return {
+    byDifficulty,
+    totalQuestions,
+    overallPattern,
+  };
+}
+
+// ============================================
 // SUMMARY INSIGHTS
 // ============================================
 

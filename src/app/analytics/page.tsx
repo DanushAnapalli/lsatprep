@@ -38,12 +38,14 @@ import {
   detectErrorPatterns,
   analyzeFatigue,
   getAnalyticsSummary,
+  getDifficultyAnalytics,
   QuestionTypeStats,
   TimeAnalytics,
   ScoreTrendAnalysis,
   ErrorPattern,
   FatigueAnalysis,
   AnalyticsSummary,
+  DifficultyAnalytics,
 } from "@/lib/advanced-analytics";
 
 function cx(...classes: (string | boolean | undefined)[]) {
@@ -649,15 +651,103 @@ function SummaryCard({
   );
 }
 
-function QuestionTypePerformanceSection({
-  stats,
+// Animated Difficulty Bar Chart - Grouped horizontal bars
+function AnimatedDifficultyChart({
+  data,
+}: {
+  data: { difficulty: string; accuracy: number; total: number }[];
+}) {
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      const startTime = Date.now();
+      const duration = 1200;
+
+      const animate = () => {
+        const elapsed = Date.now() - startTime;
+        const p = Math.min(elapsed / duration, 1);
+        const easeOut = 1 - Math.pow(1 - p, 3);
+        setProgress(easeOut);
+
+        if (p < 1) {
+          requestAnimationFrame(animate);
+        }
+      };
+
+      requestAnimationFrame(animate);
+    }, 200);
+
+    return () => clearTimeout(timeout);
+  }, []);
+
+  if (data.length === 0) return null;
+
+  const difficultyConfig: Record<string, { label: string; color: string; bgColor: string; icon: string }> = {
+    easy: { label: "Easy", color: "bg-emerald-500", bgColor: "bg-emerald-100 dark:bg-emerald-900/30", icon: "1" },
+    medium: { label: "Medium", color: "bg-amber-500", bgColor: "bg-amber-100 dark:bg-amber-900/30", icon: "2" },
+    hard: { label: "Hard", color: "bg-red-500", bgColor: "bg-red-100 dark:bg-red-900/30", icon: "3" },
+  };
+
+  return (
+    <div className="space-y-5">
+      {data.map((d, i) => {
+        const config = difficultyConfig[d.difficulty] || difficultyConfig.medium;
+        const animatedAccuracy = d.accuracy * progress;
+
+        return (
+          <div key={d.difficulty} className="group">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-3">
+                <div className={cx(
+                  "w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold",
+                  config.bgColor,
+                  d.difficulty === "easy" ? "text-emerald-700 dark:text-emerald-300" :
+                  d.difficulty === "medium" ? "text-amber-700 dark:text-amber-300" :
+                  "text-red-700 dark:text-red-300"
+                )}>
+                  {config.icon}
+                </div>
+                <div>
+                  <span className="font-semibold text-stone-900 dark:text-stone-100">
+                    {config.label}
+                  </span>
+                  <span className="ml-2 text-xs text-stone-500 dark:text-stone-400">
+                    ({d.total} questions)
+                  </span>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className={cx(
+                  "text-xl font-bold tabular-nums",
+                  animatedAccuracy >= 70 ? "text-emerald-600 dark:text-emerald-400" :
+                  animatedAccuracy >= 50 ? "text-amber-600 dark:text-amber-400" :
+                  "text-red-600 dark:text-red-400"
+                )}>
+                  {Math.round(animatedAccuracy)}%
+                </span>
+              </div>
+            </div>
+            <div className="h-4 bg-stone-100 dark:bg-stone-800 rounded-full overflow-hidden">
+              <div
+                className={cx("h-full rounded-full transition-all duration-1000 ease-out", config.color)}
+                style={{ width: `${animatedAccuracy}%` }}
+              />
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function DifficultyProgressionSection({
+  analytics,
   isLocked,
 }: {
-  stats: QuestionTypeStats[];
+  analytics: DifficultyAnalytics | null;
   isLocked: boolean;
 }) {
-  const lrStats = stats.filter((s) => s.sectionType === "logical-reasoning");
-  const rcStats = stats.filter((s) => s.sectionType === "reading-comprehension");
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
@@ -665,17 +755,26 @@ function QuestionTypePerformanceSection({
     return () => clearTimeout(timeout);
   }, []);
 
-  const lrChartData = lrStats.map((s) => ({
-    name: s.displayName,
-    accuracy: s.accuracy,
-    color: s.accuracy >= 80 ? "green" : s.accuracy >= 60 ? "amber" : "red",
-  }));
+  const patternMessages: Record<string, { message: string; color: string }> = {
+    "improving": {
+      message: "Great job! Your performance is strong across all difficulty levels.",
+      color: "text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800",
+    },
+    "consistent": {
+      message: "Your performance is consistent across difficulty levels.",
+      color: "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800",
+    },
+    "struggling-with-hard": {
+      message: "Focus on harder questions - consider reviewing advanced strategies.",
+      color: "text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800",
+    },
+  };
 
-  const rcChartData = rcStats.map((s) => ({
-    name: s.displayName,
-    accuracy: s.accuracy,
-    color: s.accuracy >= 80 ? "green" : s.accuracy >= 60 ? "amber" : "red",
-  }));
+  const chartData = analytics?.byDifficulty.map((d) => ({
+    difficulty: d.difficulty,
+    accuracy: d.accuracy,
+    total: d.total,
+  })) || [];
 
   return (
     <div
@@ -690,40 +789,73 @@ function QuestionTypePerformanceSection({
         <div className="mb-4 flex items-center gap-2">
           <BarChart3 size={20} className="text-[#1a365d] dark:text-amber-400" />
           <h3 className="font-serif text-lg font-bold text-stone-900 dark:text-stone-100">
-            Question Type Performance
+            Difficulty Progression
           </h3>
         </div>
 
-        {stats.length === 0 ? (
+        {!analytics || analytics.totalQuestions === 0 ? (
           <div className="py-8 text-center text-stone-500">
-            Complete some practice tests to see your performance breakdown.
+            Complete some practice tests to see your performance by difficulty level.
           </div>
         ) : (
           <div className="grid gap-6 lg:grid-cols-2">
-            {/* LR Section */}
+            {/* Chart */}
             <div>
-              <h4 className="mb-4 flex items-center gap-2 text-sm font-semibold text-stone-700 dark:text-stone-300">
-                <Brain size={16} className="text-[#1a365d] dark:text-amber-400" />
-                Logical Reasoning
+              <h4 className="mb-4 text-sm font-semibold text-stone-700 dark:text-stone-300">
+                Accuracy by Difficulty
               </h4>
-              {lrStats.length === 0 ? (
-                <p className="text-sm text-stone-500">No LR data yet</p>
-              ) : (
-                <AnimatedBarChart data={lrChartData} />
-              )}
+              <AnimatedDifficultyChart data={chartData} />
             </div>
 
-            {/* RC Section */}
-            <div>
-              <h4 className="mb-4 flex items-center gap-2 text-sm font-semibold text-stone-700 dark:text-stone-300">
-                <Target size={16} className="text-[#1a365d] dark:text-amber-400" />
-                Reading Comprehension
+            {/* Summary Stats */}
+            <div className="space-y-4">
+              <h4 className="mb-4 text-sm font-semibold text-stone-700 dark:text-stone-300">
+                Performance Summary
               </h4>
-              {rcStats.length === 0 ? (
-                <p className="text-sm text-stone-500">No RC data yet</p>
-              ) : (
-                <AnimatedBarChart data={rcChartData} />
-              )}
+
+              {/* Pattern Message */}
+              <FadeInStagger index={0} baseDelay={300}>
+                <div className={cx(
+                  "rounded-sm border p-4",
+                  patternMessages[analytics.overallPattern]?.color || patternMessages.consistent.color
+                )}>
+                  <div className="flex items-start gap-3">
+                    {analytics.overallPattern === "improving" && <CheckCircle2 size={20} className="flex-shrink-0 mt-0.5" />}
+                    {analytics.overallPattern === "consistent" && <TrendingUp size={20} className="flex-shrink-0 mt-0.5" />}
+                    {analytics.overallPattern === "struggling-with-hard" && <AlertTriangle size={20} className="flex-shrink-0 mt-0.5" />}
+                    <p className="text-sm font-medium">
+                      {patternMessages[analytics.overallPattern]?.message || patternMessages.consistent.message}
+                    </p>
+                  </div>
+                </div>
+              </FadeInStagger>
+
+              {/* Quick Stats */}
+              <div className="grid grid-cols-3 gap-3">
+                {analytics.byDifficulty.map((d, i) => (
+                  <FadeInStagger key={d.difficulty} index={i + 1} baseDelay={400} staggerDelay={100}>
+                    <div className={cx(
+                      "rounded-sm border p-3 text-center",
+                      d.difficulty === "easy" ? "border-emerald-200 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-900/20" :
+                      d.difficulty === "medium" ? "border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-900/20" :
+                      "border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-900/20"
+                    )}>
+                      <div className={cx(
+                        "text-xs font-medium mb-1",
+                        d.difficulty === "easy" ? "text-emerald-600 dark:text-emerald-400" :
+                        d.difficulty === "medium" ? "text-amber-600 dark:text-amber-400" :
+                        "text-red-600 dark:text-red-400"
+                      )}>
+                        {d.difficulty.charAt(0).toUpperCase() + d.difficulty.slice(1)}
+                      </div>
+                      <div className="text-lg font-bold text-stone-900 dark:text-stone-100">
+                        {d.correct}/{d.total}
+                      </div>
+                      <div className="text-xs text-stone-500">correct</div>
+                    </div>
+                  </FadeInStagger>
+                ))}
+              </div>
             </div>
           </div>
         )}
@@ -1333,6 +1465,7 @@ export default function AdvancedAnalyticsPage() {
   const [errorPatterns, setErrorPatterns] = useState<ErrorPattern[]>([]);
   const [fatigueAnalysis, setFatigueAnalysis] = useState<FatigueAnalysis | null>(null);
   const [summary, setSummary] = useState<AnalyticsSummary | null>(null);
+  const [difficultyAnalytics, setDifficultyAnalytics] = useState<DifficultyAnalytics | null>(null);
 
   // Listen to auth state
   useEffect(() => {
@@ -1371,6 +1504,7 @@ export default function AdvancedAnalyticsPage() {
     setErrorPatterns(detectErrorPatterns(loaded));
     setFatigueAnalysis(analyzeFatigue(loaded));
     setSummary(getAnalyticsSummary(loaded));
+    setDifficultyAnalytics(getDifficultyAnalytics(loaded));
 
     setIsLoading(false);
   }, [user, authLoading]);
@@ -1557,8 +1691,8 @@ export default function AdvancedAnalyticsPage() {
             isLocked={!isProOrFounder}
           />
 
-          <QuestionTypePerformanceSection
-            stats={questionTypeStats}
+          <DifficultyProgressionSection
+            analytics={difficultyAnalytics}
             isLocked={!isProOrFounder}
           />
 

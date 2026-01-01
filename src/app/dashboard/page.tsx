@@ -46,7 +46,7 @@ import { logicalReasoningQuestions, readingComprehensionQuestions } from "@/lib/
 import { LR_TYPE_DESCRIPTIONS, RC_TYPE_DESCRIPTIONS } from "@/lib/lsat-types";
 import { onAuthChange, logOut, User as FirebaseUser } from "@/lib/firebase";
 import { useTheme } from "@/components/ThemeProvider";
-import { getUserTier, getTierDisplayInfo, canAccessFeature, SubscriptionTier, getTrialInfo } from "@/lib/subscription";
+import { getUserTier, getTierDisplayInfo, canAccessFeature, SubscriptionTier, getTrialInfo, getSubscriptionInfo, saveSubscriptionInfo } from "@/lib/subscription";
 
 function cx(...classes: (string | boolean | undefined)[]) {
   return classes.filter(Boolean).join(" ");
@@ -217,15 +217,24 @@ function UserDropdown({
   onSignOut: () => void;
 }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const tierInfo = getTierDisplayInfo(userTier);
   const trialInfo = getTrialInfo();
+  const subscriptionInfo = getSubscriptionInfo();
+
+  // Check if user can cancel (Pro tier with active subscription)
+  const canCancel = userTier === "pro" &&
+    subscriptionInfo?.subscriptionId &&
+    !subscriptionInfo?.cancelAtPeriodEnd;
 
   // Close dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsOpen(false);
+        setShowCancelConfirm(false);
       }
     }
 
@@ -238,12 +247,46 @@ function UserDropdown({
     function handleEscape(event: KeyboardEvent) {
       if (event.key === "Escape") {
         setIsOpen(false);
+        setShowCancelConfirm(false);
       }
     }
 
     document.addEventListener("keydown", handleEscape);
     return () => document.removeEventListener("keydown", handleEscape);
   }, []);
+
+  const handleCancelSubscription = async () => {
+    if (!subscriptionInfo?.subscriptionId) return;
+
+    setIsCancelling(true);
+
+    try {
+      const response = await fetch("/api/cancel-subscription", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ subscriptionId: subscriptionInfo.subscriptionId }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        saveSubscriptionInfo({
+          cancelAtPeriodEnd: true,
+          currentPeriodEnd: data.subscription.currentPeriodEnd,
+        });
+        setShowCancelConfirm(false);
+        setIsOpen(false);
+        // Reload to update UI
+        window.location.reload();
+      } else {
+        alert(data.error || "Failed to cancel subscription");
+      }
+    } catch {
+      alert("An error occurred. Please try again.");
+    } finally {
+      setIsCancelling(false);
+    }
+  };
 
   return (
     <div ref={dropdownRef} className="relative">
@@ -277,7 +320,7 @@ function UserDropdown({
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className="absolute right-0 top-full z-50 mt-2 w-64 overflow-hidden rounded-sm border-2 border-stone-200 bg-white shadow-lg dark:border-stone-700 dark:bg-stone-800">
+        <div className="absolute right-0 top-full z-50 mt-2 w-72 overflow-hidden rounded-sm border-2 border-stone-200 bg-white shadow-lg dark:border-stone-700 dark:bg-stone-800">
           {/* User Info Header */}
           <div className="border-b border-stone-200 p-4 dark:border-stone-700">
             <div className="flex items-center gap-3">
@@ -308,6 +351,11 @@ function UserDropdown({
                   {trialInfo.daysLeft}d left
                 </span>
               )}
+              {subscriptionInfo?.cancelAtPeriodEnd && (
+                <span className="rounded-sm bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700 dark:bg-red-900/30 dark:text-red-400">
+                  Cancels soon
+                </span>
+              )}
             </div>
           </div>
 
@@ -319,15 +367,15 @@ function UserDropdown({
               className="flex items-center gap-3 rounded-sm px-3 py-2 text-sm text-stone-700 transition hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-700"
             >
               <User size={16} className="text-stone-400" />
-              Profile
+              Profile Settings
             </Link>
             <Link
-              href="/profile"
+              href="/subscription"
               onClick={() => setIsOpen(false)}
               className="flex items-center gap-3 rounded-sm px-3 py-2 text-sm text-stone-700 transition hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-700"
             >
               <CreditCard size={16} className="text-stone-400" />
-              Subscription
+              {userTier === "free" ? "Upgrade to Pro" : "Manage Subscription"}
               {userTier === "free" && (
                 <span className="ml-auto rounded-sm bg-amber-100 px-1.5 py-0.5 text-xs font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
                   Upgrade
@@ -335,6 +383,45 @@ function UserDropdown({
               )}
             </Link>
           </div>
+
+          {/* Cancel Subscription Section */}
+          {canCancel && (
+            <div className="border-t border-stone-200 p-2 dark:border-stone-700">
+              {!showCancelConfirm ? (
+                <button
+                  type="button"
+                  onClick={() => setShowCancelConfirm(true)}
+                  className="flex w-full items-center gap-3 rounded-sm px-3 py-2 text-sm text-amber-600 transition hover:bg-amber-50 dark:text-amber-400 dark:hover:bg-amber-900/20"
+                >
+                  <X size={16} />
+                  Cancel Subscription
+                </button>
+              ) : (
+                <div className="rounded-sm bg-red-50 p-3 dark:bg-red-900/20">
+                  <p className="mb-3 text-xs text-red-700 dark:text-red-400">
+                    Are you sure? You'll keep access until your billing period ends.
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={handleCancelSubscription}
+                      disabled={isCancelling}
+                      className="flex-1 rounded-sm bg-red-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-red-700 disabled:opacity-50"
+                    >
+                      {isCancelling ? "Cancelling..." : "Yes, Cancel"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowCancelConfirm(false)}
+                      className="flex-1 rounded-sm bg-stone-200 px-3 py-1.5 text-xs font-semibold text-stone-700 transition hover:bg-stone-300 dark:bg-stone-700 dark:text-stone-300 dark:hover:bg-stone-600"
+                    >
+                      Keep Plan
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Sign Out */}
           <div className="border-t border-stone-200 p-2 dark:border-stone-700">
