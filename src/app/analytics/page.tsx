@@ -24,11 +24,16 @@ import {
   Moon,
   Sun,
   LogOut,
+  ChevronDown,
+  User,
+  CreditCard,
+  X,
+  Loader2,
 } from "lucide-react";
 import { loadUserProgress, UserProgress, setCurrentUserId } from "@/lib/user-progress";
 import { onAuthChange, logOut, User as FirebaseUser } from "@/lib/firebase";
 import { useTheme } from "@/components/ThemeProvider";
-import { getUserTier, getTierDisplayInfo, SubscriptionTier } from "@/lib/subscription";
+import { getUserTier, getTierDisplayInfo, SubscriptionTier, getTrialInfo, getSubscriptionInfo, saveSubscriptionInfo } from "@/lib/subscription";
 import {
   getDetailedQuestionTypeStats,
   getTopWeaknesses,
@@ -204,168 +209,101 @@ function FadeInStagger({
 // CHART COMPONENTS
 // ============================================
 
-// Animated Line Graph for Score Trends
-function AnimatedLineGraph({
+// Mini Score Trend Line - compact, inline sparkline style
+function MiniScoreTrend({
   data,
-  height = 140,
 }: {
   data: { score: number; date: string }[];
-  height?: number;
 }) {
-  const [progress, setProgress] = useState(0);
-  const svgRef = useRef<SVGSVGElement>(null);
+  const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    const timeout = setTimeout(() => {
-      const startTime = Date.now();
-      const duration = 1500;
-
-      const animate = () => {
-        const elapsed = Date.now() - startTime;
-        const p = Math.min(elapsed / duration, 1);
-        const easeOut = 1 - Math.pow(1 - p, 3);
-        setProgress(easeOut);
-
-        if (p < 1) {
-          requestAnimationFrame(animate);
-        }
-      };
-
-      requestAnimationFrame(animate);
-    }, 200);
-
+    const timeout = setTimeout(() => setIsVisible(true), 200);
     return () => clearTimeout(timeout);
   }, []);
 
-  if (data.length === 0) return null;
+  if (data.length < 2) return null;
 
-  const width = 400;
-  const padding = { top: 16, right: 16, bottom: 24, left: 36 };
-  const chartWidth = width - padding.left - padding.right;
-  const chartHeight = height - padding.top - padding.bottom;
+  const scores = data.map(d => d.score);
+  const minScore = Math.min(...scores) - 2;
+  const maxScore = Math.max(...scores) + 2;
+  const range = maxScore - minScore || 1;
 
-  const minScore = Math.min(...data.map((d) => d.score)) - 5;
-  const maxScore = Math.max(...data.map((d) => d.score)) + 5;
+  // Create points for the polyline
+  const points = data.map((d, i) => {
+    const x = (i / (data.length - 1)) * 100;
+    const y = 100 - ((d.score - minScore) / range) * 100;
+    return `${x},${y}`;
+  }).join(' ');
 
-  const xScale = (i: number) => padding.left + (i / (data.length - 1 || 1)) * chartWidth;
-  const yScale = (score: number) =>
-    padding.top + chartHeight - ((score - minScore) / (maxScore - minScore || 1)) * chartHeight;
-
-  // Create smooth bezier curve path
-  const createSmoothPath = () => {
-    if (data.length < 2) return data.map((d, i) => `${i === 0 ? "M" : "L"} ${xScale(i)} ${yScale(d.score)}`).join(" ");
-
-    let path = `M ${xScale(0)} ${yScale(data[0].score)}`;
-
-    for (let i = 1; i < data.length; i++) {
-      const x0 = xScale(i - 1);
-      const y0 = yScale(data[i - 1].score);
-      const x1 = xScale(i);
-      const y1 = yScale(data[i].score);
-
-      const cpOffset = (x1 - x0) * 0.3;
-      path += ` C ${x0 + cpOffset} ${y0}, ${x1 - cpOffset} ${y1}, ${x1} ${y1}`;
-    }
-
-    return path;
-  };
-
-  const pathData = createSmoothPath();
-
-  const areaPathData =
-    pathData +
-    ` L ${xScale(data.length - 1)} ${padding.top + chartHeight} L ${padding.left} ${padding.top + chartHeight} Z`;
-
-  const pathLength = 1000;
-  const visibleLength = progress * pathLength;
+  const latestScore = data[data.length - 1].score;
+  const previousScore = data[data.length - 2].score;
+  const scoreDiff = latestScore - previousScore;
 
   return (
-    <svg ref={svgRef} viewBox={`0 0 ${width} ${height}`} className="w-full h-auto">
-      {/* Grid lines */}
-      {[0, 0.5, 1].map((t) => {
-        const y = padding.top + t * chartHeight;
-        const score = Math.round(maxScore - t * (maxScore - minScore));
-        return (
-          <g key={t}>
-            <line
-              x1={padding.left}
-              y1={y}
-              x2={width - padding.right}
-              y2={y}
-              stroke="currentColor"
-              strokeOpacity={0.08}
-              strokeDasharray="3,3"
-            />
-            <text
-              x={padding.left - 6}
-              y={y}
-              textAnchor="end"
-              alignmentBaseline="middle"
-              className="fill-stone-400 dark:fill-stone-500"
-              style={{ fontSize: "10px", fontFamily: "system-ui, -apple-system, sans-serif" }}
-            >
-              {score}
-            </text>
-          </g>
-        );
-      })}
+    <div className={cx(
+      "flex items-center gap-4 transition-all duration-500",
+      isVisible ? "opacity-100" : "opacity-0"
+    )}>
+      {/* Mini sparkline */}
+      <div className="flex-1 h-12 max-w-[200px]">
+        <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="w-full h-full">
+          {/* Subtle gradient background */}
+          <defs>
+            <linearGradient id="sparklineGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" className="text-[#1a365d] dark:text-amber-400" stopColor="currentColor" stopOpacity="0.1" />
+              <stop offset="100%" className="text-[#1a365d] dark:text-amber-400" stopColor="currentColor" stopOpacity="0" />
+            </linearGradient>
+          </defs>
 
-      {/* Gradient fill */}
-      <defs>
-        <linearGradient id="areaGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stopColor="#1a365d" stopOpacity={0.15} />
-          <stop offset="100%" stopColor="#1a365d" stopOpacity={0} />
-        </linearGradient>
-        <linearGradient id="areaGradientDark" x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stopColor="#f59e0b" stopOpacity={0.15} />
-          <stop offset="100%" stopColor="#f59e0b" stopOpacity={0} />
-        </linearGradient>
-      </defs>
-
-      {/* Area fill */}
-      <path
-        d={areaPathData}
-        className="fill-[url(#areaGradient)] dark:fill-[url(#areaGradientDark)]"
-        style={{
-          opacity: progress,
-          transition: "opacity 0.5s ease-out",
-        }}
-      />
-
-      {/* Line */}
-      <path
-        d={pathData}
-        fill="none"
-        className="stroke-[#1a365d] dark:stroke-amber-400"
-        strokeWidth={2}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeDasharray={pathLength}
-        strokeDashoffset={pathLength - visibleLength}
-      />
-
-      {/* Data points */}
-      {data.map((d, i) => (
-        <g key={i} style={{ opacity: progress > i / data.length ? 1 : 0, transition: "opacity 0.3s ease-out" }}>
-          <circle
-            cx={xScale(i)}
-            cy={yScale(d.score)}
-            r={4}
-            className="fill-white dark:fill-stone-900 stroke-[#1a365d] dark:stroke-amber-400"
-            strokeWidth={2}
+          {/* Area fill */}
+          <polygon
+            points={`0,100 ${points} 100,100`}
+            fill="url(#sparklineGradient)"
           />
-          <text
-            x={xScale(i)}
-            y={padding.top + chartHeight + 14}
-            textAnchor="middle"
-            className="fill-stone-400 dark:fill-stone-500"
-            style={{ fontSize: "9px", fontFamily: "system-ui, -apple-system, sans-serif" }}
-          >
-            {d.date}
-          </text>
-        </g>
-      ))}
-    </svg>
+
+          {/* Line */}
+          <polyline
+            points={points}
+            fill="none"
+            className="stroke-[#1a365d] dark:stroke-amber-400"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            vectorEffect="non-scaling-stroke"
+          />
+
+          {/* End point dot */}
+          <circle
+            cx="100"
+            cy={100 - ((latestScore - minScore) / range) * 100}
+            r="4"
+            className="fill-[#1a365d] dark:fill-amber-400"
+            vectorEffect="non-scaling-stroke"
+          />
+        </svg>
+      </div>
+
+      {/* Score info */}
+      <div className="flex flex-col items-end">
+        <div className="text-lg font-bold tabular-nums text-stone-900 dark:text-stone-100">
+          {latestScore}
+        </div>
+        <div className={cx(
+          "text-xs font-medium tabular-nums flex items-center gap-1",
+          scoreDiff > 0 ? "text-emerald-600 dark:text-emerald-400" :
+          scoreDiff < 0 ? "text-red-600 dark:text-red-400" :
+          "text-stone-500"
+        )}>
+          {scoreDiff > 0 ? (
+            <TrendingUp size={12} />
+          ) : scoreDiff < 0 ? (
+            <TrendingDown size={12} />
+          ) : null}
+          {scoreDiff > 0 ? "+" : ""}{scoreDiff} pts
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -949,6 +887,209 @@ function AnimatedQuestionTypeBar({
   );
 }
 
+// ============================================
+// USER DROPDOWN COMPONENT
+// ============================================
+
+function UserDropdown({
+  user,
+  userTier,
+  onSignOut,
+}: {
+  user: FirebaseUser;
+  userTier: SubscriptionTier;
+  onSignOut: () => void;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const tierInfo = getTierDisplayInfo(userTier);
+  const trialInfo = getTrialInfo();
+  const subscriptionInfo = getSubscriptionInfo();
+
+  const canCancel = userTier === "pro" &&
+    subscriptionInfo?.subscriptionId &&
+    !subscriptionInfo?.cancelAtPeriodEnd;
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+        setShowCancelConfirm(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setIsOpen(false);
+        setShowCancelConfirm(false);
+      }
+    }
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, []);
+
+  const handleCancelSubscription = async () => {
+    if (!subscriptionInfo?.subscriptionId) return;
+    setIsCancelling(true);
+    try {
+      const response = await fetch("/api/cancel-subscription", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ subscriptionId: subscriptionInfo.subscriptionId }),
+      });
+      const data = await response.json();
+      if (data.success) {
+        saveSubscriptionInfo({
+          cancelAtPeriodEnd: true,
+          currentPeriodEnd: data.subscription.currentPeriodEnd,
+        });
+        setShowCancelConfirm(false);
+        setIsOpen(false);
+        window.location.reload();
+      } else {
+        alert(data.error || "Failed to cancel subscription");
+      }
+    } catch {
+      alert("An error occurred. Please try again.");
+    } finally {
+      setIsCancelling(false);
+    }
+  };
+
+  return (
+    <div ref={dropdownRef} className="relative z-50">
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center gap-2 rounded-sm border-2 border-stone-200 bg-stone-50 px-3 py-2 transition hover:border-stone-300 hover:bg-stone-100 dark:border-stone-700 dark:bg-stone-800 dark:hover:border-stone-600 dark:hover:bg-stone-700"
+      >
+        {user.photoURL ? (
+          <img src={user.photoURL} alt="Profile" className="h-6 w-6 rounded-full" />
+        ) : (
+          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[#1a365d] text-xs font-bold text-white dark:bg-amber-500 dark:text-stone-900">
+            {(user.displayName || user.email || "U").charAt(0).toUpperCase()}
+          </div>
+        )}
+        <span className="hidden max-w-[100px] truncate text-sm font-medium text-stone-700 dark:text-stone-300 sm:block">
+          {user.displayName || user.email?.split("@")[0]}
+        </span>
+        <ChevronDown size={16} className={cx("text-stone-400 transition-transform duration-200", isOpen && "rotate-180")} />
+      </button>
+
+      {isOpen && (
+        <div className="absolute right-0 top-full z-50 mt-2 w-72 overflow-hidden rounded-sm border-2 border-stone-200 bg-white shadow-lg dark:border-stone-700 dark:bg-stone-800">
+          {/* User Info Header */}
+          <div className="border-b border-stone-200 p-4 dark:border-stone-700">
+            <div className="flex items-center gap-3">
+              {user.photoURL ? (
+                <img src={user.photoURL} alt="Profile" className="h-10 w-10 rounded-full" />
+              ) : (
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#1a365d] text-lg font-bold text-white dark:bg-amber-500 dark:text-stone-900">
+                  {(user.displayName || user.email || "U").charAt(0).toUpperCase()}
+                </div>
+              )}
+              <div className="flex-1 overflow-hidden">
+                <div className="truncate font-semibold text-stone-900 dark:text-stone-100">{user.displayName || "User"}</div>
+                <div className="truncate text-xs text-stone-500">{user.email}</div>
+              </div>
+            </div>
+            <div className="mt-2 flex items-center gap-2">
+              <span className={cx("rounded-sm px-2 py-0.5 text-xs font-semibold", tierInfo.bgColor, tierInfo.color)}>
+                {tierInfo.name}
+              </span>
+              {userTier === "pro" && trialInfo.isTrialing && (
+                <span className="rounded-sm bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+                  {trialInfo.daysLeft}d left
+                </span>
+              )}
+              {subscriptionInfo?.cancelAtPeriodEnd && (
+                <span className="rounded-sm bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700 dark:bg-red-900/30 dark:text-red-400">
+                  Cancels soon
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Menu Items */}
+          <div className="p-2">
+            <Link
+              href="/profile"
+              className="flex w-full items-center gap-3 rounded-sm px-3 py-2 text-left text-sm text-stone-700 transition hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-700"
+              onClick={() => setIsOpen(false)}
+            >
+              <User size={16} />
+              Profile
+            </Link>
+            <Link
+              href="/subscription"
+              className="flex w-full items-center gap-3 rounded-sm px-3 py-2 text-left text-sm text-stone-700 transition hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-700"
+              onClick={() => setIsOpen(false)}
+            >
+              <CreditCard size={16} />
+              Manage Subscription
+            </Link>
+
+            {/* Cancel Subscription */}
+            {canCancel && !showCancelConfirm && (
+              <button
+                type="button"
+                onClick={() => setShowCancelConfirm(true)}
+                className="flex w-full items-center gap-3 rounded-sm px-3 py-2 text-left text-sm text-red-600 transition hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
+              >
+                <X size={16} />
+                Cancel Subscription
+              </button>
+            )}
+
+            {showCancelConfirm && (
+              <div className="mx-2 my-2 rounded-sm border border-red-200 bg-red-50 p-3 dark:border-red-800 dark:bg-red-900/20">
+                <p className="mb-3 text-xs text-red-700 dark:text-red-300">
+                  Are you sure? You&apos;ll keep access until the billing period ends.
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={handleCancelSubscription}
+                    disabled={isCancelling}
+                    className="flex-1 rounded-sm bg-red-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-red-700 disabled:opacity-50"
+                  >
+                    {isCancelling ? <Loader2 size={14} className="mx-auto animate-spin" /> : "Yes, Cancel"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowCancelConfirm(false)}
+                    className="flex-1 rounded-sm bg-stone-200 px-3 py-1.5 text-xs font-semibold text-stone-700 transition hover:bg-stone-300 dark:bg-stone-600 dark:text-stone-200 dark:hover:bg-stone-500"
+                  >
+                    Keep It
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Sign Out */}
+          <div className="border-t border-stone-200 p-2 dark:border-stone-700">
+            <button
+              type="button"
+              onClick={onSignOut}
+              className="flex w-full items-center gap-3 rounded-sm px-3 py-2 text-left text-sm text-stone-700 transition hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-700"
+            >
+              <LogOut size={16} />
+              Sign Out
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function QuestionTypePerformanceSection({
   stats,
   isLocked,
@@ -1277,17 +1418,14 @@ function ScoreTrendSection({
           </div>
         )}
 
-        {/* Score Trend Graph */}
+        {/* Score Trend */}
         {analysis.trends.length > 1 && (
-          <div className="mt-6">
-            <h4 className="mb-3 text-sm font-medium text-stone-600 dark:text-stone-400">
-              Score Trend
-            </h4>
-            <div className="rounded-lg border border-stone-200 bg-stone-50/50 p-4 dark:border-stone-700 dark:bg-stone-800/30 max-w-2xl mx-auto">
-              <AnimatedLineGraph
-                data={analysis.trends.slice(-10)}
-                height={120}
-              />
+          <div className="mt-6 pt-4 border-t border-stone-200 dark:border-stone-700">
+            <div className="flex items-center justify-between">
+              <h4 className="text-sm font-medium text-stone-600 dark:text-stone-400">
+                Recent Trend
+              </h4>
+              <MiniScoreTrend data={analysis.trends.slice(-8)} />
             </div>
           </div>
         )}
@@ -1760,32 +1898,9 @@ export default function AdvancedAnalyticsPage() {
               );
             })()}
 
-            {/* User Profile or Sign In Button */}
+            {/* User Dropdown or Sign In Button */}
             {user ? (
-              <div className="flex items-center gap-2 rounded-sm border-2 border-stone-200 bg-stone-50 px-3 py-2 dark:border-stone-700 dark:bg-stone-800">
-                {user.photoURL ? (
-                  <img
-                    src={user.photoURL}
-                    alt="Profile"
-                    className="h-6 w-6 rounded-full"
-                  />
-                ) : (
-                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[#1a365d] text-xs font-bold text-white dark:bg-amber-500 dark:text-stone-900">
-                    {(user.displayName || user.email || "U").charAt(0).toUpperCase()}
-                  </div>
-                )}
-                <span className="hidden max-w-[100px] truncate text-sm font-medium text-stone-700 dark:text-stone-300 sm:block">
-                  {user.displayName || user.email?.split("@")[0]}
-                </span>
-                <button
-                  type="button"
-                  onClick={handleSignOut}
-                  className="ml-1 rounded p-1 text-stone-400 transition hover:bg-stone-200 hover:text-red-600 dark:hover:bg-stone-700 dark:hover:text-red-400"
-                  title="Sign Out"
-                >
-                  <LogOut size={16} />
-                </button>
-              </div>
+              <UserDropdown user={user} userTier={userTier} onSignOut={handleSignOut} />
             ) : (
               <Link
                 href="/"
