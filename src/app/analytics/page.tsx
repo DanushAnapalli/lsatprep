@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -54,88 +54,19 @@ function cx(...classes: (string | boolean | undefined)[]) {
 // ANIMATION HOOKS & UTILITIES
 // ============================================
 
-// Hook for animating numbers
-function useAnimatedNumber(
-  targetValue: number,
-  duration: number = 1500,
-  startOnMount: boolean = true
-): { value: number; start: () => void } {
-  const [currentValue, setCurrentValue] = useState(0);
-  const [hasStarted, setHasStarted] = useState(false);
-  const animationRef = useRef<number | undefined>(undefined);
-  const startTimeRef = useRef<number | undefined>(undefined);
-
-  const start = useCallback(() => {
-    if (hasStarted) return;
-    setHasStarted(true);
-  }, [hasStarted]);
+// Hook for page load animation trigger
+function usePageLoad(delay: number = 0): boolean {
+  const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    if (startOnMount) {
-      const timeout = setTimeout(() => setHasStarted(true), 100);
-      return () => clearTimeout(timeout);
-    }
-  }, [startOnMount]);
+    const timeout = setTimeout(() => setIsReady(true), delay);
+    return () => clearTimeout(timeout);
+  }, [delay]);
 
-  useEffect(() => {
-    if (!hasStarted) return;
-
-    const animate = (timestamp: number) => {
-      if (!startTimeRef.current) {
-        startTimeRef.current = timestamp;
-      }
-
-      const elapsed = timestamp - startTimeRef.current;
-      const progress = Math.min(elapsed / duration, 1);
-
-      // Ease-out cubic for smooth deceleration
-      const easeOut = 1 - Math.pow(1 - progress, 3);
-      setCurrentValue(targetValue * easeOut);
-
-      if (progress < 1) {
-        animationRef.current = requestAnimationFrame(animate);
-      }
-    };
-
-    animationRef.current = requestAnimationFrame(animate);
-
-    return () => {
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-      }
-    };
-  }, [hasStarted, targetValue, duration]);
-
-  return { value: currentValue, start };
+  return isReady;
 }
 
-// Hook for intersection observer (scroll reveal)
-function useInView(threshold: number = 0.1): [React.RefObject<HTMLDivElement | null>, boolean] {
-  const ref = useRef<HTMLDivElement | null>(null);
-  const [isInView, setIsInView] = useState(false);
-
-  useEffect(() => {
-    const element = ref.current;
-    if (!element) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsInView(true);
-          observer.unobserve(element);
-        }
-      },
-      { threshold }
-    );
-
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, [threshold]);
-
-  return [ref, isInView];
-}
-
-// Animated progress bar component
+// Animated progress bar component - triggers on page load
 function AnimatedProgressBar({
   percentage,
   color,
@@ -148,19 +79,16 @@ function AnimatedProgressBar({
   height?: string;
 }) {
   const [width, setWidth] = useState(0);
-  const [ref, isInView] = useInView();
 
   useEffect(() => {
-    if (isInView) {
-      const timeout = setTimeout(() => {
-        setWidth(percentage);
-      }, delay);
-      return () => clearTimeout(timeout);
-    }
-  }, [isInView, percentage, delay]);
+    const timeout = setTimeout(() => {
+      setWidth(percentage);
+    }, 100 + delay);
+    return () => clearTimeout(timeout);
+  }, [percentage, delay]);
 
   return (
-    <div ref={ref} className={cx(height, "w-full rounded-full bg-stone-200 dark:bg-stone-700 overflow-hidden")}>
+    <div className={cx(height, "w-full rounded-full bg-stone-200 dark:bg-stone-700 overflow-hidden")}>
       <div
         className={cx(
           "h-full rounded-full transition-all duration-1000 ease-out",
@@ -172,27 +100,34 @@ function AnimatedProgressBar({
   );
 }
 
-// Animated counter component
+// Animated counter component - triggers on page load
 function AnimatedCounter({
   value,
   suffix = "",
   prefix = "",
   duration = 1500,
   decimals = 0,
+  delay = 0,
 }: {
   value: number;
   suffix?: string;
   prefix?: string;
   duration?: number;
   decimals?: number;
+  delay?: number;
 }) {
-  const [ref, isInView] = useInView();
   const [displayValue, setDisplayValue] = useState(0);
   const animationRef = useRef<number | undefined>(undefined);
   const startTimeRef = useRef<number | undefined>(undefined);
+  const [shouldAnimate, setShouldAnimate] = useState(false);
 
   useEffect(() => {
-    if (!isInView) return;
+    const timeout = setTimeout(() => setShouldAnimate(true), delay);
+    return () => clearTimeout(timeout);
+  }, [delay]);
+
+  useEffect(() => {
+    if (!shouldAnimate) return;
 
     startTimeRef.current = undefined;
 
@@ -219,10 +154,10 @@ function AnimatedCounter({
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [isInView, value, duration]);
+  }, [shouldAnimate, value, duration]);
 
   return (
-    <span ref={ref}>
+    <span>
       {prefix}
       {displayValue.toFixed(decimals)}
       {suffix}
@@ -230,7 +165,7 @@ function AnimatedCounter({
   );
 }
 
-// Staggered fade-in wrapper
+// Fade-in wrapper - triggers on page load with stagger
 function FadeInStagger({
   children,
   index = 0,
@@ -242,27 +177,367 @@ function FadeInStagger({
   baseDelay?: number;
   staggerDelay?: number;
 }) {
-  const [ref, isInView] = useInView();
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    if (isInView) {
-      const timeout = setTimeout(() => {
-        setIsVisible(true);
-      }, baseDelay + index * staggerDelay);
-      return () => clearTimeout(timeout);
-    }
-  }, [isInView, index, baseDelay, staggerDelay]);
+    const timeout = setTimeout(() => {
+      setIsVisible(true);
+    }, baseDelay + index * staggerDelay);
+    return () => clearTimeout(timeout);
+  }, [index, baseDelay, staggerDelay]);
 
   return (
     <div
-      ref={ref}
       className={cx(
         "transition-all duration-700 ease-out",
         isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
       )}
     >
       {children}
+    </div>
+  );
+}
+
+// ============================================
+// CHART COMPONENTS
+// ============================================
+
+// Animated Line Graph for Score Trends
+function AnimatedLineGraph({
+  data,
+  height = 200,
+}: {
+  data: { score: number; date: string }[];
+  height?: number;
+}) {
+  const [progress, setProgress] = useState(0);
+  const svgRef = useRef<SVGSVGElement>(null);
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      const startTime = Date.now();
+      const duration = 1500;
+
+      const animate = () => {
+        const elapsed = Date.now() - startTime;
+        const p = Math.min(elapsed / duration, 1);
+        const easeOut = 1 - Math.pow(1 - p, 3);
+        setProgress(easeOut);
+
+        if (p < 1) {
+          requestAnimationFrame(animate);
+        }
+      };
+
+      requestAnimationFrame(animate);
+    }, 200);
+
+    return () => clearTimeout(timeout);
+  }, []);
+
+  if (data.length === 0) return null;
+
+  const width = 400;
+  const padding = { top: 20, right: 20, bottom: 30, left: 40 };
+  const chartWidth = width - padding.left - padding.right;
+  const chartHeight = height - padding.top - padding.bottom;
+
+  const minScore = Math.min(...data.map((d) => d.score)) - 5;
+  const maxScore = Math.max(...data.map((d) => d.score)) + 5;
+
+  const xScale = (i: number) => padding.left + (i / (data.length - 1 || 1)) * chartWidth;
+  const yScale = (score: number) =>
+    padding.top + chartHeight - ((score - minScore) / (maxScore - minScore || 1)) * chartHeight;
+
+  const pathData = data
+    .map((d, i) => `${i === 0 ? "M" : "L"} ${xScale(i)} ${yScale(d.score)}`)
+    .join(" ");
+
+  const areaPathData =
+    pathData +
+    ` L ${xScale(data.length - 1)} ${padding.top + chartHeight} L ${padding.left} ${padding.top + chartHeight} Z`;
+
+  const pathLength = 1000;
+  const visibleLength = progress * pathLength;
+
+  return (
+    <svg ref={svgRef} viewBox={`0 0 ${width} ${height}`} className="w-full h-auto">
+      {/* Grid lines */}
+      {[0, 0.25, 0.5, 0.75, 1].map((t) => {
+        const y = padding.top + t * chartHeight;
+        const score = Math.round(maxScore - t * (maxScore - minScore));
+        return (
+          <g key={t}>
+            <line
+              x1={padding.left}
+              y1={y}
+              x2={width - padding.right}
+              y2={y}
+              stroke="currentColor"
+              strokeOpacity={0.1}
+              strokeDasharray="4,4"
+            />
+            <text
+              x={padding.left - 8}
+              y={y}
+              textAnchor="end"
+              alignmentBaseline="middle"
+              className="fill-stone-500 text-[10px]"
+            >
+              {score}
+            </text>
+          </g>
+        );
+      })}
+
+      {/* Gradient fill */}
+      <defs>
+        <linearGradient id="areaGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="#1a365d" stopOpacity={0.3} />
+          <stop offset="100%" stopColor="#1a365d" stopOpacity={0} />
+        </linearGradient>
+        <linearGradient id="areaGradientDark" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="#f59e0b" stopOpacity={0.3} />
+          <stop offset="100%" stopColor="#f59e0b" stopOpacity={0} />
+        </linearGradient>
+      </defs>
+
+      {/* Area fill */}
+      <path
+        d={areaPathData}
+        className="fill-[url(#areaGradient)] dark:fill-[url(#areaGradientDark)]"
+        style={{
+          opacity: progress,
+          transition: "opacity 0.5s ease-out",
+        }}
+      />
+
+      {/* Line */}
+      <path
+        d={pathData}
+        fill="none"
+        className="stroke-[#1a365d] dark:stroke-amber-400"
+        strokeWidth={3}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeDasharray={pathLength}
+        strokeDashoffset={pathLength - visibleLength}
+      />
+
+      {/* Data points */}
+      {data.map((d, i) => (
+        <g key={i} style={{ opacity: progress > i / data.length ? 1 : 0, transition: "opacity 0.3s ease-out" }}>
+          <circle
+            cx={xScale(i)}
+            cy={yScale(d.score)}
+            r={6}
+            className="fill-white dark:fill-stone-900 stroke-[#1a365d] dark:stroke-amber-400"
+            strokeWidth={3}
+          />
+          <text
+            x={xScale(i)}
+            y={padding.top + chartHeight + 18}
+            textAnchor="middle"
+            className="fill-stone-500 text-[9px]"
+          >
+            {d.date}
+          </text>
+        </g>
+      ))}
+    </svg>
+  );
+}
+
+// Animated Donut Chart for Time Distribution
+function AnimatedDonutChart({
+  data,
+  size = 180,
+}: {
+  data: { label: string; count: number; color: string }[];
+  size?: number;
+}) {
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      const startTime = Date.now();
+      const duration = 1200;
+
+      const animate = () => {
+        const elapsed = Date.now() - startTime;
+        const p = Math.min(elapsed / duration, 1);
+        const easeOut = 1 - Math.pow(1 - p, 3);
+        setProgress(easeOut);
+
+        if (p < 1) {
+          requestAnimationFrame(animate);
+        }
+      };
+
+      requestAnimationFrame(animate);
+    }, 300);
+
+    return () => clearTimeout(timeout);
+  }, []);
+
+  const total = data.reduce((sum, d) => sum + d.count, 0);
+  if (total === 0) return null;
+
+  const centerX = size / 2;
+  const centerY = size / 2;
+  const radius = size / 2 - 10;
+  const innerRadius = radius * 0.6;
+
+  let currentAngle = -90;
+  const paths = data.map((d, i) => {
+    const percentage = d.count / total;
+    const angle = percentage * 360 * progress;
+    const startAngle = currentAngle;
+    const endAngle = currentAngle + angle;
+    currentAngle = endAngle;
+
+    const startRad = (startAngle * Math.PI) / 180;
+    const endRad = (endAngle * Math.PI) / 180;
+
+    const x1 = centerX + radius * Math.cos(startRad);
+    const y1 = centerY + radius * Math.sin(startRad);
+    const x2 = centerX + radius * Math.cos(endRad);
+    const y2 = centerY + radius * Math.sin(endRad);
+    const x3 = centerX + innerRadius * Math.cos(endRad);
+    const y3 = centerY + innerRadius * Math.sin(endRad);
+    const x4 = centerX + innerRadius * Math.cos(startRad);
+    const y4 = centerY + innerRadius * Math.sin(startRad);
+
+    const largeArc = angle > 180 ? 1 : 0;
+
+    const pathData = `
+      M ${x1} ${y1}
+      A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2}
+      L ${x3} ${y3}
+      A ${innerRadius} ${innerRadius} 0 ${largeArc} 0 ${x4} ${y4}
+      Z
+    `;
+
+    const colorMap: Record<string, string> = {
+      "bg-red-400": "#f87171",
+      "bg-green-400": "#4ade80",
+      "bg-green-500": "#22c55e",
+      "bg-amber-400": "#fbbf24",
+      "bg-red-500": "#ef4444",
+    };
+
+    return (
+      <path
+        key={i}
+        d={pathData}
+        fill={colorMap[d.color] || "#9ca3af"}
+        className="transition-all duration-300 hover:opacity-80"
+      />
+    );
+  });
+
+  return (
+    <div className="flex items-center gap-4">
+      <svg width={size} height={size} className="flex-shrink-0">
+        {paths}
+        <text
+          x={centerX}
+          y={centerY}
+          textAnchor="middle"
+          alignmentBaseline="middle"
+          className="fill-stone-900 dark:fill-stone-100 text-2xl font-bold"
+        >
+          {total}
+        </text>
+        <text
+          x={centerX}
+          y={centerY + 18}
+          textAnchor="middle"
+          alignmentBaseline="middle"
+          className="fill-stone-500 text-[10px]"
+        >
+          questions
+        </text>
+      </svg>
+      <div className="space-y-1">
+        {data.map((d, i) => {
+          const colorMap: Record<string, string> = {
+            "bg-red-400": "bg-red-400",
+            "bg-green-400": "bg-green-400",
+            "bg-green-500": "bg-green-500",
+            "bg-amber-400": "bg-amber-400",
+            "bg-red-500": "bg-red-500",
+          };
+          return (
+            <div key={i} className="flex items-center gap-2 text-xs">
+              <div className={cx("w-3 h-3 rounded-sm", colorMap[d.color])} />
+              <span className="text-stone-600 dark:text-stone-400">{d.label}</span>
+              <span className="font-semibold text-stone-900 dark:text-stone-100">{d.count}</span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// Animated Bar Chart for Question Types
+function AnimatedBarChart({
+  data,
+  height = 200,
+}: {
+  data: { name: string; accuracy: number; color: string }[];
+  height?: number;
+}) {
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      const startTime = Date.now();
+      const duration = 1000;
+
+      const animate = () => {
+        const elapsed = Date.now() - startTime;
+        const p = Math.min(elapsed / duration, 1);
+        const easeOut = 1 - Math.pow(1 - p, 3);
+        setProgress(easeOut);
+
+        if (p < 1) {
+          requestAnimationFrame(animate);
+        }
+      };
+
+      requestAnimationFrame(animate);
+    }, 200);
+
+    return () => clearTimeout(timeout);
+  }, []);
+
+  if (data.length === 0) return null;
+
+  const barHeight = Math.min(30, (height - 40) / data.length - 8);
+
+  return (
+    <div className="space-y-2">
+      {data.map((d, i) => (
+        <div key={i} className="flex items-center gap-3">
+          <div className="w-24 text-xs text-stone-600 dark:text-stone-400 truncate" title={d.name}>
+            {d.name}
+          </div>
+          <div className="flex-1 bg-stone-200 dark:bg-stone-700 rounded-full overflow-hidden" style={{ height: barHeight }}>
+            <div
+              className={cx(
+                "h-full rounded-full transition-all duration-1000 ease-out",
+                d.accuracy >= 80 ? "bg-green-500" : d.accuracy >= 60 ? "bg-amber-500" : "bg-red-500"
+              )}
+              style={{ width: `${d.accuracy * progress}%` }}
+            />
+          </div>
+          <div className="w-12 text-right text-sm font-semibold text-stone-900 dark:text-stone-100">
+            {Math.round(d.accuracy * progress)}%
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
@@ -304,15 +579,12 @@ function SummaryCard({
   color?: "amber" | "green" | "red" | "blue";
   index?: number;
 }) {
-  const [ref, isInView] = useInView();
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    if (isInView) {
-      const timeout = setTimeout(() => setIsVisible(true), index * 100);
-      return () => clearTimeout(timeout);
-    }
-  }, [isInView, index]);
+    const timeout = setTimeout(() => setIsVisible(true), 100 + index * 80);
+    return () => clearTimeout(timeout);
+  }, [index]);
 
   const colorClasses = {
     amber: "text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/30",
@@ -323,7 +595,6 @@ function SummaryCard({
 
   return (
     <div
-      ref={ref}
       className={cx(
         "rounded-sm border-2 border-stone-200 bg-white p-6 dark:border-stone-700 dark:bg-stone-900",
         "transition-all duration-700 ease-out",
@@ -336,7 +607,7 @@ function SummaryCard({
           colorClasses[color],
           isVisible ? "scale-100" : "scale-0"
         )}
-        style={{ transitionDelay: `${index * 100 + 200}ms` }}
+        style={{ transitionDelay: `${index * 80 + 150}ms` }}
         >
           <Icon size={20} />
         </div>
@@ -359,22 +630,27 @@ function QuestionTypePerformanceSection({
 }) {
   const lrStats = stats.filter((s) => s.sectionType === "logical-reasoning");
   const rcStats = stats.filter((s) => s.sectionType === "reading-comprehension");
-  const [sectionRef, sectionInView] = useInView();
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    if (sectionInView) {
-      const timeout = setTimeout(() => setIsVisible(true), 100);
-      return () => clearTimeout(timeout);
-    }
-  }, [sectionInView]);
+    const timeout = setTimeout(() => setIsVisible(true), 100);
+    return () => clearTimeout(timeout);
+  }, []);
 
-  const getBarColor = (accuracy: number) =>
-    accuracy >= 80 ? "bg-green-500" : accuracy >= 60 ? "bg-amber-500" : "bg-red-500";
+  const lrChartData = lrStats.map((s) => ({
+    name: s.displayName,
+    accuracy: s.accuracy,
+    color: s.accuracy >= 80 ? "green" : s.accuracy >= 60 ? "amber" : "red",
+  }));
+
+  const rcChartData = rcStats.map((s) => ({
+    name: s.displayName,
+    accuracy: s.accuracy,
+    color: s.accuracy >= 80 ? "green" : s.accuracy >= 60 ? "amber" : "red",
+  }));
 
   return (
     <div
-      ref={sectionRef}
       className={cx(
         "relative rounded-sm border-2 border-stone-200 bg-white p-6 dark:border-stone-700 dark:bg-stone-900",
         "transition-all duration-700 ease-out",
@@ -398,76 +674,28 @@ function QuestionTypePerformanceSection({
           <div className="grid gap-6 lg:grid-cols-2">
             {/* LR Section */}
             <div>
-              <h4 className="mb-3 flex items-center gap-2 text-sm font-semibold text-stone-700 dark:text-stone-300">
+              <h4 className="mb-4 flex items-center gap-2 text-sm font-semibold text-stone-700 dark:text-stone-300">
                 <Brain size={16} className="text-[#1a365d] dark:text-amber-400" />
                 Logical Reasoning
               </h4>
-              <div className="space-y-3">
-                {lrStats.map((stat, index) => (
-                  <FadeInStagger key={stat.type} index={index} baseDelay={200} staggerDelay={80}>
-                    <div className="space-y-1">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="font-medium text-stone-700 dark:text-stone-300">
-                          {stat.displayName}
-                          {stat.isWeakness && (
-                            <span className="ml-2 rounded bg-red-100 px-1.5 py-0.5 text-xs font-semibold text-red-600 dark:bg-red-900/30 dark:text-red-400">
-                              Weak
-                            </span>
-                          )}
-                        </span>
-                        <span className="text-stone-500">
-                          {stat.correct}/{stat.total} (<AnimatedCounter value={stat.accuracy} decimals={0} />%)
-                        </span>
-                      </div>
-                      <AnimatedProgressBar
-                        percentage={stat.accuracy}
-                        color={getBarColor(stat.accuracy)}
-                        delay={index * 80 + 300}
-                      />
-                    </div>
-                  </FadeInStagger>
-                ))}
-                {lrStats.length === 0 && (
-                  <p className="text-sm text-stone-500">No LR data yet</p>
-                )}
-              </div>
+              {lrStats.length === 0 ? (
+                <p className="text-sm text-stone-500">No LR data yet</p>
+              ) : (
+                <AnimatedBarChart data={lrChartData} height={Math.max(150, lrStats.length * 40)} />
+              )}
             </div>
 
             {/* RC Section */}
             <div>
-              <h4 className="mb-3 flex items-center gap-2 text-sm font-semibold text-stone-700 dark:text-stone-300">
+              <h4 className="mb-4 flex items-center gap-2 text-sm font-semibold text-stone-700 dark:text-stone-300">
                 <Target size={16} className="text-[#1a365d] dark:text-amber-400" />
                 Reading Comprehension
               </h4>
-              <div className="space-y-3">
-                {rcStats.map((stat, index) => (
-                  <FadeInStagger key={stat.type} index={index} baseDelay={400} staggerDelay={80}>
-                    <div className="space-y-1">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="font-medium text-stone-700 dark:text-stone-300">
-                          {stat.displayName}
-                          {stat.isWeakness && (
-                            <span className="ml-2 rounded bg-red-100 px-1.5 py-0.5 text-xs font-semibold text-red-600 dark:bg-red-900/30 dark:text-red-400">
-                              Weak
-                            </span>
-                          )}
-                        </span>
-                        <span className="text-stone-500">
-                          {stat.correct}/{stat.total} (<AnimatedCounter value={stat.accuracy} decimals={0} />%)
-                        </span>
-                      </div>
-                      <AnimatedProgressBar
-                        percentage={stat.accuracy}
-                        color={getBarColor(stat.accuracy)}
-                        delay={index * 80 + 500}
-                      />
-                    </div>
-                  </FadeInStagger>
-                ))}
-                {rcStats.length === 0 && (
-                  <p className="text-sm text-stone-500">No RC data yet</p>
-                )}
-              </div>
+              {rcStats.length === 0 ? (
+                <p className="text-sm text-stone-500">No RC data yet</p>
+              ) : (
+                <AnimatedBarChart data={rcChartData} height={Math.max(150, rcStats.length * 40)} />
+              )}
             </div>
           </div>
         )}
@@ -483,15 +711,12 @@ function TimeAnalyticsSection({
   analytics: TimeAnalytics;
   isLocked: boolean;
 }) {
-  const [sectionRef, sectionInView] = useInView();
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    if (sectionInView) {
-      const timeout = setTimeout(() => setIsVisible(true), 100);
-      return () => clearTimeout(timeout);
-    }
-  }, [sectionInView]);
+    const timeout = setTimeout(() => setIsVisible(true), 150);
+    return () => clearTimeout(timeout);
+  }, []);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -507,8 +732,6 @@ function TimeAnalyticsSection({
     distribution.ninetyTo120s +
     distribution.over120s;
 
-  const getPercentage = (count: number) => (total > 0 ? (count / total) * 100 : 0);
-
   const distributionData = [
     { label: "Under 30s", count: distribution.under30s, color: "bg-red-400" },
     { label: "30-60s", count: distribution.thirtyTo60s, color: "bg-green-400" },
@@ -519,7 +742,6 @@ function TimeAnalyticsSection({
 
   return (
     <div
-      ref={sectionRef}
       className={cx(
         "relative rounded-sm border-2 border-stone-200 bg-white p-6 dark:border-stone-700 dark:bg-stone-900",
         "transition-all duration-700 ease-out",
@@ -543,7 +765,7 @@ function TimeAnalyticsSection({
           <div className="grid gap-6 lg:grid-cols-2">
             {/* Time Stats */}
             <div className="space-y-4">
-              <FadeInStagger index={0} baseDelay={200}>
+              <FadeInStagger index={0} baseDelay={100}>
                 <div className="flex items-center justify-between rounded-sm border border-stone-200 p-4 dark:border-stone-700">
                   <div>
                     <div className="text-sm text-stone-500">Average Time/Question</div>
@@ -565,49 +787,32 @@ function TimeAnalyticsSection({
               </FadeInStagger>
 
               <div className="grid grid-cols-2 gap-4">
-                <FadeInStagger index={1} baseDelay={200}>
+                <FadeInStagger index={1} baseDelay={100}>
                   <div className="rounded-sm border border-red-200 bg-red-50 p-4 dark:border-red-800 dark:bg-red-900/20">
                     <div className="text-sm text-red-600 dark:text-red-400">Rushed (&lt;30s)</div>
                     <div className="text-2xl font-bold text-red-700 dark:text-red-400">
-                      <AnimatedCounter value={analytics.questionsRushed} />
+                      <AnimatedCounter value={analytics.questionsRushed} delay={200} />
                     </div>
                   </div>
                 </FadeInStagger>
-                <FadeInStagger index={2} baseDelay={200}>
+                <FadeInStagger index={2} baseDelay={100}>
                   <div className="rounded-sm border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-900/20">
                     <div className="text-sm text-amber-600 dark:text-amber-400">Over 2 min</div>
                     <div className="text-2xl font-bold text-amber-700 dark:text-amber-400">
-                      <AnimatedCounter value={analytics.questionsOverPace} />
+                      <AnimatedCounter value={analytics.questionsOverPace} delay={200} />
                     </div>
                   </div>
                 </FadeInStagger>
               </div>
             </div>
 
-            {/* Time Distribution */}
+            {/* Time Distribution - Donut Chart */}
             <div>
-              <h4 className="mb-3 text-sm font-semibold text-stone-700 dark:text-stone-300">
+              <h4 className="mb-4 text-sm font-semibold text-stone-700 dark:text-stone-300">
                 Time Distribution
               </h4>
-              <div className="space-y-2">
-                {distributionData.map(({ label, count, color }, index) => (
-                  <FadeInStagger key={label} index={index} baseDelay={300} staggerDelay={60}>
-                    <div className="flex items-center gap-3">
-                      <div className="w-20 text-sm text-stone-600 dark:text-stone-400">{label}</div>
-                      <div className="flex-1">
-                        <AnimatedProgressBar
-                          percentage={getPercentage(count)}
-                          color={color}
-                          delay={index * 100 + 400}
-                          height="h-4"
-                        />
-                      </div>
-                      <div className="w-12 text-right text-sm font-semibold text-stone-700 dark:text-stone-300">
-                        <AnimatedCounter value={count} />
-                      </div>
-                    </div>
-                  </FadeInStagger>
-                ))}
+              <div className="flex justify-center">
+                <AnimatedDonutChart data={distributionData} size={180} />
               </div>
             </div>
           </div>
@@ -624,19 +829,15 @@ function ScoreTrendSection({
   analysis: ScoreTrendAnalysis;
   isLocked: boolean;
 }) {
-  const [sectionRef, sectionInView] = useInView();
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    if (sectionInView) {
-      const timeout = setTimeout(() => setIsVisible(true), 100);
-      return () => clearTimeout(timeout);
-    }
-  }, [sectionInView]);
+    const timeout = setTimeout(() => setIsVisible(true), 150);
+    return () => clearTimeout(timeout);
+  }, []);
 
   return (
     <div
-      ref={sectionRef}
       className={cx(
         "relative rounded-sm border-2 border-stone-200 bg-white p-6 dark:border-stone-700 dark:bg-stone-900",
         "transition-all duration-700 ease-out",
@@ -659,11 +860,11 @@ function ScoreTrendSection({
         ) : (
           <div className="grid gap-6 lg:grid-cols-3">
             {/* Current Score */}
-            <FadeInStagger index={0} baseDelay={200}>
+            <FadeInStagger index={0} baseDelay={100}>
               <div className="rounded-sm border-2 border-[#1a365d] bg-[#1a365d]/5 p-6 text-center dark:border-amber-500 dark:bg-amber-500/5">
                 <div className="text-sm text-stone-600 dark:text-stone-400">Current Score</div>
                 <div className="text-4xl font-bold text-[#1a365d] dark:text-amber-400">
-                  <AnimatedCounter value={analysis.currentScore} duration={2000} />
+                  <AnimatedCounter value={analysis.currentScore} duration={2000} delay={100} />
                 </div>
                 <div className="mt-2 flex items-center justify-center gap-1 text-sm">
                   {analysis.trend === "improving" && (
@@ -686,11 +887,11 @@ function ScoreTrendSection({
             </FadeInStagger>
 
             {/* Projected Score */}
-            <FadeInStagger index={1} baseDelay={200}>
+            <FadeInStagger index={1} baseDelay={100}>
               <div className="rounded-sm border border-stone-200 p-6 text-center dark:border-stone-700">
                 <div className="text-sm text-stone-600 dark:text-stone-400">Projected Score</div>
                 <div className="text-4xl font-bold text-stone-900 dark:text-stone-100">
-                  <AnimatedCounter value={analysis.projectedScore} duration={2000} />
+                  <AnimatedCounter value={analysis.projectedScore} duration={2000} delay={150} />
                 </div>
                 <div className="mt-2 text-sm text-stone-500">
                   Range: {analysis.confidenceLow}-{analysis.confidenceHigh}
@@ -699,7 +900,7 @@ function ScoreTrendSection({
             </FadeInStagger>
 
             {/* Weekly Improvement */}
-            <FadeInStagger index={2} baseDelay={200}>
+            <FadeInStagger index={2} baseDelay={100}>
               <div className="rounded-sm border border-stone-200 p-6 text-center dark:border-stone-700">
                 <div className="text-sm text-stone-600 dark:text-stone-400">Weekly Change</div>
                 <div
@@ -713,7 +914,7 @@ function ScoreTrendSection({
                   )}
                 >
                   {analysis.weeklyImprovement > 0 ? "+" : ""}
-                  <AnimatedCounter value={Math.abs(analysis.weeklyImprovement)} decimals={1} />
+                  <AnimatedCounter value={Math.abs(analysis.weeklyImprovement)} decimals={1} delay={200} />
                 </div>
                 <div className="mt-2 text-sm text-stone-500">points per week</div>
               </div>
@@ -721,23 +922,17 @@ function ScoreTrendSection({
           </div>
         )}
 
-        {/* Score History */}
-        {analysis.trends.length > 0 && (
+        {/* Score Trend Graph */}
+        {analysis.trends.length > 1 && (
           <div className="mt-6">
-            <h4 className="mb-3 text-sm font-semibold text-stone-700 dark:text-stone-300">
-              Recent Scores
+            <h4 className="mb-4 text-sm font-semibold text-stone-700 dark:text-stone-300">
+              Score Trend
             </h4>
-            <div className="flex flex-wrap gap-2">
-              {analysis.trends.slice(-10).map((trend, i) => (
-                <FadeInStagger key={i} index={i} baseDelay={500} staggerDelay={50}>
-                  <div className="rounded-sm border border-stone-200 px-3 py-2 text-center dark:border-stone-700 transition-transform hover:scale-105">
-                    <div className="text-lg font-bold text-stone-900 dark:text-stone-100">
-                      {trend.score}
-                    </div>
-                    <div className="text-xs text-stone-500">{trend.date}</div>
-                  </div>
-                </FadeInStagger>
-              ))}
+            <div className="rounded-sm border border-stone-200 p-4 dark:border-stone-700">
+              <AnimatedLineGraph
+                data={analysis.trends.slice(-10)}
+                height={220}
+              />
             </div>
           </div>
         )}
@@ -753,19 +948,15 @@ function ErrorPatternsSection({
   patterns: ErrorPattern[];
   isLocked: boolean;
 }) {
-  const [sectionRef, sectionInView] = useInView();
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    if (sectionInView) {
-      const timeout = setTimeout(() => setIsVisible(true), 100);
-      return () => clearTimeout(timeout);
-    }
-  }, [sectionInView]);
+    const timeout = setTimeout(() => setIsVisible(true), 200);
+    return () => clearTimeout(timeout);
+  }, []);
 
   return (
     <div
-      ref={sectionRef}
       className={cx(
         "relative rounded-sm border-2 border-stone-200 bg-white p-6 dark:border-stone-700 dark:bg-stone-900",
         "transition-all duration-700 ease-out",
@@ -831,19 +1022,15 @@ function FatigueAnalysisSection({
   isLocked: boolean;
 }) {
   const hasData = analysis.firstHalfAccuracy > 0 || analysis.secondHalfAccuracy > 0;
-  const [sectionRef, sectionInView] = useInView();
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    if (sectionInView) {
-      const timeout = setTimeout(() => setIsVisible(true), 100);
-      return () => clearTimeout(timeout);
-    }
-  }, [sectionInView]);
+    const timeout = setTimeout(() => setIsVisible(true), 200);
+    return () => clearTimeout(timeout);
+  }, []);
 
   return (
     <div
-      ref={sectionRef}
       className={cx(
         "relative rounded-sm border-2 border-stone-200 bg-white p-6 dark:border-stone-700 dark:bg-stone-900",
         "transition-all duration-700 ease-out",
