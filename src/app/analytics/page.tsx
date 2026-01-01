@@ -1283,10 +1283,10 @@ function ScoreTrendSection({
             <h4 className="mb-3 text-sm font-medium text-stone-600 dark:text-stone-400">
               Score Trend
             </h4>
-            <div className="rounded-lg border border-stone-200 bg-stone-50/50 p-4 dark:border-stone-700 dark:bg-stone-800/30">
+            <div className="rounded-lg border border-stone-200 bg-stone-50/50 p-4 dark:border-stone-700 dark:bg-stone-800/30 max-w-2xl mx-auto">
               <AnimatedLineGraph
                 data={analysis.trends.slice(-10)}
-                height={150}
+                height={120}
               />
             </div>
           </div>

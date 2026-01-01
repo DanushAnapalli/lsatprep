@@ -476,6 +476,10 @@ function PracticeContent() {
   const answersRef = useRef<Record<string, UserAnswer>>({});
   const timeRemainingRef = useRef(2100);
 
+  // Track time spent on each question
+  const questionStartTimeRef = useRef<number>(Date.now());
+  const currentQuestionIdRef = useRef<string | null>(null);
+
   // Listen to auth state and check tier
   useEffect(() => {
     const unsubscribe = onAuthChange((firebaseUser) => {
@@ -599,6 +603,21 @@ function PracticeContent() {
     const section = secs[secIndex];
     if (!section) return;
 
+    // Save time for the current question before completing section
+    const currentQId = currentQuestionIdRef.current;
+    if (currentQId) {
+      const elapsed = Math.floor((Date.now() - questionStartTimeRef.current) / 1000);
+      if (elapsed > 0) {
+        const existing = ans[currentQId];
+        ans[currentQId] = {
+          questionId: currentQId,
+          selectedAnswer: existing?.selectedAnswer || null,
+          timeSpent: (existing?.timeSpent || 0) + elapsed,
+          flagged: existing?.flagged || false,
+        };
+      }
+    }
+
     const sectionQuestions = section.questions;
     let rawScore = 0;
     const sectionAnswers: UserAnswer[] = [];
@@ -716,15 +735,52 @@ function PracticeContent() {
     });
   }, [currentQuestion?.id]);
 
+  // Save time spent on current question before navigating away
+  const saveCurrentQuestionTime = useCallback(() => {
+    const questionId = currentQuestionIdRef.current;
+    if (!questionId) return;
+
+    const elapsed = Math.floor((Date.now() - questionStartTimeRef.current) / 1000);
+    if (elapsed > 0) {
+      setAnswers((prev) => {
+        const existing = prev[questionId];
+        return {
+          ...prev,
+          [questionId]: {
+            questionId,
+            selectedAnswer: existing?.selectedAnswer || null,
+            timeSpent: (existing?.timeSpent || 0) + elapsed,
+            flagged: existing?.flagged || false,
+          },
+        };
+      });
+    }
+  }, []);
+
+  // Track question changes and update time
+  useEffect(() => {
+    if (!currentQuestion) return;
+
+    // Save time for previous question
+    if (currentQuestionIdRef.current && currentQuestionIdRef.current !== currentQuestion.id) {
+      saveCurrentQuestionTime();
+    }
+
+    // Start timing new question
+    currentQuestionIdRef.current = currentQuestion.id;
+    questionStartTimeRef.current = Date.now();
+  }, [currentQuestion?.id, saveCurrentQuestionTime]);
+
   // Navigate questions
   const goToQuestion = useCallback(
     (index: number) => {
       if (currentSection && index >= 0 && index < currentSection.questions.length) {
+        saveCurrentQuestionTime();
         setCurrentQuestionIndex(index);
         setShowExplanation(false);
       }
     },
-    [currentSection?.questions?.length]
+    [currentSection?.questions?.length, saveCurrentQuestionTime]
   );
 
   const goToPrevious = () => goToQuestion(currentQuestionIndex - 1);
