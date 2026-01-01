@@ -259,74 +259,27 @@ function ScoreTrendGraph({
   const getX = (i: number) => paddingX + (i / (data.length - 1)) * (width - paddingX * 2);
   const getY = (score: number) => paddingY + (1 - (score - minScore) / range) * (height - paddingY * 2);
 
-  // Create smooth path
+  // Create points
   const points = data.map((d, i) => ({ x: getX(i), y: getY(d.score) }));
-
-  let pathD = `M ${points[0].x} ${points[0].y}`;
-  for (let i = 1; i < points.length; i++) {
-    const prev = points[i - 1];
-    const curr = points[i];
-    const cpX = (prev.x + curr.x) / 2;
-    pathD += ` C ${cpX} ${prev.y}, ${cpX} ${curr.y}, ${curr.x} ${curr.y}`;
-  }
-
-  // Area path
-  const areaD = pathD + ` L ${points[points.length - 1].x} ${height - paddingY} L ${points[0].x} ${height - paddingY} Z`;
 
   return (
     <div className="space-y-4">
       {/* Graph */}
       <div className="relative h-32 bg-stone-50 dark:bg-stone-800/50 rounded-lg p-4">
         <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-full" preserveAspectRatio="none">
-          {/* Gradient */}
-          <defs>
-            <linearGradient id="lineGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" className="text-[#1a365d] dark:text-amber-400" stopColor="currentColor" stopOpacity="0.2" />
-              <stop offset="100%" className="text-[#1a365d] dark:text-amber-400" stopColor="currentColor" stopOpacity="0" />
-            </linearGradient>
-          </defs>
-
-          {/* Area fill */}
-          <path
-            d={areaD}
-            fill="url(#lineGradient)"
-            style={{ opacity: progress }}
-          />
-
-          {/* Line */}
-          <path
-            d={pathD}
-            fill="none"
-            className="stroke-[#1a365d] dark:stroke-amber-400"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            vectorEffect="non-scaling-stroke"
-            style={{
-              strokeDasharray: 500,
-              strokeDashoffset: 500 - progress * 500,
-            }}
-          />
-
-          {/* Points */}
+          {/* Points only */}
           {points.map((point, i) => (
             <circle
               key={i}
               cx={point.x}
               cy={point.y}
-              r={i === points.length - 1 ? 4 : 3}
-              className={cx(
-                "transition-all duration-300",
-                i === points.length - 1
-                  ? "fill-[#1a365d] dark:fill-amber-400"
-                  : "fill-white dark:fill-stone-800 stroke-[#1a365d] dark:stroke-amber-400"
-              )}
-              strokeWidth={i === points.length - 1 ? 0 : 1.5}
-              vectorEffect="non-scaling-stroke"
+              r={i === points.length - 1 ? 5 : 4}
+              className="fill-[#1a365d] dark:fill-amber-400"
               style={{
                 opacity: progress > i / points.length ? 1 : 0,
                 transform: `scale(${progress > i / points.length ? 1 : 0})`,
                 transformOrigin: `${point.x}px ${point.y}px`,
+                transition: 'opacity 0.3s, transform 0.3s',
               }}
             />
           ))}
@@ -1359,7 +1312,7 @@ function TimeAnalyticsSection({
                 Time Distribution
               </h4>
               <div className="flex justify-center items-center flex-1">
-                <AnimatedDonutChart data={distributionData} size={180} />
+                <AnimatedDonutChart data={distributionData} size={200} />
               </div>
             </div>
           </div>
