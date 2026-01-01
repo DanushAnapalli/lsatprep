@@ -4,8 +4,8 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import { getUserTier, getTierDisplayInfo, getTrialInfo } from "@/lib/subscription";
-import { Check, Crown, Loader2, ArrowLeft, Gift, Calendar } from "lucide-react";
+import { getUserTier, getTierDisplayInfo, getTrialInfo, getSubscriptionInfo, saveSubscriptionInfo, SubscriptionInfo } from "@/lib/subscription";
+import { Check, Crown, Loader2, ArrowLeft, Gift, Calendar, CreditCard, AlertCircle, ExternalLink, X } from "lucide-react";
 
 const TRIAL_DAYS = 5;
 
@@ -16,6 +16,10 @@ export default function SubscriptionPage() {
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [currentTier, setCurrentTier] = useState<"free" | "pro" | "founder">("free");
   const [trialInfo, setTrialInfo] = useState<{ isTrialing: boolean; daysLeft: number } | null>(null);
+  const [subscriptionInfo, setSubscriptionInfo] = useState<SubscriptionInfo | null>(null);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
+  const [isLoadingPortal, setIsLoadingPortal] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -23,6 +27,7 @@ export default function SubscriptionPage() {
       if (user) {
         setCurrentTier(getUserTier(user));
         setTrialInfo(getTrialInfo());
+        setSubscriptionInfo(getSubscriptionInfo());
       }
       setLoading(false);
     });
@@ -68,6 +73,65 @@ export default function SubscriptionPage() {
       console.error("Checkout error:", error);
       alert(`Failed to start checkout: ${error instanceof Error ? error.message : "Unknown error"}`);
       setCheckoutLoading(false);
+    }
+  };
+
+  const handleCancelSubscription = async () => {
+    if (!subscriptionInfo?.subscriptionId) return;
+
+    setIsCancelling(true);
+    try {
+      const response = await fetch("/api/cancel-subscription", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ subscriptionId: subscriptionInfo.subscriptionId }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        const updatedInfo: SubscriptionInfo = {
+          ...subscriptionInfo,
+          cancelAtPeriodEnd: true,
+          currentPeriodEnd: data.subscription.currentPeriodEnd,
+        };
+        saveSubscriptionInfo(updatedInfo);
+        setSubscriptionInfo(updatedInfo);
+        setShowCancelConfirm(false);
+      } else {
+        alert("Failed to cancel subscription. Please try again.");
+      }
+    } catch (error) {
+      console.error("Cancel error:", error);
+      alert("Failed to cancel subscription. Please try again.");
+    } finally {
+      setIsCancelling(false);
+    }
+  };
+
+  const handleManagePayment = async () => {
+    if (!user?.email) return;
+
+    setIsLoadingPortal(true);
+    try {
+      const response = await fetch("/api/create-portal-session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ customerEmail: user.email }),
+      });
+
+      const data = await response.json();
+
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        alert("Failed to open billing portal. Please try again.");
+      }
+    } catch (error) {
+      console.error("Portal error:", error);
+      alert("Failed to open billing portal. Please try again.");
+    } finally {
+      setIsLoadingPortal(false);
     }
   };
 
@@ -123,6 +187,136 @@ export default function SubscriptionPage() {
             </div>
           )}
         </div>
+
+        {/* Current Subscription Management for Pro Users */}
+        {isPro && subscriptionInfo && (
+          <div className="mb-8 bg-white dark:bg-stone-900 rounded-2xl shadow-lg p-6 border-2 border-amber-500">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <Crown className="w-6 h-6 text-amber-500" />
+                <h2 className="text-xl font-bold text-stone-900 dark:text-stone-100">
+                  Your Current Subscription
+                </h2>
+              </div>
+              {subscriptionInfo.cancelAtPeriodEnd && (
+                <span className="px-3 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 text-sm font-medium rounded-full">
+                  Cancels Soon
+                </span>
+              )}
+            </div>
+
+            <div className="grid sm:grid-cols-2 gap-4 mb-6">
+              <div className="p-4 rounded-xl bg-stone-50 dark:bg-stone-800">
+                <div className="flex items-center gap-2 text-stone-500 dark:text-stone-400 text-sm mb-1">
+                  <CreditCard className="w-4 h-4" />
+                  Status
+                </div>
+                <p className="font-semibold text-stone-900 dark:text-stone-100">
+                  {trialInfo?.isTrialing ? (
+                    <span className="text-green-600 dark:text-green-400">Trial Active</span>
+                  ) : subscriptionInfo.cancelAtPeriodEnd ? (
+                    <span className="text-orange-600 dark:text-orange-400">Canceling</span>
+                  ) : (
+                    <span className="text-green-600 dark:text-green-400">Active</span>
+                  )}
+                </p>
+              </div>
+              <div className="p-4 rounded-xl bg-stone-50 dark:bg-stone-800">
+                <div className="flex items-center gap-2 text-stone-500 dark:text-stone-400 text-sm mb-1">
+                  <Calendar className="w-4 h-4" />
+                  {subscriptionInfo.cancelAtPeriodEnd ? "Access Until" : "Next Billing"}
+                </div>
+                <p className="font-semibold text-stone-900 dark:text-stone-100">
+                  {subscriptionInfo.currentPeriodEnd
+                    ? new Date(subscriptionInfo.currentPeriodEnd).toLocaleDateString("en-US", {
+                        month: "long",
+                        day: "numeric",
+                        year: "numeric",
+                      })
+                    : "—"}
+                </p>
+              </div>
+            </div>
+
+            {subscriptionInfo.cancelAtPeriodEnd ? (
+              <div className="p-4 rounded-xl bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 mb-4">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 text-orange-500 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium text-orange-800 dark:text-orange-300">
+                      Your subscription will end on{" "}
+                      {subscriptionInfo.currentPeriodEnd
+                        ? new Date(subscriptionInfo.currentPeriodEnd).toLocaleDateString()
+                        : "the current period end"}
+                    </p>
+                    <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">
+                      You&apos;ll retain Pro access until then. To continue, you can resubscribe anytime.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
+            <div className="flex flex-wrap gap-3">
+              <button
+                onClick={handleManagePayment}
+                disabled={isLoadingPortal}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl font-medium bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 hover:bg-stone-200 dark:hover:bg-stone-700 transition-colors disabled:opacity-50"
+              >
+                {isLoadingPortal ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <ExternalLink className="w-4 h-4" />
+                )}
+                Manage Payment
+              </button>
+              {!subscriptionInfo.cancelAtPeriodEnd && (
+                <button
+                  onClick={() => setShowCancelConfirm(true)}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                  Cancel Subscription
+                </button>
+              )}
+            </div>
+
+            {/* Cancel Confirmation Dialog */}
+            {showCancelConfirm && (
+              <div className="mt-4 p-4 rounded-xl border-2 border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20">
+                <div className="flex items-start gap-3 mb-4">
+                  <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-medium text-red-800 dark:text-red-300">
+                      Cancel your subscription?
+                    </p>
+                    <p className="text-sm text-red-600 dark:text-red-400 mt-1">
+                      You&apos;ll keep Pro access until the end of your current billing period, then revert to the Free plan.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <button
+                    onClick={handleCancelSubscription}
+                    disabled={isCancelling}
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl font-medium bg-red-600 hover:bg-red-700 text-white transition-colors disabled:opacity-50"
+                  >
+                    {isCancelling ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : null}
+                    Yes, Cancel
+                  </button>
+                  <button
+                    onClick={() => setShowCancelConfirm(false)}
+                    className="px-4 py-2 rounded-xl font-medium bg-stone-200 dark:bg-stone-700 text-stone-700 dark:text-stone-300 hover:bg-stone-300 dark:hover:bg-stone-600 transition-colors"
+                  >
+                    Keep Subscription
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Pricing Cards */}
         <div className="grid md:grid-cols-2 gap-6 mb-12">
