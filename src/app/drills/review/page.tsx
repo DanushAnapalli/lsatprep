@@ -208,47 +208,50 @@ export default function ReviewDrillPage() {
 
   return (
     <div className="min-h-screen bg-stone-50 dark:bg-stone-950">
-      <div className="mx-auto max-w-2xl px-4 py-8">
+      <div className="mx-auto max-w-6xl px-4 py-6">
         {/* Header */}
-        <div className="mb-6">
-          <button
-            onClick={() => router.push('/drills')}
-            className="flex items-center gap-2 text-stone-500 hover:text-stone-700 dark:hover:text-stone-300 mb-4"
-          >
-            <ArrowLeft size={20} />
-            Exit Review
-          </button>
-
+        <div className="mb-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <RotateCcw size={24} className="text-[#1a365d] dark:text-amber-400" />
-              <h1 className="font-serif text-xl font-bold text-stone-900 dark:text-stone-100">
-                Spaced Review
-              </h1>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-stone-600 dark:text-stone-400">
-                {currentIndex + 1} / {dueCards.length}
-              </span>
-              <div className="w-24 h-2 bg-stone-200 rounded-full dark:bg-stone-700">
-                <div
-                  className="h-full bg-[#1a365d] rounded-full transition-all dark:bg-amber-500"
-                  style={{ width: `${((currentIndex + 1) / dueCards.length) * 100}%` }}
-                />
+            <button
+              onClick={() => router.push('/drills')}
+              className="flex items-center gap-2 text-stone-500 hover:text-stone-700 dark:hover:text-stone-300"
+            >
+              <ArrowLeft size={20} />
+              Exit Review
+            </button>
+
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3">
+                <RotateCcw size={20} className="text-[#1a365d] dark:text-amber-400" />
+                <span className="font-serif text-lg font-bold text-stone-900 dark:text-stone-100">
+                  Spaced Review
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-stone-600 dark:text-stone-400">
+                  {currentIndex + 1} / {dueCards.length}
+                </span>
+                <div className="w-32 h-2 bg-stone-200 rounded-full dark:bg-stone-700">
+                  <div
+                    className="h-full bg-[#1a365d] rounded-full transition-all dark:bg-amber-500"
+                    style={{ width: `${((currentIndex + 1) / dueCards.length) * 100}%` }}
+                  />
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Question card */}
+        {/* Main content - split pane layout */}
         <motion.div
           key={currentCard.questionId}
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          className="rounded-xl border-2 border-stone-200 bg-white p-6 dark:border-stone-700 dark:bg-stone-900"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="rounded-xl border-2 border-stone-200 bg-white dark:border-stone-700 dark:bg-stone-900 overflow-hidden"
         >
-          <div className="mb-4 flex items-center gap-2">
-            <span className="rounded-full bg-stone-100 px-3 py-1 text-xs font-medium text-stone-600 dark:bg-stone-700 dark:text-stone-400">
+          {/* Tags */}
+          <div className="px-6 py-3 border-b border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800/50 flex items-center gap-2">
+            <span className="rounded-full bg-stone-200 px-3 py-1 text-xs font-medium text-stone-600 dark:bg-stone-700 dark:text-stone-400">
               {currentCard.questionType.replace(/-/g, " ")}
             </span>
             <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
@@ -256,84 +259,101 @@ export default function ReviewDrillPage() {
             </span>
           </div>
 
-          <div className="mb-6 text-stone-800 dark:text-stone-200 whitespace-pre-wrap leading-relaxed">
-            {currentQuestion.stimulus}
-          </div>
-
-          <div className="mb-6 font-medium text-stone-900 dark:text-stone-100">
-            {currentQuestion.questionStem}
-          </div>
-
-          {/* Answer choices */}
-          <div className="space-y-3">
-            {currentQuestion.answerChoices.map((choice) => {
-              const isSelected = selectedAnswer === choice.letter;
-              const isCorrect = choice.letter === currentQuestion.correctAnswer;
-
-              return (
-                <button
-                  key={choice.letter}
-                  onClick={() => handleAnswer(choice.letter)}
-                  disabled={showResult}
-                  className={cx(
-                    "w-full text-left rounded-lg border-2 p-4 transition",
-                    !showResult && "hover:border-[#1a365d] dark:hover:border-amber-500",
-                    !showResult && "border-stone-200 dark:border-stone-600",
-                    showResult && isCorrect && "border-green-500 bg-green-50 dark:bg-green-900/20",
-                    showResult && isSelected && !isCorrect && "border-red-500 bg-red-50 dark:bg-red-900/20",
-                    showResult && !isSelected && !isCorrect && "border-stone-200 opacity-50 dark:border-stone-700"
-                  )}
-                >
-                  <div className="flex items-start gap-3">
-                    <span className={cx(
-                      "flex h-7 w-7 items-center justify-center rounded-full text-sm font-bold flex-shrink-0",
-                      showResult && isCorrect && "bg-green-500 text-white",
-                      showResult && isSelected && !isCorrect && "bg-red-500 text-white",
-                      !showResult && "bg-stone-200 text-stone-600 dark:bg-stone-600 dark:text-stone-300"
-                    )}>
-                      {showResult && isCorrect ? <Check size={14} /> : showResult && isSelected && !isCorrect ? <X size={14} /> : choice.letter}
-                    </span>
-                    <span className="text-sm text-stone-700 dark:text-stone-300">
-                      {choice.text}
-                    </span>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Explanation */}
-          <AnimatePresence>
-            {showResult && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                className="mt-6 rounded-lg bg-stone-50 p-4 dark:bg-stone-800"
-              >
-                <div className="font-medium text-stone-900 dark:text-stone-100 mb-2">
-                  Explanation
+          {/* Split pane: Passage | Question + Answers */}
+          <div className="flex flex-col lg:flex-row lg:divide-x divide-stone-200 dark:divide-stone-700">
+            {/* Left pane - Passage (scrollable) */}
+            <div className="lg:w-1/2 p-6">
+              <div className="text-xs font-semibold uppercase tracking-wide text-stone-400 mb-3">
+                Passage
+              </div>
+              <div className="max-h-[50vh] lg:max-h-[60vh] overflow-y-auto pr-4 scrollbar-thin scrollbar-thumb-stone-300 dark:scrollbar-thumb-stone-600">
+                <div className="text-stone-800 dark:text-stone-200 whitespace-pre-wrap leading-relaxed text-[15px]">
+                  {currentQuestion.stimulus}
                 </div>
-                <p className="text-sm text-stone-600 dark:text-stone-400">
-                  {currentQuestion.explanation}
-                </p>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </motion.div>
+              </div>
+            </div>
 
-        {/* Next button */}
-        <AnimatePresence>
-          {showResult && (
-            <motion.button
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              onClick={handleNext}
-              className="mt-6 w-full rounded-lg bg-[#1a365d] py-4 font-semibold text-white transition hover:bg-[#2d4a7c] dark:bg-amber-500 dark:text-stone-900 dark:hover:bg-amber-400"
-            >
-              {currentIndex < dueCards.length - 1 ? "Next Question" : "Complete Review"}
-            </motion.button>
-          )}
-        </AnimatePresence>
+            {/* Right pane - Question + Answers */}
+            <div className="lg:w-1/2 p-6 border-t lg:border-t-0 border-stone-200 dark:border-stone-700">
+              <div className="text-xs font-semibold uppercase tracking-wide text-stone-400 mb-3">
+                Question
+              </div>
+              <div className="mb-5 font-medium text-stone-900 dark:text-stone-100 leading-relaxed">
+                {currentQuestion.questionStem}
+              </div>
+
+              {/* Answer choices */}
+              <div className="space-y-2">
+                {currentQuestion.answerChoices.map((choice) => {
+                  const isSelected = selectedAnswer === choice.letter;
+                  const isCorrect = choice.letter === currentQuestion.correctAnswer;
+
+                  return (
+                    <button
+                      key={choice.letter}
+                      onClick={() => handleAnswer(choice.letter)}
+                      disabled={showResult}
+                      className={cx(
+                        "w-full text-left rounded-lg border-2 p-3 transition",
+                        !showResult && "hover:border-[#1a365d] dark:hover:border-amber-500",
+                        !showResult && "border-stone-200 dark:border-stone-600",
+                        showResult && isCorrect && "border-green-500 bg-green-50 dark:bg-green-900/20",
+                        showResult && isSelected && !isCorrect && "border-red-500 bg-red-50 dark:bg-red-900/20",
+                        showResult && !isSelected && !isCorrect && "border-stone-200 opacity-50 dark:border-stone-700"
+                      )}
+                    >
+                      <div className="flex items-start gap-3">
+                        <span className={cx(
+                          "flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold flex-shrink-0",
+                          showResult && isCorrect && "bg-green-500 text-white",
+                          showResult && isSelected && !isCorrect && "bg-red-500 text-white",
+                          !showResult && "bg-stone-200 text-stone-600 dark:bg-stone-600 dark:text-stone-300"
+                        )}>
+                          {showResult && isCorrect ? <Check size={12} /> : showResult && isSelected && !isCorrect ? <X size={12} /> : choice.letter}
+                        </span>
+                        <span className="text-sm text-stone-700 dark:text-stone-300 leading-relaxed">
+                          {choice.text}
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Explanation */}
+              <AnimatePresence>
+                {showResult && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    className="mt-4 rounded-lg bg-stone-50 p-4 dark:bg-stone-800"
+                  >
+                    <div className="font-medium text-stone-900 dark:text-stone-100 mb-2 text-sm">
+                      Explanation
+                    </div>
+                    <p className="text-sm text-stone-600 dark:text-stone-400 leading-relaxed">
+                      {currentQuestion.explanation}
+                    </p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Next button */}
+              <AnimatePresence>
+                {showResult && (
+                  <motion.button
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    onClick={handleNext}
+                    className="mt-4 w-full rounded-lg bg-[#1a365d] py-3 font-semibold text-white transition hover:bg-[#2d4a7c] dark:bg-amber-500 dark:text-stone-900 dark:hover:bg-amber-400"
+                  >
+                    {currentIndex < dueCards.length - 1 ? "Next Question" : "Complete Review"}
+                  </motion.button>
+                )}
+              </AnimatePresence>
+            </div>
+          </div>
+        </motion.div>
       </div>
     </div>
   );
