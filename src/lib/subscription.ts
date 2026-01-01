@@ -239,3 +239,69 @@ export function hasHadTrial(): boolean {
   if (typeof window === "undefined") return false;
   return localStorage.getItem(TRIAL_STORAGE_KEY) !== null;
 }
+
+// ============================================
+// SUBSCRIPTION INFO MANAGEMENT
+// ============================================
+
+const SUBSCRIPTION_INFO_KEY = "lsatprep-subscription-info";
+
+export interface SubscriptionInfo {
+  subscriptionId: string | null;
+  customerId: string | null;
+  status: "active" | "trialing" | "canceled" | "past_due" | "none";
+  currentPeriodEnd: string | null;
+  cancelAtPeriodEnd: boolean;
+}
+
+// Save subscription info after checkout
+export function saveSubscriptionInfo(info: Partial<SubscriptionInfo>): void {
+  if (typeof window === "undefined") return;
+
+  const existing = getSubscriptionInfo();
+  const updated = { ...existing, ...info };
+  localStorage.setItem(SUBSCRIPTION_INFO_KEY, JSON.stringify(updated));
+}
+
+// Get subscription info
+export function getSubscriptionInfo(): SubscriptionInfo {
+  if (typeof window === "undefined") {
+    return {
+      subscriptionId: null,
+      customerId: null,
+      status: "none",
+      currentPeriodEnd: null,
+      cancelAtPeriodEnd: false,
+    };
+  }
+
+  const stored = localStorage.getItem(SUBSCRIPTION_INFO_KEY);
+  if (!stored) {
+    return {
+      subscriptionId: null,
+      customerId: null,
+      status: "none",
+      currentPeriodEnd: null,
+      cancelAtPeriodEnd: false,
+    };
+  }
+
+  try {
+    return JSON.parse(stored);
+  } catch {
+    return {
+      subscriptionId: null,
+      customerId: null,
+      status: "none",
+      currentPeriodEnd: null,
+      cancelAtPeriodEnd: false,
+    };
+  }
+}
+
+// Clear subscription info (on cancellation/logout)
+export function clearSubscriptionInfo(): void {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem(SUBSCRIPTION_INFO_KEY);
+  localStorage.removeItem("lsatprep-subscription-tier");
+}

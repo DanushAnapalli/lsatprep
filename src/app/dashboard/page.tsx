@@ -24,6 +24,11 @@ import {
   Crown,
   Pencil,
   Check,
+  User,
+  CreditCard,
+  ChevronDown,
+  Settings,
+  X,
 } from "lucide-react";
 import {
   loadUserProgress,
@@ -41,7 +46,7 @@ import { logicalReasoningQuestions, readingComprehensionQuestions } from "@/lib/
 import { LR_TYPE_DESCRIPTIONS, RC_TYPE_DESCRIPTIONS } from "@/lib/lsat-types";
 import { onAuthChange, logOut, User as FirebaseUser } from "@/lib/firebase";
 import { useTheme } from "@/components/ThemeProvider";
-import { getUserTier, getTierDisplayInfo, canAccessFeature, SubscriptionTier } from "@/lib/subscription";
+import { getUserTier, getTierDisplayInfo, canAccessFeature, SubscriptionTier, getTrialInfo } from "@/lib/subscription";
 
 function cx(...classes: (string | boolean | undefined)[]) {
   return classes.filter(Boolean).join(" ");
@@ -195,6 +200,159 @@ function UsernameInput({ userId }: { userId: string }) {
         </button>
       )}
     </span>
+  );
+}
+
+// ============================================
+// USER DROPDOWN COMPONENT
+// ============================================
+
+function UserDropdown({
+  user,
+  userTier,
+  onSignOut,
+}: {
+  user: FirebaseUser;
+  userTier: SubscriptionTier;
+  onSignOut: () => void;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const tierInfo = getTierDisplayInfo(userTier);
+  const trialInfo = getTrialInfo();
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Close on escape key
+  useEffect(() => {
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setIsOpen(false);
+      }
+    }
+
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, []);
+
+  return (
+    <div ref={dropdownRef} className="relative">
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center gap-2 rounded-sm border-2 border-stone-200 bg-stone-50 px-3 py-2 transition hover:border-stone-300 hover:bg-stone-100 dark:border-stone-700 dark:bg-stone-800 dark:hover:border-stone-600 dark:hover:bg-stone-700"
+      >
+        {user.photoURL ? (
+          <img
+            src={user.photoURL}
+            alt="Profile"
+            className="h-6 w-6 rounded-full"
+          />
+        ) : (
+          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[#1a365d] text-xs font-bold text-white dark:bg-amber-500 dark:text-stone-900">
+            {(user.displayName || user.email || "U").charAt(0).toUpperCase()}
+          </div>
+        )}
+        <span className="hidden max-w-[100px] truncate text-sm font-medium text-stone-700 dark:text-stone-300 sm:block">
+          {user.displayName || user.email?.split("@")[0]}
+        </span>
+        <ChevronDown
+          size={16}
+          className={cx(
+            "text-stone-400 transition-transform duration-200",
+            isOpen && "rotate-180"
+          )}
+        />
+      </button>
+
+      {/* Dropdown Menu */}
+      {isOpen && (
+        <div className="absolute right-0 top-full z-50 mt-2 w-64 overflow-hidden rounded-sm border-2 border-stone-200 bg-white shadow-lg dark:border-stone-700 dark:bg-stone-800">
+          {/* User Info Header */}
+          <div className="border-b border-stone-200 p-4 dark:border-stone-700">
+            <div className="flex items-center gap-3">
+              {user.photoURL ? (
+                <img
+                  src={user.photoURL}
+                  alt="Profile"
+                  className="h-10 w-10 rounded-full"
+                />
+              ) : (
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#1a365d] text-lg font-bold text-white dark:bg-amber-500 dark:text-stone-900">
+                  {(user.displayName || user.email || "U").charAt(0).toUpperCase()}
+                </div>
+              )}
+              <div className="flex-1 overflow-hidden">
+                <div className="truncate font-semibold text-stone-900 dark:text-stone-100">
+                  {user.displayName || "User"}
+                </div>
+                <div className="truncate text-xs text-stone-500">{user.email}</div>
+              </div>
+            </div>
+            <div className="mt-2 flex items-center gap-2">
+              <span className={cx("rounded-sm px-2 py-0.5 text-xs font-semibold", tierInfo.bgColor, tierInfo.color)}>
+                {tierInfo.name}
+              </span>
+              {userTier === "pro" && trialInfo.isTrialing && (
+                <span className="rounded-sm bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+                  {trialInfo.daysLeft}d left
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Menu Items */}
+          <div className="p-2">
+            <Link
+              href="/profile"
+              onClick={() => setIsOpen(false)}
+              className="flex items-center gap-3 rounded-sm px-3 py-2 text-sm text-stone-700 transition hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-700"
+            >
+              <User size={16} className="text-stone-400" />
+              Profile
+            </Link>
+            <Link
+              href="/profile"
+              onClick={() => setIsOpen(false)}
+              className="flex items-center gap-3 rounded-sm px-3 py-2 text-sm text-stone-700 transition hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-700"
+            >
+              <CreditCard size={16} className="text-stone-400" />
+              Subscription
+              {userTier === "free" && (
+                <span className="ml-auto rounded-sm bg-amber-100 px-1.5 py-0.5 text-xs font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                  Upgrade
+                </span>
+              )}
+            </Link>
+          </div>
+
+          {/* Sign Out */}
+          <div className="border-t border-stone-200 p-2 dark:border-stone-700">
+            <button
+              type="button"
+              onClick={() => {
+                setIsOpen(false);
+                onSignOut();
+              }}
+              className="flex w-full items-center gap-3 rounded-sm px-3 py-2 text-sm text-red-600 transition hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
+            >
+              <LogOut size={16} />
+              Sign Out
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -832,30 +990,7 @@ export default function DashboardPage() {
 
             {/* User Profile or Sign In Button */}
             {user ? (
-              <div className="flex items-center gap-2 rounded-sm border-2 border-stone-200 bg-stone-50 px-3 py-2 dark:border-stone-700 dark:bg-stone-800">
-                {user.photoURL ? (
-                  <img
-                    src={user.photoURL}
-                    alt="Profile"
-                    className="h-6 w-6 rounded-full"
-                  />
-                ) : (
-                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[#1a365d] text-xs font-bold text-white dark:bg-amber-500 dark:text-stone-900">
-                    {(user.displayName || user.email || "U").charAt(0).toUpperCase()}
-                  </div>
-                )}
-                <span className="hidden max-w-[100px] truncate text-sm font-medium text-stone-700 dark:text-stone-300 sm:block">
-                  {user.displayName || user.email?.split("@")[0]}
-                </span>
-                <button
-                  type="button"
-                  onClick={handleSignOut}
-                  className="ml-1 rounded p-1 text-stone-400 transition hover:bg-stone-200 hover:text-red-600 dark:hover:bg-stone-700 dark:hover:text-red-400"
-                  title="Sign Out"
-                >
-                  <LogOut size={16} />
-                </button>
-              </div>
+              <UserDropdown user={user} userTier={userTier} onSignOut={handleSignOut} />
             ) : (
               <Link
                 href="/"

@@ -205,7 +205,7 @@ function FadeInStagger({
 // Animated Line Graph for Score Trends
 function AnimatedLineGraph({
   data,
-  height = 200,
+  height = 140,
 }: {
   data: { score: number; date: string }[];
   height?: number;
@@ -238,7 +238,7 @@ function AnimatedLineGraph({
   if (data.length === 0) return null;
 
   const width = 400;
-  const padding = { top: 20, right: 20, bottom: 30, left: 40 };
+  const padding = { top: 16, right: 16, bottom: 24, left: 36 };
   const chartWidth = width - padding.left - padding.right;
   const chartHeight = height - padding.top - padding.bottom;
 
@@ -249,9 +249,26 @@ function AnimatedLineGraph({
   const yScale = (score: number) =>
     padding.top + chartHeight - ((score - minScore) / (maxScore - minScore || 1)) * chartHeight;
 
-  const pathData = data
-    .map((d, i) => `${i === 0 ? "M" : "L"} ${xScale(i)} ${yScale(d.score)}`)
-    .join(" ");
+  // Create smooth bezier curve path
+  const createSmoothPath = () => {
+    if (data.length < 2) return data.map((d, i) => `${i === 0 ? "M" : "L"} ${xScale(i)} ${yScale(d.score)}`).join(" ");
+
+    let path = `M ${xScale(0)} ${yScale(data[0].score)}`;
+
+    for (let i = 1; i < data.length; i++) {
+      const x0 = xScale(i - 1);
+      const y0 = yScale(data[i - 1].score);
+      const x1 = xScale(i);
+      const y1 = yScale(data[i].score);
+
+      const cpOffset = (x1 - x0) * 0.3;
+      path += ` C ${x0 + cpOffset} ${y0}, ${x1 - cpOffset} ${y1}, ${x1} ${y1}`;
+    }
+
+    return path;
+  };
+
+  const pathData = createSmoothPath();
 
   const areaPathData =
     pathData +
@@ -263,7 +280,7 @@ function AnimatedLineGraph({
   return (
     <svg ref={svgRef} viewBox={`0 0 ${width} ${height}`} className="w-full h-auto">
       {/* Grid lines */}
-      {[0, 0.25, 0.5, 0.75, 1].map((t) => {
+      {[0, 0.5, 1].map((t) => {
         const y = padding.top + t * chartHeight;
         const score = Math.round(maxScore - t * (maxScore - minScore));
         return (
@@ -274,15 +291,16 @@ function AnimatedLineGraph({
               x2={width - padding.right}
               y2={y}
               stroke="currentColor"
-              strokeOpacity={0.1}
-              strokeDasharray="4,4"
+              strokeOpacity={0.08}
+              strokeDasharray="3,3"
             />
             <text
-              x={padding.left - 8}
+              x={padding.left - 6}
               y={y}
               textAnchor="end"
               alignmentBaseline="middle"
-              className="fill-stone-500 text-[10px]"
+              className="fill-stone-400 dark:fill-stone-500"
+              style={{ fontSize: "10px", fontFamily: "system-ui, -apple-system, sans-serif" }}
             >
               {score}
             </text>
@@ -293,11 +311,11 @@ function AnimatedLineGraph({
       {/* Gradient fill */}
       <defs>
         <linearGradient id="areaGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stopColor="#1a365d" stopOpacity={0.3} />
+          <stop offset="0%" stopColor="#1a365d" stopOpacity={0.15} />
           <stop offset="100%" stopColor="#1a365d" stopOpacity={0} />
         </linearGradient>
         <linearGradient id="areaGradientDark" x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stopColor="#f59e0b" stopOpacity={0.3} />
+          <stop offset="0%" stopColor="#f59e0b" stopOpacity={0.15} />
           <stop offset="100%" stopColor="#f59e0b" stopOpacity={0} />
         </linearGradient>
       </defs>
@@ -317,7 +335,7 @@ function AnimatedLineGraph({
         d={pathData}
         fill="none"
         className="stroke-[#1a365d] dark:stroke-amber-400"
-        strokeWidth={3}
+        strokeWidth={2}
         strokeLinecap="round"
         strokeLinejoin="round"
         strokeDasharray={pathLength}
@@ -330,15 +348,16 @@ function AnimatedLineGraph({
           <circle
             cx={xScale(i)}
             cy={yScale(d.score)}
-            r={6}
+            r={4}
             className="fill-white dark:fill-stone-900 stroke-[#1a365d] dark:stroke-amber-400"
-            strokeWidth={3}
+            strokeWidth={2}
           />
           <text
             x={xScale(i)}
-            y={padding.top + chartHeight + 18}
+            y={padding.top + chartHeight + 14}
             textAnchor="middle"
-            className="fill-stone-500 text-[9px]"
+            className="fill-stone-400 dark:fill-stone-500"
+            style={{ fontSize: "9px", fontFamily: "system-ui, -apple-system, sans-serif" }}
           >
             {d.date}
           </text>
@@ -351,7 +370,7 @@ function AnimatedLineGraph({
 // Animated Donut Chart for Time Distribution
 function AnimatedDonutChart({
   data,
-  size = 180,
+  size = 140,
 }: {
   data: { label: string; count: number; color: string }[];
   size?: number;
@@ -385,8 +404,8 @@ function AnimatedDonutChart({
 
   const centerX = size / 2;
   const centerY = size / 2;
-  const radius = size / 2 - 10;
-  const innerRadius = radius * 0.6;
+  const radius = size / 2 - 8;
+  const innerRadius = radius * 0.65;
 
   let currentAngle = -90;
   const paths = data.map((d, i) => {
@@ -437,29 +456,31 @@ function AnimatedDonutChart({
   });
 
   return (
-    <div className="flex items-center gap-4">
+    <div className="flex items-center gap-5">
       <svg width={size} height={size} className="flex-shrink-0">
         {paths}
         <text
           x={centerX}
-          y={centerY}
+          y={centerY - 4}
           textAnchor="middle"
           alignmentBaseline="middle"
-          className="fill-stone-900 dark:fill-stone-100 text-2xl font-bold"
+          className="fill-stone-900 dark:fill-stone-100"
+          style={{ fontSize: "20px", fontWeight: 600, fontFamily: "system-ui, -apple-system, sans-serif" }}
         >
           {total}
         </text>
         <text
           x={centerX}
-          y={centerY + 18}
+          y={centerY + 12}
           textAnchor="middle"
           alignmentBaseline="middle"
-          className="fill-stone-500 text-[10px]"
+          className="fill-stone-500 dark:fill-stone-400"
+          style={{ fontSize: "9px", fontFamily: "system-ui, -apple-system, sans-serif" }}
         >
           questions
         </text>
       </svg>
-      <div className="space-y-1">
+      <div className="space-y-1.5">
         {data.map((d, i) => {
           const colorMap: Record<string, string> = {
             "bg-red-400": "bg-red-400",
@@ -468,11 +489,13 @@ function AnimatedDonutChart({
             "bg-amber-400": "bg-amber-400",
             "bg-red-500": "bg-red-500",
           };
+          const percentage = total > 0 ? Math.round((d.count / total) * 100) : 0;
           return (
             <div key={i} className="flex items-center gap-2 text-xs">
-              <div className={cx("w-3 h-3 rounded-sm", colorMap[d.color])} />
-              <span className="text-stone-600 dark:text-stone-400">{d.label}</span>
-              <span className="font-semibold text-stone-900 dark:text-stone-100">{d.count}</span>
+              <div className={cx("w-2.5 h-2.5 rounded-sm", colorMap[d.color])} />
+              <span className="text-stone-500 dark:text-stone-400 min-w-[60px]">{d.label}</span>
+              <span className="font-medium text-stone-700 dark:text-stone-300 tabular-nums">{d.count}</span>
+              <span className="text-stone-400 dark:text-stone-500 text-[10px]">({percentage}%)</span>
             </div>
           );
         })}
@@ -484,10 +507,8 @@ function AnimatedDonutChart({
 // Animated Bar Chart for Question Types
 function AnimatedBarChart({
   data,
-  height = 200,
 }: {
   data: { name: string; accuracy: number; color: string }[];
-  height?: number;
 }) {
   const [progress, setProgress] = useState(0);
 
@@ -515,26 +536,33 @@ function AnimatedBarChart({
 
   if (data.length === 0) return null;
 
-  const barHeight = Math.min(30, (height - 40) / data.length - 8);
-
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       {data.map((d, i) => (
-        <div key={i} className="flex items-center gap-3">
-          <div className="w-24 text-xs text-stone-600 dark:text-stone-400 truncate" title={d.name}>
-            {d.name}
+        <div key={i} className="group">
+          <div className="flex items-center justify-between mb-1">
+            <span
+              className="text-xs font-medium text-stone-600 dark:text-stone-400 truncate max-w-[180px]"
+              title={d.name}
+            >
+              {d.name}
+            </span>
+            <span className="text-xs font-semibold text-stone-700 dark:text-stone-300 tabular-nums">
+              {Math.round(d.accuracy * progress)}%
+            </span>
           </div>
-          <div className="flex-1 bg-stone-200 dark:bg-stone-700 rounded-full overflow-hidden" style={{ height: barHeight }}>
+          <div className="h-2 bg-stone-100 dark:bg-stone-800 rounded-full overflow-hidden">
             <div
               className={cx(
                 "h-full rounded-full transition-all duration-1000 ease-out",
-                d.accuracy >= 80 ? "bg-green-500" : d.accuracy >= 60 ? "bg-amber-500" : "bg-red-500"
+                d.accuracy >= 80
+                  ? "bg-emerald-500 dark:bg-emerald-400"
+                  : d.accuracy >= 60
+                    ? "bg-amber-500 dark:bg-amber-400"
+                    : "bg-red-500 dark:bg-red-400"
               )}
               style={{ width: `${d.accuracy * progress}%` }}
             />
-          </div>
-          <div className="w-12 text-right text-sm font-semibold text-stone-900 dark:text-stone-100">
-            {Math.round(d.accuracy * progress)}%
           </div>
         </div>
       ))}
@@ -681,7 +709,7 @@ function QuestionTypePerformanceSection({
               {lrStats.length === 0 ? (
                 <p className="text-sm text-stone-500">No LR data yet</p>
               ) : (
-                <AnimatedBarChart data={lrChartData} height={Math.max(150, lrStats.length * 40)} />
+                <AnimatedBarChart data={lrChartData} />
               )}
             </div>
 
@@ -694,7 +722,7 @@ function QuestionTypePerformanceSection({
               {rcStats.length === 0 ? (
                 <p className="text-sm text-stone-500">No RC data yet</p>
               ) : (
-                <AnimatedBarChart data={rcChartData} height={Math.max(150, rcStats.length * 40)} />
+                <AnimatedBarChart data={rcChartData} />
               )}
             </div>
           </div>
@@ -707,11 +735,14 @@ function QuestionTypePerformanceSection({
 function TimeAnalyticsSection({
   analytics,
   isLocked,
+  testCount,
 }: {
   analytics: TimeAnalytics;
   isLocked: boolean;
+  testCount: number;
 }) {
   const [isVisible, setIsVisible] = useState(false);
+  const MIN_TESTS_REQUIRED = 2;
 
   useEffect(() => {
     const timeout = setTimeout(() => setIsVisible(true), 150);
@@ -740,6 +771,8 @@ function TimeAnalyticsSection({
     { label: "Over 2 min", count: distribution.over120s, color: "bg-red-500" },
   ];
 
+  const hasEnoughTests = testCount >= MIN_TESTS_REQUIRED;
+
   return (
     <div
       className={cx(
@@ -757,7 +790,19 @@ function TimeAnalyticsSection({
           </h3>
         </div>
 
-        {total === 0 ? (
+        {!hasEnoughTests ? (
+          <div className="py-8 text-center">
+            <Clock size={40} className="mx-auto mb-3 text-stone-300 dark:text-stone-600" />
+            <p className="text-stone-600 dark:text-stone-400 font-medium">
+              Complete at least {MIN_TESTS_REQUIRED} practice tests to see time analytics
+            </p>
+            <p className="mt-1 text-sm text-stone-500">
+              {testCount === 0
+                ? "No tests completed yet"
+                : `${testCount} of ${MIN_TESTS_REQUIRED} tests completed`}
+            </p>
+          </div>
+        ) : total === 0 ? (
           <div className="py-8 text-center text-stone-500">
             Complete some practice tests to see time analytics.
           </div>
@@ -808,11 +853,11 @@ function TimeAnalyticsSection({
 
             {/* Time Distribution - Donut Chart */}
             <div>
-              <h4 className="mb-4 text-sm font-semibold text-stone-700 dark:text-stone-300">
+              <h4 className="mb-3 text-sm font-medium text-stone-600 dark:text-stone-400">
                 Time Distribution
               </h4>
               <div className="flex justify-center">
-                <AnimatedDonutChart data={distributionData} size={180} />
+                <AnimatedDonutChart data={distributionData} size={130} />
               </div>
             </div>
           </div>
@@ -925,13 +970,13 @@ function ScoreTrendSection({
         {/* Score Trend Graph */}
         {analysis.trends.length > 1 && (
           <div className="mt-6">
-            <h4 className="mb-4 text-sm font-semibold text-stone-700 dark:text-stone-300">
+            <h4 className="mb-3 text-sm font-medium text-stone-600 dark:text-stone-400">
               Score Trend
             </h4>
-            <div className="rounded-sm border border-stone-200 p-4 dark:border-stone-700">
+            <div className="rounded-lg border border-stone-200 bg-stone-50/50 p-4 dark:border-stone-700 dark:bg-stone-800/30">
               <AnimatedLineGraph
                 data={analysis.trends.slice(-10)}
-                height={220}
+                height={150}
               />
             </div>
           </div>
@@ -1521,6 +1566,7 @@ export default function AdvancedAnalyticsPage() {
             <TimeAnalyticsSection
               analytics={timeAnalytics}
               isLocked={!isProOrFounder}
+              testCount={progress?.completedTests?.length || 0}
             />
           )}
 

@@ -1,0 +1,452 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import {
+  Scale,
+  ArrowLeft,
+  User,
+  Mail,
+  CreditCard,
+  Crown,
+  Shield,
+  ExternalLink,
+  AlertCircle,
+  CheckCircle2,
+  Moon,
+  Sun,
+  LogOut,
+  Calendar,
+  Clock,
+} from "lucide-react";
+import { onAuthChange, logOut, User as FirebaseUser } from "@/lib/firebase";
+import { useTheme } from "@/components/ThemeProvider";
+import {
+  getUserTier,
+  getTierDisplayInfo,
+  getSubscriptionInfo,
+  getTrialInfo,
+  SubscriptionTier,
+  SubscriptionInfo,
+  TrialInfo,
+  saveSubscriptionInfo,
+  clearSubscriptionInfo,
+  setSubscriptionTier,
+} from "@/lib/subscription";
+
+function cx(...classes: (string | boolean | undefined)[]) {
+  return classes.filter(Boolean).join(" ");
+}
+
+export default function ProfilePage() {
+  const router = useRouter();
+  const { theme, toggleTheme } = useTheme();
+  const [user, setUser] = useState<FirebaseUser | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [userTier, setUserTier] = useState<SubscriptionTier>("free");
+  const [subscriptionInfo, setSubscriptionInfoState] = useState<SubscriptionInfo | null>(null);
+  const [trialInfo, setTrialInfo] = useState<TrialInfo | null>(null);
+  const [isCancelling, setIsCancelling] = useState(false);
+  const [cancelError, setCancelError] = useState<string | null>(null);
+  const [isLoadingPortal, setIsLoadingPortal] = useState(false);
+
+  // Listen to auth state
+  useEffect(() => {
+    const unsubscribe = onAuthChange((firebaseUser) => {
+      setUser(firebaseUser);
+      setAuthLoading(false);
+
+      if (!firebaseUser) {
+        router.push("/");
+      }
+    });
+    return () => unsubscribe();
+  }, [router]);
+
+  // Get subscription info
+  useEffect(() => {
+    if (user) {
+      const tier = getUserTier(user);
+      setUserTier(tier);
+      setSubscriptionInfoState(getSubscriptionInfo());
+      setTrialInfo(getTrialInfo());
+    }
+  }, [user]);
+
+  const handleSignOut = async () => {
+    try {
+      await logOut();
+      router.push("/");
+    } catch (error) {
+      console.error("Error signing out:", error);
+    }
+  };
+
+  const handleCancelSubscription = async () => {
+    if (!subscriptionInfo?.subscriptionId) return;
+
+    setIsCancelling(true);
+    setCancelError(null);
+
+    try {
+      const response = await fetch("/api/cancel-subscription", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ subscriptionId: subscriptionInfo.subscriptionId }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        saveSubscriptionInfo({
+          cancelAtPeriodEnd: true,
+          currentPeriodEnd: data.subscription.currentPeriodEnd,
+        });
+        setSubscriptionInfoState(getSubscriptionInfo());
+      } else {
+        setCancelError(data.error || "Failed to cancel subscription");
+      }
+    } catch {
+      setCancelError("An error occurred. Please try again.");
+    } finally {
+      setIsCancelling(false);
+    }
+  };
+
+  const handleManagePayment = async () => {
+    const info = getSubscriptionInfo();
+    if (!info.customerId) {
+      // No customer ID, redirect to subscription page
+      router.push("/subscription");
+      return;
+    }
+
+    setIsLoadingPortal(true);
+
+    try {
+      const response = await fetch("/api/customer-portal", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ customerId: info.customerId }),
+      });
+
+      const data = await response.json();
+
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        console.error("Failed to get portal URL");
+      }
+    } catch (error) {
+      console.error("Error opening customer portal:", error);
+    } finally {
+      setIsLoadingPortal(false);
+    }
+  };
+
+  if (authLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-stone-100 dark:bg-stone-950">
+        <div className="text-center">
+          <Scale size={48} className="mx-auto mb-4 animate-pulse text-[#1a365d] dark:text-amber-400" />
+          <p className="text-stone-600 dark:text-stone-400">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return null;
+  }
+
+  const tierInfo = getTierDisplayInfo(userTier);
+
+  return (
+    <div className="min-h-screen bg-stone-100 dark:bg-stone-950">
+      {/* Header */}
+      <header className="border-b-2 border-stone-200 bg-white dark:border-stone-800 dark:bg-stone-900">
+        <div className="mx-auto flex max-w-4xl items-center justify-between px-6 py-4">
+          <div className="flex items-center gap-4">
+            <Link
+              href="/dashboard"
+              className="flex items-center gap-2 text-stone-600 transition hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100"
+            >
+              <ArrowLeft size={20} />
+              <span className="text-sm font-medium">Back to Dashboard</span>
+            </Link>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="rounded-sm p-2 text-stone-600 transition hover:bg-stone-100 dark:text-stone-400 dark:hover:bg-stone-800"
+            >
+              {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
+            </button>
+            <button
+              type="button"
+              onClick={handleSignOut}
+              className="flex items-center gap-2 rounded-sm bg-red-100 px-3 py-2 text-sm font-medium text-red-700 transition hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50"
+            >
+              <LogOut size={16} />
+              Sign Out
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <main className="mx-auto max-w-4xl px-6 py-8">
+        <h1 className="mb-8 font-serif text-3xl font-bold text-stone-900 dark:text-stone-100">
+          Profile Settings
+        </h1>
+
+        <div className="space-y-6">
+          {/* Account Info */}
+          <div className="rounded-sm border-2 border-stone-200 bg-white p-6 dark:border-stone-700 dark:bg-stone-900">
+            <div className="mb-4 flex items-center gap-2">
+              <User size={20} className="text-[#1a365d] dark:text-amber-400" />
+              <h2 className="font-serif text-lg font-bold text-stone-900 dark:text-stone-100">
+                Account Information
+              </h2>
+            </div>
+
+            <div className="space-y-4">
+              {/* Profile Picture & Name */}
+              <div className="flex items-center gap-4">
+                {user.photoURL ? (
+                  <img
+                    src={user.photoURL}
+                    alt="Profile"
+                    className="h-16 w-16 rounded-full border-2 border-stone-200 dark:border-stone-700"
+                  />
+                ) : (
+                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#1a365d] text-2xl font-bold text-white dark:bg-amber-500 dark:text-stone-900">
+                    {(user.displayName || user.email || "U").charAt(0).toUpperCase()}
+                  </div>
+                )}
+                <div>
+                  <div className="font-semibold text-stone-900 dark:text-stone-100">
+                    {user.displayName || "User"}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className={cx("rounded-sm px-2 py-0.5 text-xs font-semibold", tierInfo.bgColor, tierInfo.color)}>
+                      {tierInfo.name}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Email */}
+              <div className="rounded-sm border border-stone-200 p-4 dark:border-stone-700">
+                <div className="flex items-center gap-2 text-sm text-stone-500">
+                  <Mail size={16} />
+                  Email Address
+                </div>
+                <div className="mt-1 font-medium text-stone-900 dark:text-stone-100">
+                  {user.email}
+                </div>
+                {user.emailVerified && (
+                  <div className="mt-1 flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
+                    <CheckCircle2 size={12} />
+                    Verified
+                  </div>
+                )}
+              </div>
+
+              {/* Auth Provider */}
+              <div className="rounded-sm border border-stone-200 p-4 dark:border-stone-700">
+                <div className="flex items-center gap-2 text-sm text-stone-500">
+                  <Shield size={16} />
+                  Sign-in Method
+                </div>
+                <div className="mt-1 font-medium text-stone-900 dark:text-stone-100">
+                  {user.providerData[0]?.providerId === "google.com" ? "Google" : "Email & Password"}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Subscription Info */}
+          <div className="rounded-sm border-2 border-stone-200 bg-white p-6 dark:border-stone-700 dark:bg-stone-900">
+            <div className="mb-4 flex items-center gap-2">
+              <Crown size={20} className="text-[#1a365d] dark:text-amber-400" />
+              <h2 className="font-serif text-lg font-bold text-stone-900 dark:text-stone-100">
+                Subscription
+              </h2>
+            </div>
+
+            <div className="space-y-4">
+              {/* Current Plan */}
+              <div className="rounded-sm border border-stone-200 p-4 dark:border-stone-700">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-sm text-stone-500">Current Plan</div>
+                    <div className="mt-1 flex items-center gap-2">
+                      <span className="text-xl font-bold text-stone-900 dark:text-stone-100">
+                        {tierInfo.name}
+                      </span>
+                      {userTier === "pro" && trialInfo?.isTrialing && (
+                        <span className="rounded-sm bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+                          Trial
+                        </span>
+                      )}
+                      {subscriptionInfo?.cancelAtPeriodEnd && (
+                        <span className="rounded-sm bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700 dark:bg-red-900/30 dark:text-red-400">
+                          Cancels Soon
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  {userTier === "free" && (
+                    <Link
+                      href="/subscription"
+                      className="rounded-sm bg-[#1a365d] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#2d4a7c] dark:bg-amber-500 dark:text-stone-900 dark:hover:bg-amber-400"
+                    >
+                      Upgrade to Pro
+                    </Link>
+                  )}
+                </div>
+              </div>
+
+              {/* Trial Info */}
+              {trialInfo?.isTrialing && (
+                <div className="rounded-sm border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-900/20">
+                  <div className="flex items-center gap-2 text-sm text-blue-700 dark:text-blue-400">
+                    <Clock size={16} />
+                    Trial Period
+                  </div>
+                  <div className="mt-1 font-medium text-blue-900 dark:text-blue-100">
+                    {trialInfo.daysLeft} days remaining
+                  </div>
+                  <p className="mt-1 text-xs text-blue-600 dark:text-blue-400">
+                    Your trial ends on {new Date(trialInfo.trialEndDate!).toLocaleDateString()}
+                  </p>
+                </div>
+              )}
+
+              {/* Billing Period */}
+              {subscriptionInfo?.currentPeriodEnd && userTier !== "free" && (
+                <div className="rounded-sm border border-stone-200 p-4 dark:border-stone-700">
+                  <div className="flex items-center gap-2 text-sm text-stone-500">
+                    <Calendar size={16} />
+                    {subscriptionInfo.cancelAtPeriodEnd ? "Access Until" : "Next Billing Date"}
+                  </div>
+                  <div className="mt-1 font-medium text-stone-900 dark:text-stone-100">
+                    {new Date(subscriptionInfo.currentPeriodEnd).toLocaleDateString("en-US", {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Cancel Subscription */}
+              {userTier === "pro" && subscriptionInfo?.subscriptionId && !subscriptionInfo.cancelAtPeriodEnd && (
+                <div className="rounded-sm border border-red-200 bg-red-50 p-4 dark:border-red-800 dark:bg-red-900/20">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="font-medium text-red-900 dark:text-red-100">
+                        Cancel Subscription
+                      </div>
+                      <p className="mt-1 text-sm text-red-700 dark:text-red-400">
+                        You'll retain access until the end of your billing period
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleCancelSubscription}
+                      disabled={isCancelling}
+                      className="rounded-sm border-2 border-red-300 bg-white px-4 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-100 disabled:opacity-50 dark:border-red-700 dark:bg-transparent dark:text-red-400 dark:hover:bg-red-900/30"
+                    >
+                      {isCancelling ? "Cancelling..." : "Cancel Subscription"}
+                    </button>
+                  </div>
+                  {cancelError && (
+                    <div className="mt-2 flex items-center gap-2 text-sm text-red-600 dark:text-red-400">
+                      <AlertCircle size={14} />
+                      {cancelError}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Subscription Cancelled Notice */}
+              {subscriptionInfo?.cancelAtPeriodEnd && (
+                <div className="rounded-sm border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-900/20">
+                  <div className="flex items-center gap-2">
+                    <AlertCircle size={16} className="text-amber-600 dark:text-amber-400" />
+                    <span className="font-medium text-amber-900 dark:text-amber-100">
+                      Subscription Cancelled
+                    </span>
+                  </div>
+                  <p className="mt-1 text-sm text-amber-700 dark:text-amber-400">
+                    Your subscription has been cancelled. You'll retain access until{" "}
+                    {subscriptionInfo.currentPeriodEnd
+                      ? new Date(subscriptionInfo.currentPeriodEnd).toLocaleDateString()
+                      : "the end of your billing period"}
+                    .
+                  </p>
+                  <Link
+                    href="/subscription"
+                    className="mt-2 inline-flex items-center gap-1 text-sm font-semibold text-amber-700 hover:text-amber-900 dark:text-amber-400 dark:hover:text-amber-300"
+                  >
+                    Resubscribe
+                    <ExternalLink size={14} />
+                  </Link>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Payment Methods */}
+          <div className="rounded-sm border-2 border-stone-200 bg-white p-6 dark:border-stone-700 dark:bg-stone-900">
+            <div className="mb-4 flex items-center gap-2">
+              <CreditCard size={20} className="text-[#1a365d] dark:text-amber-400" />
+              <h2 className="font-serif text-lg font-bold text-stone-900 dark:text-stone-100">
+                Payment Methods
+              </h2>
+            </div>
+
+            <div className="space-y-4">
+              {subscriptionInfo?.customerId ? (
+                <div>
+                  <p className="mb-3 text-sm text-stone-600 dark:text-stone-400">
+                    Manage your payment methods, view invoices, and update billing information through the Stripe Customer Portal.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handleManagePayment}
+                    disabled={isLoadingPortal}
+                    className="inline-flex items-center gap-2 rounded-sm bg-[#1a365d] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#2d4a7c] disabled:opacity-50 dark:bg-amber-500 dark:text-stone-900 dark:hover:bg-amber-400"
+                  >
+                    {isLoadingPortal ? (
+                      "Loading..."
+                    ) : (
+                      <>
+                        Manage Payment Methods
+                        <ExternalLink size={14} />
+                      </>
+                    )}
+                  </button>
+                </div>
+              ) : (
+                <div className="rounded-sm border border-stone-200 p-4 text-center dark:border-stone-700">
+                  <CreditCard size={32} className="mx-auto mb-2 text-stone-400" />
+                  <p className="text-sm text-stone-600 dark:text-stone-400">
+                    No payment method on file
+                  </p>
+                  <p className="mt-1 text-xs text-stone-500">
+                    Subscribe to Pro to add a payment method
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}
