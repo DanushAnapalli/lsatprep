@@ -24,9 +24,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     if (savedTheme === "light" || savedTheme === "dark") {
       setThemeState(savedTheme);
     } else {
-      // Check system preference
-      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-      setThemeState(prefersDark ? "dark" : "light");
+      // Default to light mode for first-time users
+      setThemeState("light");
     }
     setMounted(true);
   }, []);
@@ -44,20 +43,6 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(THEME_KEY, theme);
   }, [theme, mounted]);
 
-  // Listen for system preference changes
-  useEffect(() => {
-    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-    const handleChange = (e: MediaQueryListEvent) => {
-      // Only update if user hasn't set a preference
-      const savedTheme = localStorage.getItem(THEME_KEY);
-      if (!savedTheme) {
-        setThemeState(e.matches ? "dark" : "light");
-      }
-    };
-
-    mediaQuery.addEventListener("change", handleChange);
-    return () => mediaQuery.removeEventListener("change", handleChange);
-  }, []);
 
   const setTheme = (newTheme: Theme) => {
     setThemeState(newTheme);

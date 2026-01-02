@@ -404,18 +404,11 @@ function ThemeToggle() {
   return (
     <button
       onClick={toggleTheme}
-      className={cx(
-        "group inline-flex items-center gap-2 rounded-full border px-3 py-2 text-sm font-medium transition",
-        "border-stone-300 bg-stone-50 hover:bg-white",
-        "dark:border-stone-700 dark:bg-stone-900 dark:hover:bg-stone-800"
-      )}
+      className="group inline-flex items-center gap-2 rounded-full px-2 py-2 text-sm font-medium transition hover:bg-stone-100 dark:hover:bg-stone-800"
       aria-label="Toggle theme"
     >
-      <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-amber-600/15 text-amber-700 transition dark:bg-amber-500/20 dark:text-amber-400">
-        {theme === "dark" ? <Moon size={16} /> : <Sun size={16} />}
-      </span>
-      <span className="hidden sm:inline">
-        {theme === "dark" ? "Dark" : "Light"} mode
+      <span className="inline-flex h-8 w-8 items-center justify-center rounded-full text-stone-600 transition hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-200">
+        {theme === "dark" ? <Moon size={18} /> : <Sun size={18} />}
       </span>
     </button>
   );
