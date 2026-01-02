@@ -29,6 +29,16 @@ import {
   Lock,
   User,
   Loader2,
+  BarChart3,
+  Brain,
+  Zap,
+  TrendingUp,
+  TrendingDown,
+  Target,
+  AlertTriangle,
+  Activity,
+  Clock,
+  XCircle,
 } from "lucide-react";
 import {
   signInWithEmail,
@@ -545,7 +555,59 @@ function Stat({ value, label, icon: Icon }: { value: string; label: string; icon
   );
 }
 
-function LsatPreviewCard() {
+// Mini score trend graph for preview
+function MiniScoreGraph() {
+  const points = [142, 148, 145, 152, 155, 158, 156, 162];
+  const max = 180;
+  const min = 120;
+  const range = max - min;
+  const width = 200;
+  const height = 60;
+
+  const pathData = points
+    .map((p, i) => {
+      const x = (i / (points.length - 1)) * width;
+      const y = height - ((p - min) / range) * height;
+      return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
+    })
+    .join(' ');
+
+  return (
+    <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-full">
+      <defs>
+        <linearGradient id="lineGradient" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stopColor="#1a365d" />
+          <stop offset="100%" stopColor="#d97706" />
+        </linearGradient>
+        <linearGradient id="fillGradient" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#1a365d" stopOpacity="0.3" />
+          <stop offset="100%" stopColor="#1a365d" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <path
+        d={pathData + ` L ${width} ${height} L 0 ${height} Z`}
+        fill="url(#fillGradient)"
+      />
+      <path
+        d={pathData}
+        fill="none"
+        stroke="url(#lineGradient)"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      {/* Current point */}
+      <circle
+        cx={width}
+        cy={height - ((points[points.length - 1] - min) / range) * height}
+        r="4"
+        fill="#d97706"
+      />
+    </svg>
+  );
+}
+
+function AnalyticsPreviewCard() {
   return (
     <div
       className={cx(
@@ -554,100 +616,130 @@ function LsatPreviewCard() {
         "dark:border-amber-500/50 dark:bg-stone-900"
       )}
     >
-      {/* Legal document header pattern */}
-      <div className="border-b-2 border-[#1a365d]/20 bg-[#1a365d] px-6 py-4 dark:border-amber-500/30 dark:bg-stone-800">
+      {/* Header */}
+      <div className="border-b-2 border-[#1a365d]/20 bg-gradient-to-r from-purple-600 via-indigo-600 to-violet-600 px-6 py-4 dark:border-amber-500/30">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="rounded-sm border-2 border-white/30 bg-white/20 p-2">
-              <Scale size={20} className="text-white" />
+              <BarChart3 size={20} className="text-white" />
             </div>
             <div>
               <div className="font-serif text-lg font-bold tracking-wide text-white">
-                LSAT Practice Dashboard
+                Advanced Insights
               </div>
               <div className="text-xs uppercase tracking-widest text-white/70">
-                Your LSAT Journey
+                Performance Analytics
               </div>
             </div>
           </div>
-          <div className="rounded-sm border border-amber-400/50 bg-amber-400/20 px-3 py-1 text-xs font-bold uppercase tracking-wider text-amber-300">
-            Active
+          <div className="rounded-sm border border-green-400/50 bg-green-400/20 px-3 py-1 text-xs font-bold uppercase tracking-wider text-green-300">
+            Live
           </div>
         </div>
       </div>
 
-      <div className="relative p-6">
-        {/* Decorative seal watermark */}
-        <div className="pointer-events-none absolute right-4 top-4 h-24 w-24 opacity-10">
-          <LegalSeal className="h-full w-full text-[#1a365d] dark:text-amber-500" />
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div
-            className={cx(
-              "rounded-sm border-l-4 border-amber-600 bg-white p-4 shadow-sm",
-              "dark:border-amber-500 dark:bg-stone-800"
-            )}
-          >
-            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400">
-              <ScrollText size={12} />
-              Today&apos;s Practice
-            </div>
-            <div className="mt-2 font-serif text-lg font-bold text-stone-800 dark:text-stone-100">
-              LR: Assumption Qs
-            </div>
-            <div className="mt-2 flex items-center gap-2 text-xs text-stone-500 dark:text-stone-400">
-              <Timer size={14} /> 35 min session
-            </div>
+      <div className="relative p-5">
+        {/* Score Projection Section */}
+        <div className="mb-4 grid grid-cols-3 gap-3">
+          <div className="rounded-sm border-2 border-stone-200 bg-white p-3 text-center dark:border-stone-700 dark:bg-stone-800">
+            <div className="text-2xl font-bold text-[#1a365d] dark:text-amber-400">162</div>
+            <div className="text-[10px] font-bold uppercase tracking-wider text-stone-500">Projected</div>
           </div>
-
-          <div
-            className={cx(
-              "rounded-sm border-l-4 border-green-600 bg-white p-4 shadow-sm",
-              "dark:border-green-500 dark:bg-stone-800"
-            )}
-          >
-            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400">
-              <LineChart size={12} />
-              Your Progress
+          <div className="rounded-sm border-2 border-stone-200 bg-white p-3 text-center dark:border-stone-700 dark:bg-stone-800">
+            <div className="text-2xl font-bold text-green-600 dark:text-green-400">78%</div>
+            <div className="text-[10px] font-bold uppercase tracking-wider text-stone-500">Accuracy</div>
+          </div>
+          <div className="rounded-sm border-2 border-stone-200 bg-white p-3 text-center dark:border-stone-700 dark:bg-stone-800">
+            <div className="flex items-center justify-center gap-1 text-2xl font-bold text-[#1a365d] dark:text-amber-400">
+              <TrendingUp size={18} className="text-green-500" />
+              +8
             </div>
-            <div className="mt-2 font-serif text-lg font-bold text-green-700 dark:text-green-400">
-              +6 scaled pts
-            </div>
-            <div className="mt-2 flex items-center gap-2 text-xs text-stone-500 dark:text-stone-400">
-              <Award size={14} /> Last 14 sessions
-            </div>
+            <div className="text-[10px] font-bold uppercase tracking-wider text-stone-500">30-Day Gain</div>
           </div>
         </div>
 
-        <div className="mt-4 rounded-sm border-2 border-stone-200 bg-white p-4 dark:border-stone-700 dark:bg-stone-800">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="flex items-center gap-2 font-serif text-base font-bold text-stone-800 dark:text-stone-100">
-                <Bookmark size={16} className="text-[#1a365d] dark:text-amber-500" />
-                Argument Analysis
-              </div>
-              <div className="mt-1 text-xs uppercase tracking-wider text-stone-500 dark:text-stone-400">
-                Premise | Conclusion | Hidden Assumptions
-              </div>
+        {/* Score Trend Graph */}
+        <div className="mb-4 rounded-sm border-2 border-stone-200 bg-white p-3 dark:border-stone-700 dark:bg-stone-800">
+          <div className="mb-2 flex items-center justify-between">
+            <div className="text-xs font-bold uppercase tracking-wider text-stone-500">Score Trend</div>
+            <div className="flex items-center gap-1 text-xs font-semibold text-green-600">
+              <TrendingUp size={12} />
+              Improving
             </div>
-            <div className="flex items-center gap-2">
-              <div className="rounded-sm border border-[#1a365d]/20 bg-[#1a365d]/10 p-2 dark:border-amber-500/30 dark:bg-amber-500/10">
-                <FileText size={16} className="text-[#1a365d] dark:text-amber-400" />
+          </div>
+          <div className="h-12">
+            <MiniScoreGraph />
+          </div>
+        </div>
+
+        {/* Strengths & Weaknesses Mini */}
+        <div className="mb-4 grid grid-cols-2 gap-3">
+          <div className="rounded-sm border-l-4 border-green-500 bg-white p-3 dark:bg-stone-800">
+            <div className="mb-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-green-600">
+              <CheckCircle2 size={10} />
+              Strengths
+            </div>
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-stone-700 dark:text-stone-300">Main Point</span>
+                <span className="font-bold text-green-600">92%</span>
               </div>
-              <div className="rounded-sm border border-[#1a365d]/20 bg-[#1a365d]/10 p-2 dark:border-amber-500/30 dark:bg-amber-500/10">
-                <LibraryBig size={16} className="text-[#1a365d] dark:text-amber-400" />
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-stone-700 dark:text-stone-300">Inference</span>
+                <span className="font-bold text-green-600">88%</span>
               </div>
             </div>
           </div>
-
-          <div className="mt-4">
-            <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400">
-              <span>Mastery Level</span>
-              <span>75% Proficient</span>
+          <div className="rounded-sm border-l-4 border-red-500 bg-white p-3 dark:bg-stone-800">
+            <div className="mb-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-red-600">
+              <AlertTriangle size={10} />
+              Needs Work
             </div>
-            <div className="mt-2 h-3 w-full overflow-hidden rounded-sm bg-stone-200 dark:bg-stone-700">
-              <div className="h-3 w-3/4 bg-gradient-to-r from-[#1a365d] to-amber-600 dark:from-amber-600 dark:to-amber-400" />
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-stone-700 dark:text-stone-300">Parallel</span>
+                <span className="font-bold text-red-600">45%</span>
+              </div>
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-stone-700 dark:text-stone-300">Weaken</span>
+                <span className="font-bold text-amber-600">58%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Error Patterns & Fatigue Mini */}
+        <div className="grid grid-cols-2 gap-3">
+          <div className="rounded-sm border-2 border-stone-200 bg-white p-3 dark:border-stone-700 dark:bg-stone-800">
+            <div className="mb-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-stone-500">
+              <XCircle size={10} />
+              Error Patterns
+            </div>
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 text-xs">
+                <div className="h-2 w-2 rounded-full bg-red-500" />
+                <span className="text-stone-600 dark:text-stone-400">Rushed: 12 errors</span>
+              </div>
+              <div className="flex items-center gap-2 text-xs">
+                <div className="h-2 w-2 rounded-full bg-amber-500" />
+                <span className="text-stone-600 dark:text-stone-400">Trap: 8 errors</span>
+              </div>
+            </div>
+          </div>
+          <div className="rounded-sm border-2 border-stone-200 bg-white p-3 dark:border-stone-700 dark:bg-stone-800">
+            <div className="mb-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-stone-500">
+              <Activity size={10} />
+              Fatigue Analysis
+            </div>
+            <div className="space-y-1">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-stone-600 dark:text-stone-400">1st half</span>
+                <span className="font-bold text-green-600">82%</span>
+              </div>
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-stone-600 dark:text-stone-400">2nd half</span>
+                <span className="font-bold text-amber-600">71%</span>
+              </div>
             </div>
           </div>
         </div>
@@ -683,19 +775,19 @@ export default function LawThemeLSATLanding() {
   const features = useMemo(
     () => [
       {
-        icon: Timer,
-        title: "Timed Practice Sessions",
-        desc: "Practice under real LSAT time pressure with our clean timer and section management.",
+        icon: BarChart3,
+        title: "Score Projection Engine",
+        desc: "Get accurate predicted LSAT scores based on your performance patterns and improvement trajectory.",
       },
       {
-        icon: ShieldCheck,
-        title: "Smart Explanations",
-        desc: "Master argument structure, assumption gaps, and flaw patterns with clear, detailed explanations.",
+        icon: Brain,
+        title: "Error Pattern Detection",
+        desc: "AI-powered analysis identifies why you miss questions—rushing, trap answers, or knowledge gaps.",
       },
       {
-        icon: LineChart,
-        title: "Performance Analytics",
-        desc: "Track your progress with detailed reports showing which question types need more work.",
+        icon: Zap,
+        title: "Fatigue & Pacing Analysis",
+        desc: "Track how your accuracy changes throughout a section and optimize your test-day strategy.",
       },
     ],
     []
@@ -703,10 +795,10 @@ export default function LawThemeLSATLanding() {
 
   const bullets = useMemo(
     () => [
-      "Practice sets organized by question type (Flaw, Necessary Assumption, RC inference)",
-      "Argument mapping with premise/conclusion identification",
-      "Review mode: filter by error type, difficulty, or time spent",
-      "Desktop-first layout for focused study sessions",
+      "Real-time score projections with confidence intervals",
+      "Identify your top 3 weakest question types automatically",
+      "Time-per-question analysis with pacing recommendations",
+      "Endurance tracking: first half vs second half accuracy",
     ],
     []
   );
@@ -825,7 +917,7 @@ export default function LawThemeLSATLanding() {
         <main className="relative mx-auto w-full max-w-7xl px-6 pb-24 pt-16">
           <div className="grid min-h-[70vh] items-center gap-16 lg:grid-cols-2">
             <div>
-              <Badge>New: Practice Sets + Question Drills</Badge>
+              <Badge>AI-Powered Score Prediction</Badge>
 
               <motion.h1
                 initial={{ opacity: 0, y: 14 }}
@@ -833,9 +925,9 @@ export default function LawThemeLSATLanding() {
                 transition={{ duration: 0.6 }}
                 className="mt-6 font-serif text-4xl font-bold leading-tight tracking-tight text-stone-900 sm:text-5xl dark:text-stone-100"
               >
-                Master the LSAT with{" "}
+                Know exactly{" "}
                 <span className="text-[#1a365d] dark:text-amber-400">
-                  focused practice
+                  where you stand
                 </span>
                 .
               </motion.h1>
@@ -846,9 +938,9 @@ export default function LawThemeLSATLanding() {
                 transition={{ duration: 0.6, delay: 0.05 }}
                 className="mt-5 max-w-xl text-lg leading-relaxed text-stone-600 dark:text-stone-400"
               >
-                LSATprep offers curated practice sets organized by question type,
-                teaching you to analyze arguments effectively—identify conclusions,
-                challenge assumptions, and spot logical flaws.
+                The only LSAT prep with advanced analytics that predict your score,
+                identify your weakest question types, and show exactly how fatigue
+                affects your performance.
               </motion.p>
 
               <motion.div
@@ -862,14 +954,14 @@ export default function LawThemeLSATLanding() {
               </motion.div>
 
               <div className="mt-10 grid grid-cols-3 gap-4">
-                <Stat value="LR + RC" label="Sections" icon={BookOpen} />
-                <Stat value="Curated" label="Practice Sets" icon={FileText} />
-                <Stat value="Detailed" label="Analytics" icon={Scale} />
+                <Stat value="Score" label="Predictions" icon={Target} />
+                <Stat value="Error" label="Patterns" icon={Brain} />
+                <Stat value="Fatigue" label="Tracking" icon={Activity} />
               </div>
 
               <div className="mt-8 rounded-sm border-l-4 border-[#1a365d] bg-white p-4 shadow-sm dark:border-amber-500 dark:bg-stone-800">
                 <div className="mb-3 text-xs font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400">
-                  Key Features
+                  Why Our Analytics Matter
                 </div>
                 <div className="space-y-3">
                   {bullets.map((b) => (
@@ -890,22 +982,22 @@ export default function LawThemeLSATLanding() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7, delay: 0.08 }}
             >
-              <LsatPreviewCard />
+              <AnalyticsPreviewCard />
             </motion.div>
           </div>
 
           {/* Features */}
           <section id="features" className="mt-24">
-            <ExhibitLabel label="Features" />
+            <ExhibitLabel label="Analytics" />
 
             <div className="flex flex-col items-start justify-between gap-6 md:flex-row md:items-end">
               <div>
                 <h2 className="font-serif text-3xl font-bold tracking-tight text-stone-900 dark:text-stone-100">
-                  Everything You Need to Succeed
+                  Analytics That Actually Help You Improve
                 </h2>
                 <p className="mt-3 max-w-2xl text-base leading-relaxed text-stone-600 dark:text-stone-400">
-                  Each feature has been carefully developed to build your reasoning skills
-                  and prepare you for the LSAT.
+                  Unlike other prep tools, we show you exactly why you're missing questions
+                  and predict your test-day score with precision.
                 </p>
               </div>
               <div className="flex gap-3">

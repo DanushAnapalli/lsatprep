@@ -542,6 +542,15 @@ export default function GoalTracker({
               </p>
             </div>
           )}
+
+          {/* View Details Link */}
+          <a
+            href="/goals"
+            className="mt-4 flex items-center justify-center gap-1 rounded-sm border border-stone-200 py-2 text-sm font-medium text-[#1a365d] transition hover:bg-stone-50 dark:border-stone-700 dark:text-amber-400 dark:hover:bg-stone-800"
+          >
+            View Full Goal Details
+            <ChevronRight size={14} />
+          </a>
         </div>
 
         {showModal && (
@@ -556,140 +565,251 @@ export default function GoalTracker({
     );
   }
 
-  // Full view
+  // Full view - Grid layout like analytics page
+  const achievedMilestones = goalProgress?.milestones.filter(m => m.achieved).length || 0;
+  const totalMilestones = goalProgress?.milestones.length || 0;
+
   return (
     <>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="rounded-sm bg-[#1a365d] p-2 dark:bg-amber-500">
-              <Target size={24} className="text-white dark:text-stone-900" />
+      {/* 6-Panel Grid Layout */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        {/* Panel 1: Progress Overview */}
+        <div className="rounded-sm border-2 border-stone-200 bg-white p-5 dark:border-stone-700 dark:bg-stone-900 h-full">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Target size={18} className="text-[#1a365d] dark:text-amber-400" />
+              <h3 className="font-serif text-lg font-bold text-stone-900 dark:text-stone-100">
+                Your Goal
+              </h3>
             </div>
-            <div>
-              <h2 className="font-serif text-xl font-bold text-stone-900 dark:text-stone-100">
-                Your LSAT Goal
-              </h2>
-              <p className="text-sm text-stone-500">
-                {goalProgress?.pointsToGo} points to go
-              </p>
-            </div>
+            <button
+              onClick={() => setShowModal(true)}
+              className="rounded-sm p-1.5 text-stone-400 transition hover:bg-stone-100 hover:text-stone-600 dark:hover:bg-stone-800 dark:hover:text-stone-300"
+              title="Edit goal"
+            >
+              <Edit2 size={16} />
+            </button>
           </div>
-          <button
-            onClick={() => setShowModal(true)}
-            className="flex items-center gap-2 rounded-sm border-2 border-stone-300 px-3 py-2 text-sm font-semibold text-stone-700 transition hover:bg-stone-50 dark:border-stone-600 dark:text-stone-300 dark:hover:bg-stone-800"
-          >
-            <Edit2 size={14} />
-            Edit Goal
-          </button>
-        </div>
 
-        {/* Progress Overview */}
-        {goalProgress && (
-          <div className="grid gap-6 md:grid-cols-2">
-            {/* Progress Ring */}
-            <div className="flex items-center justify-center rounded-sm border-2 border-stone-200 bg-white p-6 dark:border-stone-700 dark:bg-stone-900">
-              <div className="text-center">
-                <ProgressRing percentage={goalProgress.percentComplete} size={140} strokeWidth={10} />
-                <div className="mt-4 flex items-center justify-center gap-2">
-                  <span className="text-3xl font-bold text-stone-900 dark:text-stone-100">
+          {goalProgress && (
+            <div className="flex items-center gap-4">
+              <ProgressRing percentage={goalProgress.percentComplete} size={100} strokeWidth={8} />
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-2xl font-bold text-stone-900 dark:text-stone-100">
                     {currentScore}
                   </span>
-                  <ChevronRight size={20} className="text-stone-400" />
-                  <span className="text-3xl font-bold text-[#1a365d] dark:text-amber-400">
+                  <ChevronRight size={16} className="text-stone-400" />
+                  <span className="text-2xl font-bold text-[#1a365d] dark:text-amber-400">
                     {goal.targetScore}
                   </span>
                 </div>
+                <p className="text-sm text-stone-500 mt-1">
+                  {goalProgress.pointsToGo} points to go
+                </p>
                 {goal.targetDate && (
-                  <p className="mt-2 flex items-center justify-center gap-2 text-sm text-stone-500">
-                    <Calendar size={14} />
-                    Target: {goal.targetDate.toLocaleDateString()}
+                  <p className="flex items-center gap-1 text-xs text-stone-400 mt-1">
+                    <Calendar size={12} />
+                    {goal.targetDate.toLocaleDateString()}
                   </p>
                 )}
               </div>
             </div>
+          )}
+        </div>
 
-            {/* Projection */}
-            <div className="rounded-sm border-2 border-stone-200 bg-white p-6 dark:border-stone-700 dark:bg-stone-900">
-              <h3 className="mb-4 font-semibold text-stone-900 dark:text-stone-100">
-                Score Projection
-              </h3>
-              <div className="space-y-4">
-                <div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-stone-500">Projected Score</span>
-                    <span className="text-2xl font-bold text-[#1a365d] dark:text-amber-400">
-                      {goalProgress.projection.projectedScore}
-                    </span>
-                  </div>
-                  <div className="text-xs text-stone-400">
-                    Range: {goalProgress.projection.confidenceRange.low} - {goalProgress.projection.confidenceRange.high}
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  {goalProgress.projection.trend === "improving" && (
-                    <span className="flex items-center gap-1 rounded-sm bg-green-100 px-2 py-1 text-sm font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400">
-                      <TrendingUp size={14} />
-                      Improving
-                    </span>
-                  )}
-                  {goalProgress.projection.trend === "stable" && (
-                    <span className="flex items-center gap-1 rounded-sm bg-stone-100 px-2 py-1 text-sm font-medium text-stone-700 dark:bg-stone-800 dark:text-stone-300">
-                      <Minus size={14} />
-                      Stable
-                    </span>
-                  )}
-                  {goalProgress.projection.trend === "declining" && (
-                    <span className="flex items-center gap-1 rounded-sm bg-red-100 px-2 py-1 text-sm font-medium text-red-700 dark:bg-red-900/30 dark:text-red-400">
-                      <TrendingDown size={14} />
-                      Declining
-                    </span>
-                  )}
-                </div>
-
-                {goalProgress.estimatedDaysToGoal && (
-                  <p className="text-sm text-stone-600 dark:text-stone-400">
-                    At current pace: ~{goalProgress.estimatedDaysToGoal} days to goal
-                  </p>
-                )}
-
-                <div className={cx(
-                  "mt-2 rounded-sm p-3 text-sm",
-                  goalProgress.onTrack
-                    ? "bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-300"
-                    : "bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-300"
-                )}>
-                  {goalProgress.onTrack
-                    ? "You're on track to reach your goal!"
-                    : "Increase practice frequency to stay on track."}
-                </div>
-              </div>
-            </div>
+        {/* Panel 2: Score Projection */}
+        <div className="rounded-sm border-2 border-stone-200 bg-white p-5 dark:border-stone-700 dark:bg-stone-900 h-full">
+          <div className="flex items-center gap-2 mb-4">
+            <TrendingUp size={18} className="text-[#1a365d] dark:text-amber-400" />
+            <h3 className="font-serif text-lg font-bold text-stone-900 dark:text-stone-100">
+              Projection
+            </h3>
           </div>
-        )}
 
-        {/* Milestones */}
-        {goalProgress && goalProgress.milestones.length > 0 && (
-          <div className="rounded-sm border-2 border-stone-200 bg-white p-6 dark:border-stone-700 dark:bg-stone-900">
-            <h3 className="mb-4 font-semibold text-stone-900 dark:text-stone-100">
+          {goalProgress && (
+            <div className="space-y-3">
+              <div>
+                <div className="text-3xl font-bold text-[#1a365d] dark:text-amber-400">
+                  {goalProgress.projection.projectedScore}
+                </div>
+                <p className="text-xs text-stone-500">
+                  Range: {goalProgress.projection.confidenceRange.low}-{goalProgress.projection.confidenceRange.high}
+                </p>
+              </div>
+
+              <div>
+                {goalProgress.projection.trend === "improving" && (
+                  <span className="inline-flex items-center gap-1 rounded-sm bg-green-100 px-2 py-1 text-xs font-semibold text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                    <TrendingUp size={12} />
+                    Improving
+                  </span>
+                )}
+                {goalProgress.projection.trend === "stable" && (
+                  <span className="inline-flex items-center gap-1 rounded-sm bg-stone-100 px-2 py-1 text-xs font-semibold text-stone-600 dark:bg-stone-800 dark:text-stone-400">
+                    <Minus size={12} />
+                    Stable
+                  </span>
+                )}
+                {goalProgress.projection.trend === "declining" && (
+                  <span className="inline-flex items-center gap-1 rounded-sm bg-red-100 px-2 py-1 text-xs font-semibold text-red-700 dark:bg-red-900/30 dark:text-red-400">
+                    <TrendingDown size={12} />
+                    Needs attention
+                  </span>
+                )}
+              </div>
+
+              {goalProgress.estimatedDaysToGoal && goalProgress.projection.trend === "improving" && (
+                <p className="text-sm text-stone-600 dark:text-stone-400">
+                  ~{goalProgress.estimatedDaysToGoal} days at current pace
+                </p>
+              )}
+
+              <div className={cx(
+                "rounded-sm p-2 text-xs font-medium",
+                goalProgress.onTrack
+                  ? "bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400"
+                  : "bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400"
+              )}>
+                {goalProgress.onTrack
+                  ? "On track to reach your goal!"
+                  : "Increase practice to stay on track"}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Panel 3: Milestones */}
+        <div className="rounded-sm border-2 border-stone-200 bg-white p-5 dark:border-stone-700 dark:bg-stone-900 h-full">
+          <div className="flex items-center gap-2 mb-4">
+            <Award size={18} className="text-[#1a365d] dark:text-amber-400" />
+            <h3 className="font-serif text-lg font-bold text-stone-900 dark:text-stone-100">
               Milestones
             </h3>
-            <MilestoneList milestones={goalProgress.milestones} />
           </div>
+
+          {goalProgress && goalProgress.milestones.length > 0 ? (
+            <div className="space-y-2">
+              {goalProgress.milestones.map((milestone, index) => (
+                <div
+                  key={index}
+                  className={cx(
+                    "flex items-center gap-3 rounded-sm border p-2.5",
+                    milestone.achieved
+                      ? "border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20"
+                      : "border-stone-200 bg-white dark:border-stone-700 dark:bg-stone-800"
+                  )}
+                >
+                  {milestone.achieved ? (
+                    <CheckCircle2 size={16} className="flex-shrink-0 text-green-600 dark:text-green-400" />
+                  ) : (
+                    <Circle size={16} className="flex-shrink-0 text-stone-300 dark:text-stone-600" />
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <span className={cx(
+                      "text-sm font-medium",
+                      milestone.achieved
+                        ? "text-green-700 dark:text-green-300"
+                        : "text-stone-700 dark:text-stone-300"
+                    )}>
+                      {milestone.label}
+                    </span>
+                  </div>
+                  <span className={cx(
+                    "text-sm font-bold",
+                    milestone.achieved
+                      ? "text-green-600 dark:text-green-400"
+                      : "text-stone-500"
+                  )}>
+                    {milestone.score}
+                  </span>
+                </div>
+              ))}
+              <p className="text-xs text-stone-500 mt-2">
+                {achievedMilestones}/{totalMilestones} completed
+              </p>
+            </div>
+          ) : (
+            <p className="text-sm text-stone-500">Set a goal to see milestones</p>
+          )}
+        </div>
+
+        {/* Panel 4-6: Focus Areas (spans remaining space) */}
+        {goalProgress && goalProgress.improvementAreas.length > 0 && (
+          <>
+            {goalProgress.improvementAreas.slice(0, 3).map((area, index) => (
+              <div
+                key={area.questionType}
+                className="rounded-sm border-2 border-stone-200 bg-white p-5 dark:border-stone-700 dark:bg-stone-900 h-full"
+              >
+                <div className="flex items-center gap-2 mb-3">
+                  <Zap size={18} className="text-[#1a365d] dark:text-amber-400" />
+                  <span className="text-xs font-semibold uppercase tracking-wider text-stone-500">
+                    Focus Area {index + 1}
+                  </span>
+                  <span className={cx(
+                    "ml-auto rounded-sm px-1.5 py-0.5 text-xs font-bold uppercase",
+                    area.priority === "high"
+                      ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                      : area.priority === "medium"
+                      ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+                      : "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
+                  )}>
+                    {area.priority}
+                  </span>
+                </div>
+
+                <h4 className="font-semibold text-stone-900 dark:text-stone-100 mb-2">
+                  {area.displayName}
+                </h4>
+
+                <div className="mb-3">
+                  <div className="flex justify-between text-xs mb-1">
+                    <span className="text-stone-500">Current</span>
+                    <span className="font-medium text-[#1a365d] dark:text-amber-400">
+                      Target: {area.targetAccuracy}%
+                    </span>
+                  </div>
+                  <div className="h-2 w-full overflow-hidden rounded-full bg-stone-200 dark:bg-stone-700">
+                    <div
+                      className={cx(
+                        "h-full rounded-full transition-all",
+                        area.currentAccuracy >= 70 ? "bg-green-500" :
+                        area.currentAccuracy >= 50 ? "bg-amber-500" : "bg-red-500"
+                      )}
+                      style={{ width: `${area.currentAccuracy}%` }}
+                    />
+                  </div>
+                  <div className="flex justify-between text-xs mt-1">
+                    <span className="font-bold text-stone-700 dark:text-stone-300">
+                      {Math.round(area.currentAccuracy)}%
+                    </span>
+                    <span className="text-stone-400">
+                      {area.questionsAttempted} Qs
+                    </span>
+                  </div>
+                </div>
+
+                <p className="text-xs text-stone-600 dark:text-stone-400 line-clamp-2">
+                  {area.recommendation}
+                </p>
+              </div>
+            ))}
+          </>
         )}
 
-        {/* Improvement Areas */}
-        {goalProgress && goalProgress.improvementAreas.length > 0 && (
-          <div className="rounded-sm border-2 border-stone-200 bg-white p-6 dark:border-stone-700 dark:bg-stone-900">
-            <h3 className="mb-4 font-semibold text-stone-900 dark:text-stone-100">
-              Focus Areas to Reach Your Goal
-            </h3>
-            <ImprovementAreasList
-              areas={goalProgress.improvementAreas}
-              isPro={isPro}
-            />
-          </div>
+        {/* Fill empty slots if less than 3 improvement areas */}
+        {goalProgress && goalProgress.improvementAreas.length < 3 && (
+          Array.from({ length: 3 - goalProgress.improvementAreas.length }).map((_, i) => (
+            <div
+              key={`empty-${i}`}
+              className="rounded-sm border-2 border-dashed border-stone-200 bg-stone-50 p-5 dark:border-stone-700 dark:bg-stone-800/50 flex items-center justify-center"
+            >
+              <p className="text-sm text-stone-400 text-center">
+                Complete more tests to unlock additional insights
+              </p>
+            </div>
+          ))
         )}
       </div>
 

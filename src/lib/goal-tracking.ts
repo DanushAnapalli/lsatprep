@@ -324,19 +324,20 @@ export function calculateGoalProgress(
   goal: UserGoal
 ): GoalProgress {
   const projection = calculateProjectedScore(progress);
-  const currentScore = projection.currentScore || progress.averageScore || 150;
+  const currentScore = projection.currentScore || progress.averageScore || 120;
   const pointsToGo = Math.max(0, goal.targetScore - currentScore);
 
-  // Calculate percent complete
-  const startScore = 150; // Assume starting from average
-  const totalRange = goal.targetScore - startScore;
-  const achieved = currentScore - startScore;
+  // Calculate percent complete using LSAT minimum (120) as baseline
+  // This gives accurate progress for any starting score
+  const LSAT_MIN = 120;
+  const totalRange = goal.targetScore - LSAT_MIN; // e.g., 170 - 120 = 50 points possible
+  const achieved = currentScore - LSAT_MIN; // e.g., 130 - 120 = 10 points achieved
   const percentComplete = totalRange > 0
-    ? Math.min(100, Math.max(0, (achieved / totalRange) * 100))
+    ? Math.min(100, Math.max(0, Math.round((achieved / totalRange) * 100)))
     : (currentScore >= goal.targetScore ? 100 : 0);
 
   // Generate and update milestones
-  const milestones = generateMilestones(startScore, goal.targetScore);
+  const milestones = generateMilestones(LSAT_MIN, goal.targetScore);
   milestones.forEach(m => {
     if (currentScore >= m.score) {
       m.achieved = true;

@@ -46,7 +46,7 @@ import { logicalReasoningQuestions, readingComprehensionQuestions } from "@/lib/
 import { LR_TYPE_DESCRIPTIONS, RC_TYPE_DESCRIPTIONS } from "@/lib/lsat-types";
 import { onAuthChange, logOut, User as FirebaseUser } from "@/lib/firebase";
 import { useTheme } from "@/components/ThemeProvider";
-import { getUserTier, getTierDisplayInfo, canAccessFeature, SubscriptionTier, getTrialInfo, getSubscriptionInfo, saveSubscriptionInfo } from "@/lib/subscription";
+import { getUserTier, getTierDisplayInfo, canAccessFeature, SubscriptionTier, getTrialInfo, getSubscriptionInfo, saveSubscriptionInfo, syncSubscriptionFromStripe } from "@/lib/subscription";
 
 function cx(...classes: (string | boolean | undefined)[]) {
   return classes.filter(Boolean).join(" ");
@@ -926,10 +926,20 @@ export default function DashboardPage() {
 
   // Listen to auth state and set current user ID for storage
   useEffect(() => {
-    const unsubscribe = onAuthChange((firebaseUser) => {
+    const unsubscribe = onAuthChange(async (firebaseUser) => {
       setUser(firebaseUser);
       // Set current user ID for user-specific localStorage
       setCurrentUserId(firebaseUser?.uid || null);
+
+      // Sync subscription status from Stripe (restores access if localStorage was cleared)
+      if (firebaseUser?.email) {
+        const restored = await syncSubscriptionFromStripe(firebaseUser.email);
+        if (restored) {
+          // Update tier state after sync
+          setUserTier(getUserTier(firebaseUser));
+        }
+      }
+
       setAuthLoading(false);
     });
     return () => unsubscribe();
@@ -1234,34 +1244,9 @@ export default function DashboardPage() {
           />
         </div>
 
-        {/* Goal Progress Widget */}
-        <div className="mb-8">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="font-serif text-xl font-bold text-stone-900 dark:text-stone-100">
-              Your Goal
-            </h2>
-            <Link
-              href="/goals"
-              className="text-sm font-medium text-[#1a365d] hover:underline dark:text-amber-400"
-            >
-              View Details
-            </Link>
-          </div>
-          <GoalTracker progress={progress} user={user} compact />
-        </div>
-
-        {/* Daily Drills Section */}
-        <div className="mb-8">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="font-serif text-xl font-bold text-stone-900 dark:text-stone-100">
-              Daily Drills
-            </h2>
-          </div>
-          <DailyDrills progress={progress} userId={user?.uid} compact />
-        </div>
-
         {/* Quick Actions */}
         <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {/* 1. Start New Test */}
           <a
             href="/test-select?mode=full"
             className="group flex cursor-pointer items-center justify-between rounded-sm border-2 border-[#1a365d] bg-[#1a365d] p-6 text-white transition hover:bg-[#2d4a7c] dark:border-amber-500 dark:bg-amber-500 dark:text-stone-900 dark:hover:bg-amber-400"
@@ -1273,7 +1258,22 @@ export default function DashboardPage() {
             <ArrowRight size={24} className="transition group-hover:translate-x-1" />
           </a>
 
-          {/* Targeted Practice - NEW questions from weak topics */}
+          {/* 2. Section Practice */}
+          <a
+            href="/test-select?mode=section"
+            className="group flex cursor-pointer items-center justify-between rounded-sm border-2 border-stone-300 bg-stone-100 p-6 transition-all hover:border-stone-500 hover:bg-stone-200 dark:border-stone-700 dark:bg-stone-800 dark:hover:border-amber-500 dark:hover:bg-stone-700"
+          >
+            <div>
+              <div className="flex items-center gap-2 text-lg font-bold text-stone-900 dark:text-stone-100">
+                <Brain size={20} className="text-[#1a365d] dark:text-amber-400" />
+                Section Practice
+              </div>
+              <div className="text-sm text-stone-600 dark:text-stone-400">Focus on LR or RC</div>
+            </div>
+            <ChevronRight size={24} className="text-stone-400 transition-transform group-hover:translate-x-1 group-hover:text-stone-600 dark:group-hover:text-amber-400" />
+          </a>
+
+          {/* 3. Targeted Practice - NEW questions from weak topics */}
           {weakTopics.length > 0 && targetedQuestionCount > 0 ? (
             <a
               href="/test-select?type=targeted"
@@ -1302,7 +1302,7 @@ export default function DashboardPage() {
             </div>
           )}
 
-          {/* Review Missed Questions - retry exact questions you got wrong */}
+          {/* 4. Review Missed Questions - retry exact questions you got wrong */}
           {wrongAnswerCount > 0 ? (
             <a
               href="/test-select?type=improvement"
@@ -1330,22 +1330,68 @@ export default function DashboardPage() {
               </div>
             </div>
           )}
-
-          <a
-            href="/test-select?mode=section"
-            className="group flex cursor-pointer items-center justify-between rounded-sm border-2 border-stone-300 bg-stone-100 p-6 transition-all hover:border-stone-500 hover:bg-stone-200 dark:border-stone-700 dark:bg-stone-800 dark:hover:border-amber-500 dark:hover:bg-stone-700"
-          >
-            <div>
-              <div className="flex items-center gap-2 text-lg font-bold text-stone-900 dark:text-stone-100">
-                <Brain size={20} className="text-[#1a365d] dark:text-amber-400" />
-                Section Practice
-              </div>
-              <div className="text-sm text-stone-600 dark:text-stone-400">Focus on LR or RC</div>
-            </div>
-            <ChevronRight size={24} className="text-stone-400 transition-transform group-hover:translate-x-1 group-hover:text-stone-600 dark:group-hover:text-amber-400" />
-          </a>
         </div>
 
+        {/* Goal Progress Widget */}
+        <div className="mb-8">
+          <div className="mb-4">
+            <h2 className="font-serif text-xl font-bold text-stone-900 dark:text-stone-100">
+              Goals and Score Insights
+            </h2>
+          </div>
+          <GoalTracker progress={progress} user={user} compact />
+        </div>
+
+        {/* Daily Drills Section */}
+        <div className="mb-8">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="font-serif text-xl font-bold text-stone-900 dark:text-stone-100">
+              Daily Drills
+            </h2>
+          </div>
+          <DailyDrills progress={progress} userId={user?.uid} compact />
+        </div>
+
+        {/* Advanced Insights Banner */}
+        {hasCompletedTests && (
+          <div className="mb-8">
+            <Link
+              href="/analytics"
+              className="group block overflow-hidden rounded-sm border-2 border-purple-200 bg-gradient-to-r from-purple-50 via-indigo-50 to-violet-50 transition-all duration-300 hover:border-purple-400 hover:shadow-xl dark:border-purple-600/40 dark:from-purple-900/20 dark:via-indigo-900/20 dark:to-violet-900/20 dark:hover:border-purple-500"
+            >
+              <div className="flex items-center justify-between p-5">
+                <div className="flex items-center gap-4">
+                  <div className="relative">
+                    <div className="absolute inset-0 animate-pulse rounded-lg bg-purple-400/30 blur-md" />
+                    <div className="relative rounded-lg bg-gradient-to-br from-purple-500 via-indigo-500 to-violet-600 p-3 shadow-lg">
+                      <BarChart3 size={24} className="text-white" />
+                    </div>
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg font-bold text-purple-900 dark:text-purple-100">
+                        Advanced Insights
+                      </span>
+                      {userTier === "free" && (
+                        <span className="flex items-center gap-1 rounded-full bg-gradient-to-r from-amber-400 to-orange-400 px-2 py-0.5 text-xs font-bold text-white shadow-sm">
+                          <Crown size={10} />
+                          PRO
+                        </span>
+                      )}
+                    </div>
+                    <p className="mt-0.5 text-sm text-purple-600 dark:text-purple-300">
+                      Score projections, error patterns, fatigue analysis & more
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 rounded-full bg-purple-100 px-4 py-2 text-purple-700 transition-all duration-300 group-hover:bg-purple-200 group-hover:gap-3 dark:bg-purple-800/50 dark:text-purple-300 dark:group-hover:bg-purple-700/50">
+                  <span className="text-sm font-semibold">Explore</span>
+                  <ArrowRight size={16} className="transition-transform duration-300 group-hover:translate-x-1" />
+                </div>
+              </div>
+            </Link>
+          </div>
+        )}
 
         {/* Test History */}
         <div className="mb-8">
@@ -1387,55 +1433,9 @@ export default function DashboardPage() {
           )}
         </div>
 
-        {/* Performance Breakdown */}
-        {hasCompletedTests && (
-          <>
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="font-serif text-xl font-bold text-stone-900 dark:text-stone-100">
-              Performance Breakdown
-            </h2>
-          </div>
-
-          {/* Advanced Insights Banner */}
-          <Link
-            href="/analytics"
-            className="group mb-6 block overflow-hidden rounded-sm border-2 border-purple-200 bg-gradient-to-r from-purple-50 via-indigo-50 to-violet-50 transition-all duration-300 hover:border-purple-400 hover:shadow-xl dark:border-purple-600/40 dark:from-purple-900/20 dark:via-indigo-900/20 dark:to-violet-900/20 dark:hover:border-purple-500"
-          >
-            <div className="flex items-center justify-between p-5">
-              <div className="flex items-center gap-4">
-                <div className="relative">
-                  <div className="absolute inset-0 animate-pulse rounded-lg bg-purple-400/30 blur-md" />
-                  <div className="relative rounded-lg bg-gradient-to-br from-purple-500 via-indigo-500 to-violet-600 p-3 shadow-lg">
-                    <BarChart3 size={24} className="text-white" />
-                  </div>
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg font-bold text-purple-900 dark:text-purple-100">
-                      Advanced Insights
-                    </span>
-                    {userTier === "free" && (
-                      <span className="flex items-center gap-1 rounded-full bg-gradient-to-r from-amber-400 to-orange-400 px-2 py-0.5 text-xs font-bold text-white shadow-sm">
-                        <Crown size={10} />
-                        PRO
-                      </span>
-                    )}
-                  </div>
-                  <p className="mt-0.5 text-sm text-purple-600 dark:text-purple-300">
-                    Score projections, error patterns, fatigue analysis & more
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 rounded-full bg-purple-100 px-4 py-2 text-purple-700 transition-all duration-300 group-hover:bg-purple-200 group-hover:gap-3 dark:bg-purple-800/50 dark:text-purple-300 dark:group-hover:bg-purple-700/50">
-                <span className="text-sm font-semibold">Explore</span>
-                <ArrowRight size={16} className="transition-transform duration-300 group-hover:translate-x-1" />
-              </div>
-            </div>
-          </Link>
-
-          {/* Section Performance Summary */}
-          {Object.keys(sectionStats).length > 0 && (
-          <div className="rounded-sm border-2 border-stone-200 bg-white p-6 dark:border-stone-700 dark:bg-stone-900">
+        {/* Section Summary */}
+        {hasCompletedTests && Object.keys(sectionStats).length > 0 && (
+          <div className="mb-8 rounded-sm border-2 border-stone-200 bg-white p-6 dark:border-stone-700 dark:bg-stone-900">
             <h3 className="mb-4 font-serif text-lg font-bold text-stone-900 dark:text-stone-100">
               Section Summary
             </h3>
@@ -1450,8 +1450,6 @@ export default function DashboardPage() {
               ))}
             </div>
           </div>
-          )}
-          </>
         )}
 
         {/* Improvement Suggestions Alert */}

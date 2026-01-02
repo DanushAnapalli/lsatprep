@@ -305,3 +305,43 @@ export function clearSubscriptionInfo(): void {
   localStorage.removeItem(SUBSCRIPTION_INFO_KEY);
   localStorage.removeItem("lsatprep-subscription-tier");
 }
+
+// ============================================
+// STRIPE SYNC
+// ============================================
+
+// Sync subscription status from Stripe (restores access if user has active subscription)
+export async function syncSubscriptionFromStripe(email: string): Promise<boolean> {
+  if (!email || typeof window === "undefined") return false;
+
+  try {
+    const response = await fetch("/api/check-subscription", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    });
+
+    if (!response.ok) {
+      console.error("Failed to check subscription:", response.status);
+      return false;
+    }
+
+    const data = await response.json();
+
+    if (data.hasActiveSubscription) {
+      setSubscriptionTier("pro");
+      saveSubscriptionInfo({
+        subscriptionId: data.subscriptionId,
+        customerId: data.customerId,
+        status: data.status,
+        currentPeriodEnd: data.currentPeriodEnd,
+        cancelAtPeriodEnd: data.cancelAtPeriodEnd || false,
+      });
+      return true;
+    }
+    return false;
+  } catch (error) {
+    console.error("Failed to sync subscription from Stripe:", error);
+    return false;
+  }
+}

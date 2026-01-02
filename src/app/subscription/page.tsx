@@ -4,8 +4,8 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import { getUserTier, getTierDisplayInfo, getTrialInfo, getSubscriptionInfo, saveSubscriptionInfo, SubscriptionInfo } from "@/lib/subscription";
-import { Check, Crown, Loader2, ArrowLeft, Gift, Calendar, CreditCard, AlertCircle, ExternalLink, X } from "lucide-react";
+import { getUserTier, getTierDisplayInfo, getTrialInfo, getSubscriptionInfo, saveSubscriptionInfo, SubscriptionInfo, syncSubscriptionFromStripe } from "@/lib/subscription";
+import { Check, Crown, Loader2, ArrowLeft, Gift, Calendar, CreditCard, AlertCircle, ExternalLink, X, RefreshCw } from "lucide-react";
 
 const TRIAL_DAYS = 5;
 
@@ -20,6 +20,8 @@ export default function SubscriptionPage() {
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
   const [isLoadingPortal, setIsLoadingPortal] = useState(false);
+  const [isRestoring, setIsRestoring] = useState(false);
+  const [restoreMessage, setRestoreMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -132,6 +134,30 @@ export default function SubscriptionPage() {
       alert("Failed to open billing portal. Please try again.");
     } finally {
       setIsLoadingPortal(false);
+    }
+  };
+
+  const handleRestoreSubscription = async () => {
+    if (!user?.email) return;
+
+    setIsRestoring(true);
+    setRestoreMessage(null);
+
+    try {
+      const restored = await syncSubscriptionFromStripe(user.email);
+      if (restored) {
+        setCurrentTier(getUserTier(user));
+        setSubscriptionInfo(getSubscriptionInfo());
+        setTrialInfo(getTrialInfo());
+        setRestoreMessage({ type: "success", text: "Subscription restored! You now have Pro access." });
+      } else {
+        setRestoreMessage({ type: "error", text: "No active subscription found for this email." });
+      }
+    } catch (error) {
+      console.error("Restore error:", error);
+      setRestoreMessage({ type: "error", text: "Failed to restore subscription. Please try again." });
+    } finally {
+      setIsRestoring(false);
     }
   };
 
@@ -443,6 +469,43 @@ export default function SubscriptionPage() {
             )}
           </div>
         </div>
+
+        {/* Restore Subscription for Free Users */}
+        {currentTier === "free" && user && (
+          <div className="mb-8 p-6 bg-white dark:bg-stone-900 rounded-2xl shadow-lg border border-stone-200 dark:border-stone-800">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-medium text-stone-900 dark:text-stone-100">
+                  Already subscribed?
+                </h3>
+                <p className="text-sm text-stone-600 dark:text-stone-400 mt-1">
+                  If you have an active subscription but lost access, click to restore it.
+                </p>
+              </div>
+              <button
+                onClick={handleRestoreSubscription}
+                disabled={isRestoring}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl font-medium bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 hover:bg-stone-200 dark:hover:bg-stone-700 transition-colors disabled:opacity-50"
+              >
+                {isRestoring ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="w-4 h-4" />
+                )}
+                Restore Access
+              </button>
+            </div>
+            {restoreMessage && (
+              <div className={`mt-4 p-3 rounded-xl text-sm ${
+                restoreMessage.type === "success"
+                  ? "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800"
+                  : "bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800"
+              }`}>
+                {restoreMessage.text}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* FAQ or Additional Info */}
         <div className="text-center text-stone-600 dark:text-stone-400 text-sm">
