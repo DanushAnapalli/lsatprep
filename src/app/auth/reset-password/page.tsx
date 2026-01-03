@@ -1,12 +1,27 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Scale, Lock, Eye, EyeOff, CheckCircle2, XCircle, ArrowLeft, Loader2 } from "lucide-react";
 import { verifyResetCode, confirmReset } from "@/lib/firebase";
 
-export default function ResetPasswordPage() {
+function LoadingState() {
+  return (
+    <div className="min-h-screen bg-stone-50 dark:bg-stone-950 flex items-center justify-center">
+      <div className="text-center">
+        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-sm border-2 border-[#1a365d] bg-[#1a365d] dark:border-amber-500 dark:bg-amber-500">
+          <Scale size={32} className="animate-pulse text-white dark:text-stone-900" />
+        </div>
+        <div className="text-lg font-semibold text-stone-600 dark:text-stone-400">
+          Loading...
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ResetPasswordForm() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -335,5 +350,13 @@ export default function ResetPasswordPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={<LoadingState />}>
+      <ResetPasswordForm />
+    </Suspense>
   );
 }
