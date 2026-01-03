@@ -683,7 +683,7 @@ function VideoCard({ video }: { video: typeof MOCK_VIDEOS[0] }) {
 
 function YouTubeResourcesSection() {
   return (
-    <div className="mt-6 rounded-sm border-2 border-stone-200 bg-white p-6 dark:border-stone-700 dark:bg-stone-900">
+    <div className="mb-6 rounded-sm border-2 border-stone-200 bg-white p-6 dark:border-stone-700 dark:bg-stone-900">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <svg
@@ -761,6 +761,9 @@ export default function ExamplesPage() {
           </div>
         </div>
 
+        {/* YouTube Video Resources Section - Prominent placement at top */}
+        <YouTubeResourcesSection />
+
         {/* 6-Panel Grid Dashboard */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           <JourneyCard />
@@ -770,9 +773,6 @@ export default function ExamplesPage() {
           <ErrorPatternsCard />
           <FatigueAnalysisCard />
         </div>
-
-        {/* YouTube Video Resources Section */}
-        <YouTubeResourcesSection />
 
         {/* CTA Section */}
         <div className="mt-10 text-center">

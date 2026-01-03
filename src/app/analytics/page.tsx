@@ -1366,7 +1366,7 @@ function YouTubeResourcesSection({
   if (videosToShow.length === 0) return null;
 
   return (
-    <div className="relative mt-6 rounded-sm border-2 border-stone-200 bg-white p-6 dark:border-stone-700 dark:bg-stone-900">
+    <div className="relative mb-6 rounded-sm border-2 border-stone-200 bg-white p-6 dark:border-stone-700 dark:bg-stone-900">
       {isLocked && <ProLockOverlay />}
       <div className={isLocked ? "opacity-30 blur-sm pointer-events-none" : ""}>
         <div className="flex items-center justify-between mb-4">
@@ -1779,6 +1779,9 @@ export default function AdvancedAnalyticsPage() {
           </div>
         )}
 
+        {/* YouTube Video Resources Section - Prominent placement at top */}
+        <YouTubeResourcesSection weaknesses={weaknesses} isLocked={!isProOrFounder} />
+
         {/* 6-Panel Grid Dashboard */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {/* Row 1 */}
@@ -1801,9 +1804,6 @@ export default function AdvancedAnalyticsPage() {
           <ErrorPatternsCard patterns={errorPatterns} isLocked={!isProOrFounder} />
           <FatigueAnalysisCard analysis={fatigueAnalysis} progress={progress} isLocked={!isProOrFounder} />
         </div>
-
-        {/* YouTube Video Resources Section */}
-        <YouTubeResourcesSection weaknesses={weaknesses} isLocked={!isProOrFounder} />
 
         {/* Back to Dashboard */}
         <div className="mt-8 text-center">
