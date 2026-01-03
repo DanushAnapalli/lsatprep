@@ -86,8 +86,8 @@ export default function SubscriptionCancelPage() {
         {/* Footer note */}
         <p className="text-center text-xs text-stone-400 mt-8">
           Questions? Contact{" "}
-          <a href="mailto:support@lsatprep.com" className="underline hover:text-stone-600">
-            support@lsatprep.com
+          <a href="mailto:support@lsatprep.org" className="underline hover:text-stone-600">
+            support@lsatprep.org
           </a>
         </p>
       </main>
