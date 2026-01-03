@@ -9,6 +9,8 @@ import {
   onAuthStateChanged,
   sendPasswordResetEmail,
   sendEmailVerification,
+  confirmPasswordReset,
+  verifyPasswordResetCode,
   User,
 } from "firebase/auth";
 import {
@@ -66,6 +68,16 @@ export function onAuthChange(callback: (user: User | null) => void) {
 // Password reset
 export async function resetPassword(email: string) {
   return sendPasswordResetEmail(auth, email);
+}
+
+// Verify password reset code (checks if code is valid)
+export async function verifyResetCode(code: string) {
+  return verifyPasswordResetCode(auth, code);
+}
+
+// Confirm password reset (sets new password)
+export async function confirmReset(code: string, newPassword: string) {
+  return confirmPasswordReset(auth, code, newPassword);
 }
 
 // Resend email verification
