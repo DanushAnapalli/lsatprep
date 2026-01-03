@@ -295,9 +295,12 @@ export function getTrialInfo(): TrialInfo {
       };
     }
 
-    // Calculate days left
-    const msLeft = endDate.getTime() - now.getTime();
-    const daysLeft = Math.ceil(msLeft / (1000 * 60 * 60 * 24));
+    // Calculate days left using date-only comparison for accuracy
+    // This ensures Jan 3 → Jan 7 = 4 days, not 5
+    const endDay = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+    const todayDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const msPerDay = 1000 * 60 * 60 * 24;
+    const daysLeft = Math.max(0, Math.round((endDay.getTime() - todayDay.getTime()) / msPerDay));
 
     return {
       isTrialing: true,

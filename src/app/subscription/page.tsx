@@ -57,8 +57,12 @@ export default function SubscriptionPage() {
                 if (data.isTrialing && data.trialEnd) {
                   const trialEndDate = new Date(data.trialEnd);
                   const now = new Date();
-                  const msLeft = trialEndDate.getTime() - now.getTime();
-                  const daysLeft = Math.max(0, Math.ceil(msLeft / (1000 * 60 * 60 * 24)));
+                  // Use date-only comparison to get accurate day count
+                  // This ensures Jan 3 → Jan 7 = 4 days, not 5
+                  const endDay = new Date(trialEndDate.getFullYear(), trialEndDate.getMonth(), trialEndDate.getDate());
+                  const todayDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                  const msPerDay = 1000 * 60 * 60 * 24;
+                  const daysLeft = Math.max(0, Math.round((endDay.getTime() - todayDay.getTime()) / msPerDay));
                   setTrialInfo({
                     isTrialing: true,
                     daysLeft,
@@ -218,8 +222,11 @@ export default function SubscriptionPage() {
           if (data.isTrialing && data.trialEnd) {
             const trialEndDate = new Date(data.trialEnd);
             const now = new Date();
-            const msLeft = trialEndDate.getTime() - now.getTime();
-            const daysLeft = Math.max(0, Math.ceil(msLeft / (1000 * 60 * 60 * 24)));
+            // Use date-only comparison to get accurate day count
+            const endDay = new Date(trialEndDate.getFullYear(), trialEndDate.getMonth(), trialEndDate.getDate());
+            const todayDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const msPerDay = 1000 * 60 * 60 * 24;
+            const daysLeft = Math.max(0, Math.round((endDay.getTime() - todayDay.getTime()) / msPerDay));
             setTrialInfo({
               isTrialing: true,
               daysLeft,

@@ -107,6 +107,34 @@ const MOCK_PROGRESS = {
   rcAccuracy: 74,
 };
 
+// Mock YouTube Videos based on weaknesses
+const MOCK_VIDEOS = [
+  {
+    url: "https://www.youtube.com/watch?v=NJc9__hypvg",
+    title: "Parallel Reasoning Questions | LSAT Strategy",
+    channel: "7Sage LSAT",
+    duration: "12:48",
+    questionType: "parallel-reasoning",
+    displayName: "Parallel Reasoning",
+  },
+  {
+    url: "https://www.youtube.com/watch?v=6_LtHWRR_Rk",
+    title: "Method of Reasoning Questions | LSAT",
+    channel: "LSAT Demon",
+    duration: "13:15",
+    questionType: "method-of-reasoning",
+    displayName: "Method of Reasoning",
+  },
+  {
+    url: "https://www.youtube.com/watch?v=AwMvRf5Ivq8",
+    title: "Flaw Questions | LSAT Logical Reasoning",
+    channel: "LSAT Demon",
+    duration: "15:20",
+    questionType: "flaw",
+    displayName: "Parallel Flaw",
+  },
+];
+
 // LSAT pace constants
 const LSAT_PACE_LR = 85;
 const LSAT_PACE_RC = 100;
@@ -621,6 +649,76 @@ function FatigueAnalysisCard() {
 }
 
 // ============================================
+// YOUTUBE VIDEO CARD
+// ============================================
+
+function VideoCard({ video }: { video: typeof MOCK_VIDEOS[0] }) {
+  return (
+    <a
+      href={video.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="flex flex-col rounded-sm border-2 border-stone-200 bg-white p-4 transition hover:border-[#1a365d] hover:shadow-md dark:border-stone-700 dark:bg-stone-900 dark:hover:border-amber-500"
+    >
+      {/* Weakness Tag */}
+      <span className="mb-2 inline-flex self-start items-center gap-1 rounded-sm bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700 dark:bg-red-900/30 dark:text-red-400">
+        <XCircle size={12} />
+        {video.displayName}
+      </span>
+
+      {/* Video Title */}
+      <h4 className="font-semibold text-sm text-stone-900 dark:text-stone-100 mb-2 line-clamp-2">
+        {video.title}
+      </h4>
+
+      {/* Channel & Duration */}
+      <div className="mt-auto flex items-center gap-2 text-xs text-stone-500 dark:text-stone-400">
+        <span className="font-medium">{video.channel}</span>
+        <span>•</span>
+        <span>{video.duration}</span>
+      </div>
+    </a>
+  );
+}
+
+function YouTubeResourcesSection() {
+  return (
+    <div className="mt-6 rounded-sm border-2 border-stone-200 bg-white p-6 dark:border-stone-700 dark:bg-stone-900">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <svg
+            className="w-5 h-5 text-red-600 dark:text-red-400"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+          >
+            <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+          </svg>
+          <h3 className="font-serif text-lg font-bold text-stone-900 dark:text-stone-100">
+            Videos for Your Weak Areas
+          </h3>
+        </div>
+        <span className="text-xs text-stone-500 dark:text-stone-400">
+          Based on your weaknesses
+        </span>
+      </div>
+
+      <p className="text-sm text-stone-600 dark:text-stone-400 mb-4">
+        These videos explain the question types you&apos;re struggling with most.
+      </p>
+
+      {/* Video grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+        {MOCK_VIDEOS.map((video, idx) => (
+          <FadeInStagger key={video.questionType} index={idx} baseDelay={100} staggerDelay={50}>
+            <VideoCard video={video} />
+          </FadeInStagger>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ============================================
 // MAIN PAGE
 // ============================================
 
@@ -672,6 +770,9 @@ export default function ExamplesPage() {
           <ErrorPatternsCard />
           <FatigueAnalysisCard />
         </div>
+
+        {/* YouTube Video Resources Section */}
+        <YouTubeResourcesSection />
 
         {/* CTA Section */}
         <div className="mt-10 text-center">
