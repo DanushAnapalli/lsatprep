@@ -395,12 +395,25 @@ export function saveUserGoal(goal: UserGoal, userId?: string): void {
   if (typeof window === "undefined") return;
 
   const key = userId ? `${GOAL_STORAGE_KEY}_${userId}` : GOAL_STORAGE_KEY;
-  localStorage.setItem(key, JSON.stringify({
+  const goalData = {
     ...goal,
     targetDate: goal.targetDate?.toISOString(),
     createdAt: goal.createdAt.toISOString(),
     updatedAt: goal.updatedAt.toISOString(),
-  }));
+  };
+  localStorage.setItem(key, JSON.stringify(goalData));
+
+  // Sync to Firestore in background
+  if (userId) {
+    import("./firebase").then(({ saveGoalToFirestore }) => {
+      saveGoalToFirestore(userId, {
+        targetScore: goal.targetScore,
+        targetDate: goal.targetDate?.toISOString(),
+        createdAt: goal.createdAt.toISOString(),
+        updatedAt: goal.updatedAt.toISOString(),
+      });
+    });
+  }
 }
 
 export function loadUserGoal(userId?: string): UserGoal | null {
@@ -429,4 +442,65 @@ export function clearUserGoal(userId?: string): void {
 
   const key = userId ? `${GOAL_STORAGE_KEY}_${userId}` : GOAL_STORAGE_KEY;
   localStorage.removeItem(key);
+}
+
+// Sync goal from Firestore on login
+export async function syncGoalFromFirestore(userId: string): Promise<UserGoal | null> {
+  if (typeof window === "undefined" || !userId) return null;
+
+  try {
+    const { loadGoalFromFirestore } = await import("./firebase");
+    const cloudGoal = await loadGoalFromFirestore(userId);
+
+    if (!cloudGoal) return null;
+
+    const goal: UserGoal = {
+      targetScore: cloudGoal.targetScore,
+      targetDate: cloudGoal.targetDate ? new Date(cloudGoal.targetDate) : undefined,
+      createdAt: new Date(cloudGoal.createdAt),
+      updatedAt: new Date(cloudGoal.updatedAt),
+    };
+
+    // Compare with localStorage - use the one that was updated more recently
+    const localGoal = loadUserGoal(userId);
+
+    if (!localGoal) {
+      // No local goal, use cloud
+      const key = `${GOAL_STORAGE_KEY}_${userId}`;
+      localStorage.setItem(key, JSON.stringify({
+        ...goal,
+        targetDate: goal.targetDate?.toISOString(),
+        createdAt: goal.createdAt.toISOString(),
+        updatedAt: goal.updatedAt.toISOString(),
+      }));
+      return goal;
+    }
+
+    // Use whichever was updated more recently
+    if (goal.updatedAt > localGoal.updatedAt) {
+      const key = `${GOAL_STORAGE_KEY}_${userId}`;
+      localStorage.setItem(key, JSON.stringify({
+        ...goal,
+        targetDate: goal.targetDate?.toISOString(),
+        createdAt: goal.createdAt.toISOString(),
+        updatedAt: goal.updatedAt.toISOString(),
+      }));
+      return goal;
+    } else if (localGoal.updatedAt > goal.updatedAt) {
+      // Local is newer, sync to cloud
+      import("./firebase").then(({ saveGoalToFirestore }) => {
+        saveGoalToFirestore(userId, {
+          targetScore: localGoal.targetScore,
+          targetDate: localGoal.targetDate?.toISOString(),
+          createdAt: localGoal.createdAt.toISOString(),
+          updatedAt: localGoal.updatedAt.toISOString(),
+        });
+      });
+      return localGoal;
+    }
+
+    return localGoal;
+  } catch {
+    return null;
+  }
 }

@@ -941,6 +941,12 @@ export default function DashboardPage() {
       // Set current user ID for user-specific localStorage
       setCurrentUserId(firebaseUser?.uid || null);
 
+      if (firebaseUser?.uid) {
+        // Sync all data from Firestore on login (handles cross-device sync)
+        const { syncAllDataFromFirestore } = await import("@/lib/user-progress");
+        await syncAllDataFromFirestore(firebaseUser.uid);
+      }
+
       // Sync subscription status from Stripe (restores access if localStorage was cleared)
       if (firebaseUser?.email) {
         const restored = await syncSubscriptionFromStripe(firebaseUser.email);

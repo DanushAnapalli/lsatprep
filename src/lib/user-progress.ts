@@ -649,6 +649,13 @@ export function saveInProgressTest(test: InProgressTest, userId?: string): void 
     }
 
     localStorage.setItem(storageKey, JSON.stringify(existingTests));
+
+    // Sync to Firestore in background (non-blocking)
+    if (userId) {
+      import("./firebase").then(({ saveInProgressTestsToFirestore }) => {
+        saveInProgressTestsToFirestore(userId, existingTests);
+      });
+    }
   } catch (error) {
     console.error("Error saving in-progress test:", error);
   }
@@ -707,6 +714,7 @@ export function clearInProgressTest(userId?: string, testId?: string): void {
   if (typeof window === "undefined") return;
 
   const storageKey = getInProgressStorageKey(userId);
+  let remainingTests: InProgressTest[] = [];
 
   if (!testId) {
     // Clear most recent test (backward compatibility)
@@ -718,23 +726,30 @@ export function clearInProgressTest(userId?: string, testId?: string): void {
       new Date(b.lastUpdatedAt).getTime() - new Date(a.lastUpdatedAt).getTime()
     );
     sorted.shift(); // Remove first (most recent)
+    remainingTests = sorted;
 
     if (sorted.length === 0) {
       localStorage.removeItem(storageKey);
     } else {
       localStorage.setItem(storageKey, JSON.stringify(sorted));
     }
-    return;
+  } else {
+    // Clear specific test by testId
+    const allTests = loadAllInProgressTests(userId);
+    remainingTests = allTests.filter(t => t.testId !== testId);
+
+    if (remainingTests.length === 0) {
+      localStorage.removeItem(storageKey);
+    } else {
+      localStorage.setItem(storageKey, JSON.stringify(remainingTests));
+    }
   }
 
-  // Clear specific test by testId
-  const allTests = loadAllInProgressTests(userId);
-  const filtered = allTests.filter(t => t.testId !== testId);
-
-  if (filtered.length === 0) {
-    localStorage.removeItem(storageKey);
-  } else {
-    localStorage.setItem(storageKey, JSON.stringify(filtered));
+  // Sync to Firestore in background
+  if (userId) {
+    import("./firebase").then(({ saveInProgressTestsToFirestore }) => {
+      saveInProgressTestsToFirestore(userId, remainingTests);
+    });
   }
 }
 
@@ -751,4 +766,89 @@ export function hasInProgressTest(userId?: string): boolean {
 
 export function getInProgressTestCount(userId?: string): number {
   return loadAllInProgressTests(userId).length;
+}
+
+// ============================================
+// COMPREHENSIVE CLOUD SYNC
+// ============================================
+
+// Sync in-progress tests from Firestore
+export async function syncInProgressTestsFromFirestore(userId: string): Promise<InProgressTest[] | null> {
+  if (typeof window === "undefined" || !userId) return null;
+
+  try {
+    const { loadInProgressTestsFromFirestore } = await import("./firebase");
+    const cloudTests = await loadInProgressTestsFromFirestore(userId);
+
+    if (!cloudTests || cloudTests.length === 0) return null;
+
+    // Convert to InProgressTest format
+    const tests = (cloudTests as InProgressTest[]).map((test) => ({
+      ...test,
+      startedAt: new Date(test.startedAt),
+      lastUpdatedAt: new Date(test.lastUpdatedAt),
+    }));
+
+    // Compare with localStorage - merge by taking all unique tests
+    const localTests = loadAllInProgressTests(userId);
+
+    // Create a map of all tests by testId, preferring the more recently updated one
+    const testMap = new Map<string, InProgressTest>();
+
+    // Add local tests first
+    localTests.forEach((test) => {
+      testMap.set(test.testId, test);
+    });
+
+    // Merge cloud tests - prefer cloud if more recent
+    tests.forEach((cloudTest) => {
+      const localTest = testMap.get(cloudTest.testId);
+      if (!localTest || new Date(cloudTest.lastUpdatedAt) > new Date(localTest.lastUpdatedAt)) {
+        testMap.set(cloudTest.testId, cloudTest);
+      }
+    });
+
+    const mergedTests = Array.from(testMap.values());
+
+    // Save merged tests to localStorage
+    const storageKey = getInProgressStorageKey(userId);
+    localStorage.setItem(storageKey, JSON.stringify(mergedTests));
+
+    // Sync back to Firestore if we have more tests locally
+    if (mergedTests.length > tests.length) {
+      import("./firebase").then(({ saveInProgressTestsToFirestore }) => {
+        saveInProgressTestsToFirestore(userId, mergedTests);
+      });
+    }
+
+    return mergedTests;
+  } catch {
+    return null;
+  }
+}
+
+// Sync all user data from Firestore on login
+export async function syncAllDataFromFirestore(userId: string): Promise<{
+  progress: UserProgress | null;
+  inProgressTests: InProgressTest[] | null;
+}> {
+  if (typeof window === "undefined" || !userId) {
+    return { progress: null, inProgressTests: null };
+  }
+
+  // Sync user progress (test history, scores, wrong answers)
+  const progress = await syncProgressFromFirestore(userId);
+
+  // Sync in-progress tests
+  const inProgressTests = await syncInProgressTestsFromFirestore(userId);
+
+  // Sync goals
+  try {
+    const { syncGoalFromFirestore } = await import("./goal-tracking");
+    await syncGoalFromFirestore(userId);
+  } catch {
+    // Goal sync is optional, don't fail if it errors
+  }
+
+  return { progress, inProgressTests };
 }

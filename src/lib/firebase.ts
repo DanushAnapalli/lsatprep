@@ -183,5 +183,168 @@ export async function loadProgressFromFirestore(
   }
 }
 
+// ============================================
+// FIRESTORE IN-PROGRESS TESTS SYNC
+// ============================================
+
+export async function saveInProgressTestsToFirestore(
+  userId: string,
+  tests: unknown[]
+): Promise<void> {
+  if (!userId) return;
+
+  try {
+    const testsRef = doc(db, "inProgressTests", userId);
+    await setDoc(testsRef, {
+      tests: JSON.stringify(tests),
+      updatedAt: serverTimestamp(),
+    });
+  } catch (error) {
+    // Silently fail
+  }
+}
+
+export async function loadInProgressTestsFromFirestore(
+  userId: string
+): Promise<unknown[] | null> {
+  if (!userId) return null;
+
+  try {
+    const testsRef = doc(db, "inProgressTests", userId);
+    const docSnap = await getDoc(testsRef);
+
+    if (!docSnap.exists()) {
+      return null;
+    }
+
+    const data = docSnap.data();
+    return JSON.parse(data.tests || "[]");
+  } catch (error) {
+    return null;
+  }
+}
+
+// ============================================
+// FIRESTORE GOALS SYNC
+// ============================================
+
+export async function saveGoalToFirestore(
+  userId: string,
+  goal: { targetScore: number; targetDate?: string; createdAt: string; updatedAt: string }
+): Promise<void> {
+  if (!userId) return;
+
+  try {
+    const goalRef = doc(db, "userGoals", userId);
+    await setDoc(goalRef, {
+      ...goal,
+      updatedAt: serverTimestamp(),
+    });
+  } catch (error) {
+    // Silently fail
+  }
+}
+
+export async function loadGoalFromFirestore(
+  userId: string
+): Promise<{ targetScore: number; targetDate?: string; createdAt: string; updatedAt: string } | null> {
+  if (!userId) return null;
+
+  try {
+    const goalRef = doc(db, "userGoals", userId);
+    const docSnap = await getDoc(goalRef);
+
+    if (!docSnap.exists()) {
+      return null;
+    }
+
+    return docSnap.data() as { targetScore: number; targetDate?: string; createdAt: string; updatedAt: string };
+  } catch (error) {
+    return null;
+  }
+}
+
+// ============================================
+// FIRESTORE VOCAB PROGRESS SYNC
+// ============================================
+
+export async function saveVocabProgressToFirestore(
+  userId: string,
+  progress: unknown
+): Promise<void> {
+  if (!userId) return;
+
+  try {
+    const vocabRef = doc(db, "vocabProgress", userId);
+    await setDoc(vocabRef, {
+      progress: JSON.stringify(progress),
+      updatedAt: serverTimestamp(),
+    });
+  } catch (error) {
+    // Silently fail
+  }
+}
+
+export async function loadVocabProgressFromFirestore(
+  userId: string
+): Promise<unknown | null> {
+  if (!userId) return null;
+
+  try {
+    const vocabRef = doc(db, "vocabProgress", userId);
+    const docSnap = await getDoc(vocabRef);
+
+    if (!docSnap.exists()) {
+      return null;
+    }
+
+    const data = docSnap.data();
+    return JSON.parse(data.progress || "null");
+  } catch (error) {
+    return null;
+  }
+}
+
+// ============================================
+// FIRESTORE SCHEDULE SYNC
+// ============================================
+
+export async function saveScheduleToFirestore(
+  userId: string,
+  schedule: unknown
+): Promise<void> {
+  if (!userId) return;
+
+  try {
+    const scheduleRef = doc(db, "studySchedules", userId);
+    await setDoc(scheduleRef, {
+      schedule: JSON.stringify(schedule),
+      updatedAt: serverTimestamp(),
+    });
+  } catch (error) {
+    // Silently fail
+  }
+}
+
+export async function loadScheduleFromFirestore(
+  userId: string
+): Promise<unknown | null> {
+  if (!userId) return null;
+
+  try {
+    const scheduleRef = doc(db, "studySchedules", userId);
+    const docSnap = await getDoc(scheduleRef);
+
+    if (!docSnap.exists()) {
+      return null;
+    }
+
+    const data = docSnap.data();
+    return JSON.parse(data.schedule || "null");
+  } catch (error) {
+    return null;
+  }
+}
+
 export { auth, db };
 export type { User };
