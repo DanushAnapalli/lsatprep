@@ -22,6 +22,7 @@ export default function SubscriptionPage() {
   const [isLoadingPortal, setIsLoadingPortal] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
   const [restoreMessage, setRestoreMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [billingPeriod, setBillingPeriod] = useState<"monthly" | "yearly">("monthly");
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -52,6 +53,7 @@ export default function SubscriptionPage() {
         body: JSON.stringify({
           userId: user.uid,
           userEmail: user.email,
+          billingPeriod: billingPeriod,
         }),
       });
 
@@ -116,7 +118,7 @@ export default function SubscriptionPage() {
 
     setIsLoadingPortal(true);
     try {
-      const response = await fetch("/api/create-portal-session", {
+      const response = await fetch("/api/customer-portal", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ customerEmail: user.email }),
@@ -395,12 +397,47 @@ export default function SubscriptionPage() {
             <p className="text-stone-600 dark:text-stone-400 mb-4">
               Everything you need to ace the LSAT
             </p>
+
+            {/* Billing Period Toggle */}
+            <div className="mb-4 flex items-center justify-center gap-2 p-1 bg-stone-100 dark:bg-stone-800 rounded-xl">
+              <button
+                onClick={() => setBillingPeriod("monthly")}
+                className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-all ${
+                  billingPeriod === "monthly"
+                    ? "bg-white dark:bg-stone-700 text-stone-900 dark:text-stone-100 shadow-sm"
+                    : "text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-200"
+                }`}
+              >
+                Monthly
+              </button>
+              <button
+                onClick={() => setBillingPeriod("yearly")}
+                className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-all relative ${
+                  billingPeriod === "yearly"
+                    ? "bg-white dark:bg-stone-700 text-stone-900 dark:text-stone-100 shadow-sm"
+                    : "text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-200"
+                }`}
+              >
+                Yearly
+                <span className="absolute -top-2 -right-2 bg-green-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                  -25%
+                </span>
+              </button>
+            </div>
+
             <div className="mb-2">
               <span className="text-4xl font-bold text-stone-900 dark:text-stone-100">$0</span>
               <span className="text-stone-600 dark:text-stone-400"> for {TRIAL_DAYS} days</span>
             </div>
             <div className="mb-6 text-sm text-stone-500 dark:text-stone-400">
-              then <span className="font-semibold text-stone-700 dark:text-stone-300">$15/month</span> · Cancel anytime
+              {billingPeriod === "monthly" ? (
+                <>then <span className="font-semibold text-stone-700 dark:text-stone-300">$15/month</span> · Cancel anytime</>
+              ) : (
+                <>
+                  then <span className="font-semibold text-stone-700 dark:text-stone-300">$135/year</span>
+                  <span className="ml-2 text-green-600 dark:text-green-400 font-medium">(Save $45!)</span>
+                </>
+              )}
             </div>
 
             {/* Trial info box */}
@@ -413,6 +450,7 @@ export default function SubscriptionPage() {
                   </p>
                   <p className="text-xs text-green-600 dark:text-green-400 mt-1">
                     Card required. You won&apos;t be charged until your trial ends.
+                    {billingPeriod === "yearly" && " Then billed $135 annually."}
                   </p>
                 </div>
               </div>
@@ -434,7 +472,7 @@ export default function SubscriptionPage() {
                     Trial Active · {trialInfo.daysLeft} days left
                   </div>
                   <p className="text-xs text-center text-stone-500">
-                    Your card will be charged $15 when the trial ends
+                    Your card will be charged when the trial ends
                   </p>
                 </div>
               ) : (

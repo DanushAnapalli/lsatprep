@@ -51,6 +51,10 @@ import {
   CompletedSection,
   AnsweredQuestion,
   setCurrentUserId,
+  saveInProgressTest,
+  loadInProgressTest,
+  clearInProgressTest,
+  InProgressTest,
 } from "@/lib/user-progress";
 import { onAuthChange, User as FirebaseUser } from "@/lib/firebase";
 import { getUserTier, canStartLRTest, canStartRCTest, TIER_LIMITS, SubscriptionTier } from "@/lib/subscription";
@@ -278,20 +282,22 @@ function Timer({
   return (
     <div
       className={cx(
-        "flex items-center gap-3 rounded-sm border-2 px-4 py-2",
+        "flex items-center gap-2 rounded-sm border-2 px-2 py-1.5 sm:gap-3 sm:px-4 sm:py-2",
         isLowTime
           ? "border-red-500 bg-red-50 text-red-700 dark:border-red-500 dark:bg-red-900/20 dark:text-red-400"
           : "border-stone-200 bg-white dark:border-stone-700 dark:bg-stone-800"
       )}
     >
-      <Clock size={20} className={isLowTime ? "animate-pulse" : ""} />
-      <span className="font-mono text-lg font-bold tabular-nums">
+      <Clock size={18} className={cx("sm:hidden", isLowTime ? "animate-pulse" : "")} />
+      <Clock size={20} className={cx("hidden sm:block", isLowTime ? "animate-pulse" : "")} />
+      <span className="font-mono text-base font-bold tabular-nums sm:text-lg">
         {String(minutes).padStart(2, "0")}:{String(seconds).padStart(2, "0")}
       </span>
       <button
         onClick={isPaused ? onResume : onPause}
-        className="rounded p-1 hover:bg-stone-100 dark:hover:bg-stone-700"
+        className="rounded p-1.5 hover:bg-stone-100 dark:hover:bg-stone-700"
         type="button"
+        aria-label={isPaused ? "Resume timer" : "Pause timer"}
       >
         {isPaused ? <Play size={16} /> : <Pause size={16} />}
       </button>
@@ -384,7 +390,7 @@ function AnswerChoice({
       disabled={disabled}
       type="button"
       className={cx(
-        "flex w-full items-start gap-4 rounded-sm border-2 p-4 text-left transition",
+        "flex w-full items-start gap-3 rounded-sm border-2 p-3 text-left transition active:scale-[0.99] sm:gap-4 sm:p-4",
         showResult && isCorrect
           ? "border-green-500 bg-green-50 dark:border-green-500 dark:bg-green-900/20"
           : showResult && isIncorrect
@@ -397,7 +403,7 @@ function AnswerChoice({
     >
       <span
         className={cx(
-          "flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border-2 text-sm font-bold",
+          "flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border-2 text-xs font-bold sm:h-8 sm:w-8 sm:text-sm",
           showResult && isCorrect
             ? "border-green-500 bg-green-500 text-white"
             : showResult && isIncorrect
@@ -408,14 +414,19 @@ function AnswerChoice({
         )}
       >
         {showResult && isCorrect ? (
-          <CheckCircle2 size={16} />
+          <CheckCircle2 size={14} className="sm:hidden" />
         ) : showResult && isIncorrect ? (
-          <XCircle size={16} />
+          <XCircle size={14} className="sm:hidden" />
+        ) : null}
+        {showResult && isCorrect ? (
+          <CheckCircle2 size={16} className="hidden sm:block" />
+        ) : showResult && isIncorrect ? (
+          <XCircle size={16} className="hidden sm:block" />
         ) : (
           letter
         )}
       </span>
-      <span className="flex-1 text-sm leading-relaxed text-stone-700 dark:text-stone-300">{text}</span>
+      <span className="flex-1 text-xs leading-relaxed text-stone-700 dark:text-stone-300 sm:text-sm">{text}</span>
     </button>
   );
 }
@@ -431,6 +442,7 @@ function PracticeContent() {
   const questionIdsParam = searchParams.get("questionIds");
   const weakTypesParam = searchParams.get("weakTypes");
   const allowRepeatsParam = searchParams.get("allowRepeats") === "true";
+  const resumeTest = searchParams.get("resume") === "true";
 
   // Memoize the question IDs array to prevent infinite re-renders
   const specificQuestionIds = useMemo(() => {
@@ -444,7 +456,8 @@ function PracticeContent() {
 
   const [progress, setProgress] = useState<UserProgress | null>(null);
   const [sections, setSections] = useState<Section[]>([]);
-  const [testId] = useState(generateTestId);
+  const [testId, setTestId] = useState(generateTestId);
+  const [testName, setTestName] = useState("");
   const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, UserAnswer>>({});
@@ -457,6 +470,7 @@ function PracticeContent() {
   const [testStartTime] = useState(Date.now);
   const [isLoading, setIsLoading] = useState(true);
   const [initialized, setInitialized] = useState(false);
+  const [isResumed, setIsResumed] = useState(false);
 
   // Blind review state
   const [showBlindReviewPrompt, setShowBlindReviewPrompt] = useState(false);
@@ -520,6 +534,52 @@ function PracticeContent() {
     const loadedProgress = loadUserProgress(userId);
     setProgress(loadedProgress);
 
+    // Check if we're resuming an in-progress test
+    if (resumeTest) {
+      const inProgressTest = loadInProgressTest(userId);
+      if (inProgressTest) {
+        // Restore all the in-progress test state
+        setTestId(inProgressTest.testId);
+        setTestName(inProgressTest.testName);
+        setCurrentSectionIndex(inProgressTest.currentSectionIndex);
+        setCurrentQuestionIndex(inProgressTest.currentQuestionIndex);
+        setTimeRemaining(inProgressTest.timeRemaining);
+        timeRemainingRef.current = inProgressTest.timeRemaining;
+        setIsResumed(true);
+
+        // Restore answers (convert to UserAnswer format)
+        const restoredAnswers: Record<string, UserAnswer> = {};
+        Object.entries(inProgressTest.answers).forEach(([qId, ans]) => {
+          restoredAnswers[qId] = {
+            questionId: qId,
+            selectedAnswer: ans.selectedAnswer,
+            flagged: ans.isFlagged,
+            timeSpent: ans.timeSpent,
+          };
+        });
+        setAnswers(restoredAnswers);
+        answersRef.current = restoredAnswers;
+
+        // Rebuild sections from stored question IDs
+        const allQuestions = [...logicalReasoningQuestions, ...readingComprehensionQuestions];
+        const restoredSections: Section[] = inProgressTest.sections.map((sec) => ({
+          id: sec.id,
+          type: sec.type as SectionType,
+          questions: sec.questionIds
+            .map((qId) => allQuestions.find((q) => q.id === qId))
+            .filter((q): q is Question => q !== undefined),
+          timeLimit: sec.timeLimit,
+          isScored: true,
+        }));
+        setSections(restoredSections);
+        sectionsRef.current = restoredSections;
+
+        setIsLoading(false);
+        setInitialized(true);
+        return;
+      }
+    }
+
     // Check tier limits for free users and guests
     const currentTier = user ? getUserTier(user) : "free";
     const isGuest = !user;
@@ -580,6 +640,18 @@ function PracticeContent() {
     setSections(builtSections);
     sectionsRef.current = builtSections;
 
+    // Set test name for new tests
+    const newTestName = testType === "improvement"
+      ? "Review Missed Questions"
+      : testType === "targeted"
+      ? "Targeted Practice"
+      : testType === "lr-only"
+      ? "Logical Reasoning Practice"
+      : testType === "rc-only"
+      ? "Reading Comprehension Practice"
+      : "Full Practice Test";
+    setTestName(newTestName);
+
     if (builtSections.length > 0) {
       const initialTime = builtSections[0].timeLimit;
       setTimeRemaining(initialTime);
@@ -588,7 +660,51 @@ function PracticeContent() {
 
     setIsLoading(false);
     setInitialized(true);
-  }, [testType, specificQuestionIds, allowRepeatsParam, weakTypes, initialized, user, authLoading]);
+  }, [testType, specificQuestionIds, allowRepeatsParam, weakTypes, initialized, user, authLoading, resumeTest]);
+
+  // Auto-save test progress to localStorage whenever state changes
+  useEffect(() => {
+    // Don't save if test is not initialized, completed, or has no sections
+    if (!initialized || testCompleted || sections.length === 0) return;
+
+    const inProgressData: InProgressTest = {
+      testId,
+      testType: (isResumed ? testType : testType) as InProgressTest["testType"],
+      testName: testName || (testType === "improvement"
+        ? "Review Missed Questions"
+        : testType === "targeted"
+        ? "Targeted Practice"
+        : testType === "lr-only"
+        ? "Logical Reasoning Practice"
+        : testType === "rc-only"
+        ? "Reading Comprehension Practice"
+        : "Full Practice Test"),
+      startedAt: new Date(testStartTime),
+      lastUpdatedAt: new Date(),
+      currentSectionIndex,
+      currentQuestionIndex,
+      answers: Object.fromEntries(
+        Object.entries(answers).map(([qId, ans]) => [
+          qId,
+          {
+            selectedAnswer: ans.selectedAnswer,
+            isFlagged: ans.flagged || false,
+            timeSpent: ans.timeSpent || 0,
+          },
+        ])
+      ),
+      timeRemaining,
+      sections: sections.map((sec) => ({
+        id: sec.id,
+        type: sec.type,
+        questionIds: sec.questions.map((q) => q.id),
+        timeLimit: sec.timeLimit,
+      })),
+      totalQuestions: sections.reduce((acc, sec) => acc + sec.questions.length, 0),
+    };
+
+    saveInProgressTest(inProgressData, user?.uid);
+  }, [initialized, testCompleted, sections, currentSectionIndex, currentQuestionIndex, answers, timeRemaining, testId, testType, testName, testStartTime, user, isResumed]);
 
   const currentSection = sections[currentSectionIndex];
   const currentQuestion = currentSection?.questions[currentQuestionIndex];
@@ -786,6 +902,54 @@ function PracticeContent() {
   const goToPrevious = () => goToQuestion(currentQuestionIndex - 1);
   const goToNext = () => goToQuestion(currentQuestionIndex + 1);
 
+  // Keyboard shortcuts for practice test navigation
+  useEffect(() => {
+    if (isPaused || testCompleted || isReviewMode) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't trigger if typing in an input
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+
+      // Answer selection: A-E or 1-5
+      const letterMap: Record<string, "A" | "B" | "C" | "D" | "E"> = {
+        a: "A", b: "B", c: "C", d: "D", e: "E",
+        "1": "A", "2": "B", "3": "C", "4": "D", "5": "E",
+      };
+
+      const key = e.key.toLowerCase();
+      if (letterMap[key] && currentQuestion) {
+        e.preventDefault();
+        handleSelectAnswer(letterMap[key]);
+        return;
+      }
+
+      // Navigation: Arrow keys
+      if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+        e.preventDefault();
+        goToPrevious();
+        return;
+      }
+
+      if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+        e.preventDefault();
+        goToNext();
+        return;
+      }
+
+      // Flag toggle: F key
+      if (key === "f") {
+        e.preventDefault();
+        handleToggleFlag();
+        return;
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isPaused, testCompleted, isReviewMode, currentQuestion, handleSelectAnswer, handleToggleFlag]);
+
   // Handle blind review completion (must be before early returns for Rules of Hooks)
   const handleBlindReviewComplete = useCallback((result: BlindReviewResult) => {
     setBlindReviewResult(result);
@@ -878,6 +1042,9 @@ function PracticeContent() {
 
     saveUserProgress(updatedProgress, user?.uid);
     setProgress(updatedProgress);
+
+    // Clear the in-progress test since we've completed it
+    clearInProgressTest(user?.uid);
   }, [testCompleted, user]); // Only run when test completes
 
   // Calculate final results
@@ -1198,28 +1365,32 @@ function PracticeContent() {
     <div className="min-h-screen bg-stone-100 dark:bg-stone-950">
       {/* Header */}
       <header className="sticky top-0 z-50 border-b-2 border-stone-200 bg-white dark:border-stone-700 dark:bg-stone-900">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-3">
-          <div className="flex items-center gap-4">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-3 py-2 sm:px-6 sm:py-3">
+          <div className="flex items-center gap-2 sm:gap-4">
             <Link
               href="/dashboard"
-              className="flex items-center gap-2 text-sm font-semibold text-stone-600 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100"
+              className="flex items-center gap-1 text-sm font-semibold text-stone-600 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100 sm:gap-2"
+              aria-label="Exit practice"
             >
               <ArrowLeft size={16} />
-              Exit
+              <span className="hidden sm:inline">Exit</span>
             </Link>
-            <div className="h-6 w-px bg-stone-200 dark:bg-stone-700" />
+            <div className="hidden h-6 w-px bg-stone-200 dark:bg-stone-700 sm:block" />
             <div>
-              <div className="text-sm font-bold text-stone-900 dark:text-stone-100">
+              <div className="text-xs font-bold text-stone-900 dark:text-stone-100 sm:text-sm">
                 {testType === "improvement"
-                  ? "Review Missed Questions"
+                  ? "Review"
                   : testType === "targeted"
-                  ? "Targeted Practice"
-                  : `Section ${currentSectionIndex + 1} of ${sections.length}`}
+                  ? "Practice"
+                  : `Sec ${currentSectionIndex + 1}/${sections.length}`}
               </div>
-              <div className="text-xs text-stone-500">
+              <div className="hidden text-xs text-stone-500 sm:block">
                 {currentSection?.type === "logical-reasoning"
                   ? "Logical Reasoning"
                   : "Reading Comprehension"}
+              </div>
+              <div className="text-[10px] text-stone-500 sm:hidden">
+                {currentSection?.type === "logical-reasoning" ? "LR" : "RC"}
               </div>
             </div>
           </div>
@@ -1234,9 +1405,11 @@ function PracticeContent() {
           )}
 
           {isReviewMode && (
-            <div className="flex items-center gap-2 rounded-sm bg-amber-100 px-4 py-2 text-sm font-semibold text-amber-800 dark:bg-amber-900/20 dark:text-amber-400">
-              <Eye size={16} />
-              Review Mode
+            <div className="flex items-center gap-1.5 rounded-sm bg-amber-100 px-2 py-1.5 text-xs font-semibold text-amber-800 dark:bg-amber-900/20 dark:text-amber-400 sm:gap-2 sm:px-4 sm:py-2 sm:text-sm">
+              <Eye size={14} className="sm:hidden" />
+              <Eye size={16} className="hidden sm:block" />
+              <span className="hidden sm:inline">Review Mode</span>
+              <span className="sm:hidden">Review</span>
             </div>
           )}
         </div>
@@ -1271,30 +1444,30 @@ function PracticeContent() {
       </AnimatePresence>
 
       {/* Main Content */}
-      <main className="mx-auto max-w-7xl px-6 py-8">
-        <div className="grid gap-8 lg:grid-cols-3">
+      <main className="mx-auto max-w-7xl px-3 py-4 sm:px-6 sm:py-8">
+        <div className="grid gap-6 lg:grid-cols-3 lg:gap-8">
           {/* Question Area */}
           <div className="lg:col-span-2">
             {/* Question Type Badge */}
-            <div className="mb-4 flex items-center gap-3">
-              <span className="rounded-sm bg-[#1a365d]/10 px-3 py-1 text-xs font-bold uppercase tracking-wider text-[#1a365d] dark:bg-amber-500/10 dark:text-amber-400">
+            <div className="mb-3 flex flex-wrap items-center gap-2 sm:mb-4 sm:gap-3">
+              <span className="rounded-sm bg-[#1a365d]/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#1a365d] dark:bg-amber-500/10 dark:text-amber-400 sm:px-3 sm:py-1 sm:text-xs">
                 {questionTypeInfo?.name || currentQuestion.type}
               </span>
-              <span className="text-sm text-stone-500">
-                Question {currentQuestionIndex + 1} of {currentSection?.questions?.length || 0}
+              <span className="text-xs text-stone-500 sm:text-sm">
+                Q{currentQuestionIndex + 1}/{currentSection?.questions?.length || 0}
               </span>
             </div>
 
             {/* Stimulus */}
-            <div className="mb-6 rounded-sm border-2 border-stone-200 bg-white p-6 dark:border-stone-700 dark:bg-stone-800">
-              <p className="whitespace-pre-wrap text-base leading-relaxed text-stone-800 dark:text-stone-200">
+            <div className="mb-4 rounded-sm border-2 border-stone-200 bg-white p-4 dark:border-stone-700 dark:bg-stone-800 sm:mb-6 sm:p-6">
+              <p className="whitespace-pre-wrap text-sm leading-relaxed text-stone-800 dark:text-stone-200 sm:text-base">
                 {currentQuestion.stimulus}
               </p>
             </div>
 
             {/* Question Stem */}
-            <div className="mb-6">
-              <p className="text-base font-semibold text-stone-900 dark:text-stone-100">
+            <div className="mb-4 sm:mb-6">
+              <p className="text-sm font-semibold text-stone-900 dark:text-stone-100 sm:text-base">
                 {currentQuestion.questionStem}
               </p>
             </div>
@@ -1425,20 +1598,22 @@ function PracticeContent() {
             )}
 
             {/* Navigation */}
-            <div className="mt-8 flex items-center justify-between">
+            <div className="mt-6 flex items-center justify-between gap-2 sm:mt-8 sm:gap-4">
               <button
                 onClick={goToPrevious}
                 disabled={currentQuestionIndex === 0}
                 type="button"
                 className={cx(
-                  "flex items-center gap-2 rounded-sm border-2 px-4 py-2 font-semibold transition",
+                  "flex items-center gap-1 rounded-sm border-2 px-2 py-2 text-sm font-semibold transition sm:gap-2 sm:px-4",
                   currentQuestionIndex === 0
                     ? "cursor-not-allowed border-stone-200 text-stone-400 dark:border-stone-700"
                     : "border-stone-300 text-stone-700 hover:bg-stone-50 dark:border-stone-600 dark:text-stone-300 dark:hover:bg-stone-800"
                 )}
+                aria-label="Previous question"
               >
-                <ChevronLeft size={20} />
-                Previous
+                <ChevronLeft size={18} className="sm:hidden" />
+                <ChevronLeft size={20} className="hidden sm:block" />
+                <span className="hidden sm:inline">Previous</span>
               </button>
 
               {!isReviewMode && (
@@ -1446,14 +1621,15 @@ function PracticeContent() {
                   onClick={handleToggleFlag}
                   type="button"
                   className={cx(
-                    "flex items-center gap-2 rounded-sm border-2 px-4 py-2 font-semibold transition",
+                    "flex items-center gap-1 rounded-sm border-2 px-2 py-2 text-sm font-semibold transition sm:gap-2 sm:px-4",
                     currentAnswer?.flagged
                       ? "border-amber-500 bg-amber-50 text-amber-700 dark:border-amber-500 dark:bg-amber-900/20 dark:text-amber-400"
                       : "border-stone-300 text-stone-700 hover:bg-stone-50 dark:border-stone-600 dark:text-stone-300 dark:hover:bg-stone-800"
                   )}
+                  aria-label={currentAnswer?.flagged ? "Remove flag" : "Flag for review"}
                 >
                   <Flag size={16} fill={currentAnswer?.flagged ? "currentColor" : "none"} />
-                  {currentAnswer?.flagged ? "Flagged" : "Flag for Review"}
+                  <span className="hidden sm:inline">{currentAnswer?.flagged ? "Flagged" : "Flag"}</span>
                 </button>
               )}
 
@@ -1461,33 +1637,57 @@ function PracticeContent() {
                 <button
                   onClick={goToNext}
                   type="button"
-                  className="flex items-center gap-2 rounded-sm border-2 border-[#1a365d] bg-[#1a365d] px-4 py-2 font-semibold text-white transition hover:bg-[#153050] dark:border-amber-500 dark:bg-amber-500 dark:text-stone-900 dark:hover:bg-amber-400"
+                  className="flex items-center gap-1 rounded-sm border-2 border-[#1a365d] bg-[#1a365d] px-2 py-2 text-sm font-semibold text-white transition hover:bg-[#153050] dark:border-amber-500 dark:bg-amber-500 dark:text-stone-900 dark:hover:bg-amber-400 sm:gap-2 sm:px-4"
+                  aria-label="Next question"
                 >
-                  Next
-                  <ChevronRight size={20} />
+                  <span className="hidden sm:inline">Next</span>
+                  <ChevronRight size={18} className="sm:hidden" />
+                  <ChevronRight size={20} className="hidden sm:block" />
                 </button>
               ) : !isReviewMode ? (
                 <button
                   onClick={handleSectionComplete}
                   type="button"
-                  className="flex items-center gap-2 rounded-sm border-2 border-green-600 bg-green-600 px-4 py-2 font-semibold text-white transition hover:bg-green-700"
+                  className="flex items-center gap-1 rounded-sm border-2 border-green-600 bg-green-600 px-2 py-2 text-sm font-semibold text-white transition hover:bg-green-700 sm:gap-2 sm:px-4"
                 >
-                  <CheckCircle2 size={20} />
-                  {currentSectionIndex < sections.length - 1 ? "Next Section" : "Finish Test"}
+                  <CheckCircle2 size={16} className="sm:hidden" />
+                  <CheckCircle2 size={20} className="hidden sm:block" />
+                  <span className="hidden sm:inline">{currentSectionIndex < sections.length - 1 ? "Next Section" : "Finish"}</span>
+                  <span className="sm:hidden">Done</span>
                 </button>
               ) : (
                 <Link
                   href="/dashboard"
-                  className="flex items-center gap-2 rounded-sm border-2 border-stone-300 px-4 py-2 font-semibold text-stone-700 transition hover:bg-stone-50 dark:border-stone-600 dark:text-stone-300 dark:hover:bg-stone-800"
+                  className="flex items-center gap-1 rounded-sm border-2 border-stone-300 px-2 py-2 text-sm font-semibold text-stone-700 transition hover:bg-stone-50 dark:border-stone-600 dark:text-stone-300 dark:hover:bg-stone-800 sm:gap-2 sm:px-4"
                 >
-                  Done Reviewing
+                  <span className="hidden sm:inline">Done Reviewing</span>
+                  <span className="sm:hidden">Done</span>
                 </Link>
               )}
             </div>
+
+            {/* Mobile Question Navigator - Shows below navigation on mobile */}
+            <div className="mt-4 rounded-sm border-2 border-stone-200 bg-white p-3 dark:border-stone-700 dark:bg-stone-800 lg:hidden">
+              <details className="group">
+                <summary className="flex cursor-pointer items-center justify-between text-sm font-bold text-stone-900 dark:text-stone-100">
+                  <span>Question Navigator</span>
+                  <ChevronRight size={16} className="transition group-open:rotate-90" />
+                </summary>
+                <div className="mt-3">
+                  <QuestionNavigator
+                    questions={currentSection?.questions || []}
+                    currentIndex={currentQuestionIndex}
+                    answers={answers}
+                    onSelect={goToQuestion}
+                    showResults={isReviewMode}
+                  />
+                </div>
+              </details>
+            </div>
           </div>
 
-          {/* Sidebar */}
-          <div className="space-y-6">
+          {/* Sidebar - Hidden on mobile, visible on lg+ */}
+          <div className="hidden space-y-6 lg:block">
             {/* Question Navigator */}
             <div className="rounded-sm border-2 border-stone-200 bg-white p-4 dark:border-stone-700 dark:bg-stone-800">
               <h3 className="mb-4 font-bold text-stone-900 dark:text-stone-100">Question Navigator</h3>

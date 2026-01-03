@@ -44,6 +44,7 @@ import {
   signInWithEmail,
   signUpWithEmail,
   signInWithGoogle,
+  resetPassword,
   onAuthChange,
   User as FirebaseUser,
 } from "@/lib/firebase";
@@ -114,11 +115,40 @@ function SignInModal({
   onSuccess: () => void;
 }) {
   const [isSignUp, setIsSignUp] = useState(false);
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError(null);
+    setSuccessMessage(null);
+
+    try {
+      await resetPassword(email);
+      setSuccessMessage("Password reset email sent! Check your inbox.");
+      setTimeout(() => {
+        setIsForgotPassword(false);
+        setSuccessMessage(null);
+      }, 3000);
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to send reset email";
+      if (errorMessage.includes("auth/user-not-found")) {
+        setError("No account found with this email");
+      } else if (errorMessage.includes("auth/invalid-email")) {
+        setError("Please enter a valid email address");
+      } else {
+        setError("Failed to send reset email. Please try again.");
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -208,14 +238,23 @@ function SignInModal({
             <Scale size={28} className="text-white dark:text-stone-900" />
           </div>
           <h2 className="font-serif text-2xl font-bold text-stone-900 dark:text-stone-100">
-            {isSignUp ? "Create Account" : "Welcome Back"}
+            {isForgotPassword ? "Reset Password" : isSignUp ? "Create Account" : "Welcome Back"}
           </h2>
           <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
-            {isSignUp
+            {isForgotPassword
+              ? "Enter your email to receive a reset link"
+              : isSignUp
               ? "Join LSATprep and start your journey"
               : "Sign in to continue your preparation"}
           </p>
         </div>
+
+        {/* Success message */}
+        {successMessage && (
+          <div className="mb-4 rounded-sm border-2 border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700 dark:border-green-800 dark:bg-green-900/30 dark:text-green-400">
+            {successMessage}
+          </div>
+        )}
 
         {/* Error message */}
         {error && (
@@ -224,7 +263,69 @@ function SignInModal({
           </div>
         )}
 
-        {/* Form */}
+        {/* Forgot Password Form */}
+        {isForgotPassword ? (
+          <form onSubmit={handleForgotPassword} className="space-y-4">
+            <div>
+              <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-stone-600 dark:text-stone-400">
+                Email Address
+              </label>
+              <div className="relative">
+                <Mail
+                  size={18}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400"
+                />
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  className={cx(
+                    "w-full rounded-sm border-2 py-3 pl-10 pr-4 text-sm transition",
+                    "border-stone-200 bg-white placeholder:text-stone-400",
+                    "focus:border-[#1a365d] focus:outline-none focus:ring-2 focus:ring-[#1a365d]/20",
+                    "dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100",
+                    "dark:focus:border-amber-500 dark:focus:ring-amber-500/20"
+                  )}
+                  required
+                />
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={isLoading}
+              className={cx(
+                "flex w-full items-center justify-center gap-2 rounded-sm border-2 py-3 text-sm font-bold uppercase tracking-wide transition",
+                "border-[#1a365d] bg-[#1a365d] text-white hover:bg-[#153050]",
+                "dark:border-amber-500 dark:bg-amber-500 dark:text-stone-900 dark:hover:bg-amber-400",
+                "disabled:cursor-not-allowed disabled:opacity-50"
+              )}
+            >
+              {isLoading ? (
+                <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+              ) : (
+                <>
+                  <Mail size={18} />
+                  Send Reset Link
+                </>
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setIsForgotPassword(false);
+                setError(null);
+                setSuccessMessage(null);
+              }}
+              className="w-full text-center text-sm text-stone-500 hover:text-stone-700 dark:text-stone-400 dark:hover:text-stone-200"
+            >
+              Back to Sign In
+            </button>
+          </form>
+        ) : (
+        /* Regular Sign In/Sign Up Form */
         <form onSubmit={handleSubmit} className="space-y-4">
           {isSignUp && (
             <div>
@@ -306,10 +407,14 @@ function SignInModal({
             </div>
           </div>
 
-          {!isSignUp && (
+          {!isSignUp && !isForgotPassword && (
             <div className="text-right">
               <button
                 type="button"
+                onClick={() => {
+                  setIsForgotPassword(true);
+                  setError(null);
+                }}
                 className="text-sm text-[#1a365d] hover:underline dark:text-amber-400"
               >
                 Forgot password?
@@ -337,15 +442,19 @@ function SignInModal({
             )}
           </button>
         </form>
+        )}
 
-        {/* Divider */}
-        <div className="my-6 flex items-center gap-3">
-          <div className="h-px flex-1 bg-stone-200 dark:bg-stone-700" />
-          <span className="text-xs text-stone-400">or</span>
-          <div className="h-px flex-1 bg-stone-200 dark:bg-stone-700" />
-        </div>
+        {/* Divider - only show when not in forgot password mode */}
+        {!isForgotPassword && (
+          <div className="my-6 flex items-center gap-3">
+            <div className="h-px flex-1 bg-stone-200 dark:bg-stone-700" />
+            <span className="text-xs text-stone-400">or</span>
+            <div className="h-px flex-1 bg-stone-200 dark:bg-stone-700" />
+          </div>
+        )}
 
-        {/* Google Sign In */}
+        {/* Google Sign In - only show when not in forgot password mode */}
+        {!isForgotPassword && (
         <button
           type="button"
           onClick={handleGoogleSignIn}
@@ -381,8 +490,10 @@ function SignInModal({
           </svg>
           Continue with Google
         </button>
+        )}
 
-        {/* Toggle Sign Up / Sign In */}
+        {/* Toggle Sign Up / Sign In - only show when not in forgot password mode */}
+        {!isForgotPassword && (
         <p className="mt-6 text-center text-sm text-stone-600 dark:text-stone-400">
           {isSignUp ? "Already have an account?" : "Don't have an account?"}{" "}
           <button
@@ -393,6 +504,7 @@ function SignInModal({
             {isSignUp ? "Sign In" : "Create one"}
           </button>
         </p>
+        )}
       </motion.div>
     </div>
   );
@@ -943,7 +1055,7 @@ export default function LawThemeLSATLanding() {
                 className="mt-8 flex flex-col gap-4 sm:flex-row"
               >
                 <PrimaryButton onClick={handleGetStarted}>{user ? "Go to Dashboard" : "Get Started Free"}</PrimaryButton>
-                <SecondaryButton href="#features">Learn More</SecondaryButton>
+                <SecondaryButton href="/examples">See Our Analytics</SecondaryButton>
               </motion.div>
 
               <div className="mt-10 grid grid-cols-3 gap-4">
@@ -994,7 +1106,7 @@ export default function LawThemeLSATLanding() {
                 </p>
               </div>
               <div className="flex gap-3">
-                <SecondaryButton>See Examples</SecondaryButton>
+                <SecondaryButton href="/examples">How It Works</SecondaryButton>
                 <PrimaryButton onClick={handleGetStarted}>{user ? "Go to Dashboard" : "Start Practicing"}</PrimaryButton>
               </div>
             </div>

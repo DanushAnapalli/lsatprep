@@ -118,9 +118,8 @@ function migrateLegacyData(userId: string): void {
     try {
       // Copy legacy data to user's storage
       localStorage.setItem(userStorageKey, legacyData);
-      console.log(`Migrated legacy data to user ${userId}`);
-    } catch (error) {
-      console.error("Error migrating legacy data:", error);
+    } catch {
+      // Silently fail - migration is best-effort
     }
   }
 }
@@ -180,7 +179,6 @@ export function loadUserProgress(userId?: string): UserProgress {
             if (legacyParsed.completedTests && legacyParsed.completedTests.length > 0) {
               localStorage.setItem(storageKey, legacyData);
               stored = legacyData;
-              console.log(`Migrated legacy data (${legacyParsed.completedTests.length} tests) to user ${userId}`);
             }
           } catch {
             // Legacy data is corrupted, ignore
@@ -243,8 +241,70 @@ export function saveUserProgress(progress: UserProgress, userId?: string): void 
     const storageKey = getUserStorageKey(userId);
     localStorage.setItem(storageKey, JSON.stringify(progress));
     localStorage.setItem(VERSION_KEY, CURRENT_VERSION);
-  } catch (error) {
-    console.error("Error saving user progress:", error);
+
+    // Sync to Firestore in background (non-blocking)
+    if (userId) {
+      import("./firebase").then(({ saveProgressToFirestore }) => {
+        saveProgressToFirestore(userId, progress);
+      });
+    }
+  } catch {
+    // Silent fail for localStorage errors
+  }
+}
+
+// Sync progress from Firestore (call on login to restore from cloud)
+export async function syncProgressFromFirestore(userId: string): Promise<UserProgress | null> {
+  if (typeof window === "undefined" || !userId) return null;
+
+  try {
+    const { loadProgressFromFirestore } = await import("./firebase");
+    const cloudProgress = await loadProgressFromFirestore(userId);
+
+    if (!cloudProgress) return null;
+
+    // Convert to UserProgress format
+    const progress: UserProgress = {
+      completedTests: (cloudProgress.completedTests as CompletedTest[]).map((test) => ({
+        ...test,
+        completedAt: new Date(test.completedAt),
+      })),
+      wrongAnswers: (cloudProgress.wrongAnswers as WrongAnswer[]).map((wa) => ({
+        ...wa,
+        timestamp: new Date(wa.timestamp),
+        masteredAt: wa.masteredAt ? new Date(wa.masteredAt) : undefined,
+      })),
+      seenQuestionIds: cloudProgress.seenQuestionIds,
+      improvementTestsTaken: cloudProgress.improvementTestsTaken,
+      totalQuestionsAnswered: cloudProgress.totalQuestionsAnswered,
+      totalCorrect: cloudProgress.totalCorrect,
+      averageScore: cloudProgress.averageScore,
+      highestScore: cloudProgress.highestScore,
+      lastActiveAt: cloudProgress.lastActiveAt,
+      createdAt: cloudProgress.createdAt,
+    };
+
+    // Compare with localStorage - use the one with more data
+    const localProgress = loadUserProgress(userId);
+    const localTestCount = localProgress.completedTests.length;
+    const cloudTestCount = progress.completedTests.length;
+
+    if (cloudTestCount > localTestCount) {
+      // Cloud has more data - use it and save to localStorage
+      const storageKey = getUserStorageKey(userId);
+      localStorage.setItem(storageKey, JSON.stringify(progress));
+      return progress;
+    } else if (localTestCount > cloudTestCount) {
+      // Local has more data - sync to Firestore
+      import("./firebase").then(({ saveProgressToFirestore }) => {
+        saveProgressToFirestore(userId, localProgress);
+      });
+      return localProgress;
+    }
+
+    return localProgress;
+  } catch {
+    return null;
   }
 }
 
@@ -528,4 +588,167 @@ export function resetSeenQuestions(progress: UserProgress): UserProgress {
     seenQuestionIds: [],
     lastActiveAt: new Date(),
   };
+}
+
+// ============================================
+// IN-PROGRESS TEST FUNCTIONS
+// ============================================
+
+export interface InProgressTest {
+  testId: string;
+  testType: "full" | "lr-only" | "rc-only" | "improvement" | "targeted" | "custom";
+  testName: string;
+  startedAt: Date;
+  lastUpdatedAt: Date;
+  currentSectionIndex: number;
+  currentQuestionIndex: number;
+  answers: Record<string, {
+    selectedAnswer: "A" | "B" | "C" | "D" | "E" | null;
+    isFlagged: boolean;
+    timeSpent: number;
+  }>;
+  timeRemaining: number;
+  sections: {
+    id: string;
+    type: string;
+    questionIds: string[];
+    timeLimit: number;
+  }[];
+  totalQuestions: number;
+}
+
+const IN_PROGRESS_KEY_PREFIX = "lsatprep_in_progress_tests"; // Now stores array
+
+function getInProgressStorageKey(userId?: string): string {
+  const uid = userId || getCurrentUserId() || "guest";
+  return `${IN_PROGRESS_KEY_PREFIX}_${uid}`;
+}
+
+export function saveInProgressTest(test: InProgressTest, userId?: string): void {
+  if (typeof window === "undefined") return;
+
+  const storageKey = getInProgressStorageKey(userId);
+  const data = {
+    ...test,
+    lastUpdatedAt: new Date(),
+  };
+
+  try {
+    // Load existing tests
+    const existingTests = loadAllInProgressTests(userId);
+
+    // Check if this test already exists (by testId)
+    const existingIndex = existingTests.findIndex(t => t.testId === test.testId);
+
+    if (existingIndex >= 0) {
+      // Update existing test
+      existingTests[existingIndex] = data;
+    } else {
+      // Add new test
+      existingTests.push(data);
+    }
+
+    localStorage.setItem(storageKey, JSON.stringify(existingTests));
+  } catch (error) {
+    console.error("Error saving in-progress test:", error);
+  }
+}
+
+// Load all in-progress tests (returns array)
+export function loadAllInProgressTests(userId?: string): InProgressTest[] {
+  if (typeof window === "undefined") return [];
+
+  try {
+    const storageKey = getInProgressStorageKey(userId);
+    const stored = localStorage.getItem(storageKey);
+
+    if (!stored) return [];
+
+    const data = JSON.parse(stored);
+
+    // Handle migration from single test to array format
+    if (!Array.isArray(data)) {
+      // Old format: single test object
+      const singleTest = {
+        ...data,
+        startedAt: new Date(data.startedAt),
+        lastUpdatedAt: new Date(data.lastUpdatedAt),
+      };
+      // Migrate to array format
+      localStorage.setItem(storageKey, JSON.stringify([singleTest]));
+      return [singleTest];
+    }
+
+    // Convert date strings back to Date objects
+    return data.map((test: InProgressTest) => ({
+      ...test,
+      startedAt: new Date(test.startedAt),
+      lastUpdatedAt: new Date(test.lastUpdatedAt),
+    }));
+  } catch (error) {
+    console.error("Error loading in-progress tests:", error);
+    return [];
+  }
+}
+
+// Load the most recent in-progress test (for backward compatibility)
+export function loadInProgressTest(userId?: string): InProgressTest | null {
+  const allTests = loadAllInProgressTests(userId);
+  if (allTests.length === 0) return null;
+
+  // Return the most recently updated test
+  return allTests.sort((a, b) =>
+    new Date(b.lastUpdatedAt).getTime() - new Date(a.lastUpdatedAt).getTime()
+  )[0];
+}
+
+// Clear a specific in-progress test by testId
+export function clearInProgressTest(userId?: string, testId?: string): void {
+  if (typeof window === "undefined") return;
+
+  const storageKey = getInProgressStorageKey(userId);
+
+  if (!testId) {
+    // Clear most recent test (backward compatibility)
+    const allTests = loadAllInProgressTests(userId);
+    if (allTests.length === 0) return;
+
+    // Remove most recent
+    const sorted = allTests.sort((a, b) =>
+      new Date(b.lastUpdatedAt).getTime() - new Date(a.lastUpdatedAt).getTime()
+    );
+    sorted.shift(); // Remove first (most recent)
+
+    if (sorted.length === 0) {
+      localStorage.removeItem(storageKey);
+    } else {
+      localStorage.setItem(storageKey, JSON.stringify(sorted));
+    }
+    return;
+  }
+
+  // Clear specific test by testId
+  const allTests = loadAllInProgressTests(userId);
+  const filtered = allTests.filter(t => t.testId !== testId);
+
+  if (filtered.length === 0) {
+    localStorage.removeItem(storageKey);
+  } else {
+    localStorage.setItem(storageKey, JSON.stringify(filtered));
+  }
+}
+
+// Clear all in-progress tests
+export function clearAllInProgressTests(userId?: string): void {
+  if (typeof window === "undefined") return;
+  const storageKey = getInProgressStorageKey(userId);
+  localStorage.removeItem(storageKey);
+}
+
+export function hasInProgressTest(userId?: string): boolean {
+  return loadAllInProgressTests(userId).length > 0;
+}
+
+export function getInProgressTestCount(userId?: string): number {
+  return loadAllInProgressTests(userId).length;
 }

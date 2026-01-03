@@ -6,9 +6,28 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 // 5-day free trial configuration
 const TRIAL_PERIOD_DAYS = 5;
 
+// Pricing configuration
+const PRICING = {
+  monthly: {
+    amount: 1500, // $15.00 in cents
+    interval: "month" as const,
+    name: "LSATprep Pro (Monthly)",
+    description: "Unlimited access to all LSAT prep features - billed monthly",
+  },
+  yearly: {
+    amount: 13500, // $135.00 in cents
+    interval: "year" as const,
+    name: "LSATprep Pro (Annual)",
+    description: "Unlimited access to all LSAT prep features - billed annually (save $45!)",
+  },
+};
+
 export async function POST(request: NextRequest) {
   try {
-    const { userId, userEmail } = await request.json();
+    const body = await request.json();
+    const userId = body.userId;
+    const userEmail = body.userEmail;
+    const billingPeriod: "monthly" | "yearly" = body.billingPeriod === "yearly" ? "yearly" : "monthly";
 
     if (!userId || !userEmail) {
       return NextResponse.json(
@@ -16,6 +35,8 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    const pricing = PRICING[billingPeriod];
 
     // Create Checkout Session with subscription and 5-day free trial
     const session = await stripe.checkout.sessions.create({
@@ -27,12 +48,12 @@ export async function POST(request: NextRequest) {
           price_data: {
             currency: "usd",
             product_data: {
-              name: "LSATprep Pro",
-              description: "Unlimited access to all LSAT prep features",
+              name: pricing.name,
+              description: pricing.description,
             },
-            unit_amount: 1500, // $15.00 in cents
+            unit_amount: pricing.amount,
             recurring: {
-              interval: "month",
+              interval: pricing.interval,
             },
           },
           quantity: 1,
@@ -42,10 +63,12 @@ export async function POST(request: NextRequest) {
         trial_period_days: TRIAL_PERIOD_DAYS,
         metadata: {
           userId: userId,
+          billingPeriod: billingPeriod,
         },
       },
       metadata: {
         userId: userId,
+        billingPeriod: billingPeriod,
       },
       // Collect payment method upfront for post-trial billing
       payment_method_collection: "always",
@@ -57,6 +80,7 @@ export async function POST(request: NextRequest) {
       sessionId: session.id,
       url: session.url,
       trialDays: TRIAL_PERIOD_DAYS,
+      billingPeriod: billingPeriod,
     });
   } catch (error) {
     console.error("Error creating checkout session:", error);

@@ -60,21 +60,45 @@ export const TIER_LIMITS: Record<SubscriptionTier, TierLimits> = {
   },
 };
 
+// ============================================
+// SECURE SUBSCRIPTION VERIFICATION
+// ============================================
+
+// In-memory cache for verified subscription status (not localStorage - can't be tampered)
+let verifiedTierCache: {
+  email: string;
+  tier: SubscriptionTier;
+  verifiedAt: number;
+} | null = null;
+
+const CACHE_DURATION_MS = 5 * 60 * 1000; // 5 minutes
+
 // Check if user is a founder based on email
 export function isFounder(user: User | null): boolean {
   if (!user?.email) return false;
   return FOUNDER_EMAILS.includes(user.email.toLowerCase());
 }
 
-// Get user's subscription tier
+// Get user's subscription tier (uses cached value or localStorage as fallback)
+// For critical features, use verifySubscriptionTier() instead
 export function getUserTier(user: User | null): SubscriptionTier {
   // Founders always get founder tier
   if (isFounder(user)) {
     return "founder";
   }
 
-  // Check localStorage for pro subscription (for demo/dev purposes)
-  // In production, this would check a payment provider or database
+  // Check in-memory verified cache first
+  if (user?.email && verifiedTierCache) {
+    const cacheAge = Date.now() - verifiedTierCache.verifiedAt;
+    if (
+      verifiedTierCache.email === user.email.toLowerCase() &&
+      cacheAge < CACHE_DURATION_MS
+    ) {
+      return verifiedTierCache.tier;
+    }
+  }
+
+  // Fallback to localStorage (will be verified on next server call)
   if (typeof window !== "undefined") {
     const storedTier = localStorage.getItem("lsatprep-subscription-tier");
     if (storedTier === "pro") {
@@ -83,6 +107,69 @@ export function getUserTier(user: User | null): SubscriptionTier {
   }
 
   return "free";
+}
+
+// Verify subscription tier with the server (secure - can't be bypassed)
+export async function verifySubscriptionTier(user: User | null): Promise<SubscriptionTier> {
+  // Founders always get founder tier
+  if (isFounder(user)) {
+    return "founder";
+  }
+
+  if (!user?.email) {
+    return "free";
+  }
+
+  // Check if we have a fresh cache
+  if (verifiedTierCache) {
+    const cacheAge = Date.now() - verifiedTierCache.verifiedAt;
+    if (
+      verifiedTierCache.email === user.email.toLowerCase() &&
+      cacheAge < CACHE_DURATION_MS
+    ) {
+      return verifiedTierCache.tier;
+    }
+  }
+
+  // Verify with server
+  try {
+    const response = await fetch("/api/check-subscription", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: user.email }),
+    });
+
+    if (!response.ok) {
+      return "free";
+    }
+
+    const data = await response.json();
+    const tier: SubscriptionTier = data.hasActiveSubscription ? "pro" : "free";
+
+    // Update verified cache
+    verifiedTierCache = {
+      email: user.email.toLowerCase(),
+      tier,
+      verifiedAt: Date.now(),
+    };
+
+    // Also update localStorage for UI consistency
+    if (tier === "pro") {
+      localStorage.setItem("lsatprep-subscription-tier", "pro");
+    } else {
+      localStorage.removeItem("lsatprep-subscription-tier");
+    }
+
+    return tier;
+  } catch {
+    // On error, fall back to cached/localStorage value
+    return getUserTier(user);
+  }
+}
+
+// Clear the verified cache (call on logout)
+export function clearVerifiedTierCache(): void {
+  verifiedTierCache = null;
 }
 
 // Get limits for a tier

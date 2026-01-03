@@ -57,11 +57,13 @@ function QuestionReviewCard({
   questionNumber,
   isExpanded,
   onToggle,
+  sectionType,
 }: {
   answeredQuestion: AnsweredQuestion;
   questionNumber: number;
   isExpanded: boolean;
   onToggle: () => void;
+  sectionType: "logical-reasoning" | "reading-comprehension";
 }) {
   const question = getQuestionById(answeredQuestion.questionId);
 
@@ -188,6 +190,7 @@ function QuestionReviewCard({
               {question.explanation}
             </div>
           </div>
+
         </div>
       )}
     </div>
@@ -449,6 +452,7 @@ export default function TestReviewPage() {
                 questionNumber={index + 1}
                 isExpanded={!!expandedQuestions[question.questionId]}
                 onToggle={() => toggleQuestion(question.questionId)}
+                sectionType={question.sectionType as "logical-reasoning" | "reading-comprehension"}
               />
             ))
           )}

@@ -31,11 +31,12 @@ import {
   Loader2,
   Sparkles,
   Activity,
+  Info,
 } from "lucide-react";
 import { loadUserProgress, UserProgress, setCurrentUserId } from "@/lib/user-progress";
 import { onAuthChange, logOut, User as FirebaseUser } from "@/lib/firebase";
 import { useTheme } from "@/components/ThemeProvider";
-import { getUserTier, getTierDisplayInfo, SubscriptionTier, getTrialInfo, getSubscriptionInfo, saveSubscriptionInfo } from "@/lib/subscription";
+import { getUserTier, verifySubscriptionTier, getTierDisplayInfo, SubscriptionTier, getTrialInfo, getSubscriptionInfo, saveSubscriptionInfo } from "@/lib/subscription";
 import {
   getDetailedQuestionTypeStats,
   getTopWeaknesses,
@@ -53,10 +54,109 @@ import {
   FatigueAnalysis,
   AnalyticsSummary,
   DifficultyAnalytics,
+  SectionTimeStats,
+  LSAT_PACE_LR,
+  LSAT_PACE_RC,
+  LSAT_AMBER_THRESHOLD_LR,
+  LSAT_AMBER_THRESHOLD_RC,
 } from "@/lib/advanced-analytics";
+import { getVideosForWeaknesses, getAllVideos, VideoResource } from "@/lib/youtube-videos";
 
 function cx(...classes: (string | boolean | undefined)[]) {
   return classes.filter(Boolean).join(" ");
+}
+
+// ============================================
+// INFO TOOLTIP COMPONENT
+// ============================================
+
+const ANALYTICS_INFO: Record<string, { title: string; description: string }> = {
+  journey: {
+    title: "Your LSAT Journey",
+    description: "A personalized summary of your LSAT prep progress. Shows your overall accuracy, score trend direction, mastered question types (80%+ accuracy), and areas that need more focus. Use this to quickly understand where you stand."
+  },
+  performance: {
+    title: "Performance Snapshot",
+    description: "Key metrics at a glance: your projected LSAT score based on recent performance, overall accuracy percentage, and average time per question. The graph shows your score trend over your last 8 tests."
+  },
+  strengthsWeaknesses: {
+    title: "Strengths & Weaknesses",
+    description: "Identifies your top 3 strongest and weakest question types based on accuracy. Focus your study time on weak areas to maximize score improvement. Click 'Practice Weak Areas' for targeted practice."
+  },
+  timeAnalytics: {
+    title: "Time Analytics",
+    description: "Tracks your pacing against LSAT standards. Target pace: 1:25 for Logical Reasoning, 1:40 for Reading Comprehension. Shows what percentage of questions you complete 'on pace' and helps identify if you're rushing or spending too long."
+  },
+  errorPatterns: {
+    title: "Error Patterns",
+    description: "AI-detected patterns in your mistakes. Identifies recurring issues like rushing through questions, missing key words, or struggling with specific reasoning types. Each pattern includes a targeted tip to help you improve."
+  },
+  fatigue: {
+    title: "Endurance & Stats",
+    description: "Analyzes whether your performance drops during the second half of sections (fatigue). Also shows total tests completed and your accuracy breakdown for Logical Reasoning vs Reading Comprehension."
+  }
+};
+
+function InfoTooltip({ infoKey }: { infoKey: keyof typeof ANALYTICS_INFO }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const tooltipRef = useRef<HTMLDivElement>(null);
+  const info = ANALYTICS_INFO[infoKey];
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (tooltipRef.current && !tooltipRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    if (isOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isOpen]);
+
+  useEffect(() => {
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setIsOpen(false);
+      }
+    }
+    if (isOpen) {
+      document.addEventListener("keydown", handleEscape);
+    }
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, [isOpen]);
+
+  return (
+    <div ref={tooltipRef} className="relative inline-block">
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="p-1 rounded-full text-stone-400 hover:text-stone-600 hover:bg-stone-100 dark:text-stone-500 dark:hover:text-stone-300 dark:hover:bg-stone-800 transition-colors"
+        aria-label={`Information about ${info.title}`}
+      >
+        <Info size={14} />
+      </button>
+      {isOpen && (
+        <div className="absolute z-50 left-0 top-full mt-2 w-72 rounded-sm border-2 border-stone-200 bg-white p-4 shadow-lg dark:border-stone-700 dark:bg-stone-800 animate-in fade-in slide-in-from-top-2 duration-200">
+          <div className="flex items-start justify-between gap-2 mb-2">
+            <h4 className="font-semibold text-stone-900 dark:text-stone-100 text-sm">
+              {info.title}
+            </h4>
+            <button
+              type="button"
+              onClick={() => setIsOpen(false)}
+              className="p-0.5 rounded text-stone-400 hover:text-stone-600 dark:hover:text-stone-300"
+            >
+              <X size={14} />
+            </button>
+          </div>
+          <p className="text-xs text-stone-600 dark:text-stone-400 leading-relaxed">
+            {info.description}
+          </p>
+        </div>
+      )}
+    </div>
+  );
 }
 
 // ============================================
@@ -551,6 +651,7 @@ function JourneyCard({
           <h3 className="font-serif text-lg font-bold text-stone-900 dark:text-stone-100">
             Your LSAT Journey
           </h3>
+          <InfoTooltip infoKey="journey" />
         </div>
 
         <ul className="space-y-3 text-sm">
@@ -655,6 +756,7 @@ function PerformanceSnapshot({
           <h3 className="font-serif text-lg font-bold text-stone-900 dark:text-stone-100">
             Performance Snapshot
           </h3>
+          <InfoTooltip infoKey="performance" />
         </div>
 
         {/* 3 Key Metrics */}
@@ -714,6 +816,7 @@ function StrengthsWeaknessesCard({
           <h3 className="font-serif text-lg font-bold text-stone-900 dark:text-stone-100">
             Strengths & Weaknesses
           </h3>
+          <InfoTooltip infoKey="strengthsWeaknesses" />
         </div>
 
         <div className="grid grid-cols-2 gap-4">
@@ -805,22 +908,138 @@ function TimeAnalyticsCard({
     return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
-  const distribution = analytics?.timeDistribution;
-  const total = distribution
-    ? distribution.under30s + distribution.thirtyTo60s + distribution.sixtyTo90s + distribution.ninetyTo120s + distribution.over120s
-    : 0;
-
-  const distributionData = distribution
-    ? [
-        { label: "Under 30s", count: distribution.under30s, color: "bg-red-400" },
-        { label: "30-60s", count: distribution.thirtyTo60s, color: "bg-green-400" },
-        { label: "60-90s", count: distribution.sixtyTo90s, color: "bg-green-500" },
-        { label: "90-120s", count: distribution.ninetyTo120s, color: "bg-amber-400" },
-        { label: "Over 2 min", count: distribution.over120s, color: "bg-red-500" },
-      ]
-    : [];
+  // Get pacing status color based on LSAT standards
+  const getPacingStatus = (avgTime: number, targetPace: number, amberThreshold: number) => {
+    if (avgTime <= targetPace) return "green";
+    if (avgTime <= amberThreshold) return "amber";
+    return "red";
+  };
 
   const hasEnoughTests = testCount >= MIN_TESTS_REQUIRED;
+  const bySection = analytics?.bySection;
+  const totalQuestions = (bySection?.logicalReasoning.totalQuestions || 0) +
+                        (bySection?.readingComprehension.totalQuestions || 0);
+
+  // Section card component
+  const SectionPacingCard = ({
+    title,
+    shortTitle,
+    stats,
+    targetPace,
+    amberThreshold,
+    index,
+  }: {
+    title: string;
+    shortTitle: string;
+    stats: SectionTimeStats;
+    targetPace: number;
+    amberThreshold: number;
+    index: number;
+  }) => {
+    const status = stats.totalQuestions > 0
+      ? getPacingStatus(stats.avgTimePerQuestion, targetPace, amberThreshold)
+      : "none";
+    const onPacePercent = stats.totalQuestions > 0
+      ? Math.round((stats.questionsOnPace / stats.totalQuestions) * 100)
+      : 0;
+
+    const statusColors = {
+      green: {
+        bg: "bg-green-50 dark:bg-green-900/20",
+        border: "border-green-200 dark:border-green-800",
+        text: "text-green-700 dark:text-green-400",
+        badge: "bg-green-100 dark:bg-green-900/40",
+      },
+      amber: {
+        bg: "bg-amber-50 dark:bg-amber-900/20",
+        border: "border-amber-200 dark:border-amber-800",
+        text: "text-amber-700 dark:text-amber-400",
+        badge: "bg-amber-100 dark:bg-amber-900/40",
+      },
+      red: {
+        bg: "bg-red-50 dark:bg-red-900/20",
+        border: "border-red-200 dark:border-red-800",
+        text: "text-red-700 dark:text-red-400",
+        badge: "bg-red-100 dark:bg-red-900/40",
+      },
+      none: {
+        bg: "bg-stone-50 dark:bg-stone-800/50",
+        border: "border-stone-200 dark:border-stone-700",
+        text: "text-stone-500 dark:text-stone-400",
+        badge: "bg-stone-100 dark:bg-stone-800",
+      },
+    };
+
+    const colors = statusColors[status];
+
+    return (
+      <FadeInStagger index={index} baseDelay={100}>
+        <div className={cx(
+          "rounded-sm border-2 p-4",
+          colors.bg,
+          colors.border
+        )}>
+          <div className="flex items-center justify-between mb-3">
+            <h4 className="font-semibold text-stone-900 dark:text-stone-100 text-sm">
+              {shortTitle}
+            </h4>
+            {stats.totalQuestions > 0 && (
+              <span className={cx(
+                "text-xs font-medium px-2 py-0.5 rounded",
+                colors.badge,
+                colors.text
+              )}>
+                {status === "green" ? "On Pace" : status === "amber" ? "Slightly Over" : "Over Pace"}
+              </span>
+            )}
+          </div>
+
+          {stats.totalQuestions === 0 ? (
+            <div className="text-xs text-stone-500 dark:text-stone-400">
+              No {title.toLowerCase()} questions yet
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <div className="flex items-baseline justify-between">
+                <div>
+                  <span className="text-xs text-stone-500 dark:text-stone-400">Your avg: </span>
+                  <span className={cx("text-lg font-bold", colors.text)}>
+                    {formatTime(stats.avgTimePerQuestion)}
+                  </span>
+                </div>
+                <div className="text-xs text-stone-500 dark:text-stone-400">
+                  Target: {formatTime(targetPace)}
+                </div>
+              </div>
+
+              {/* Progress bar showing on-pace percentage */}
+              <div className="space-y-1">
+                <div className="flex justify-between text-xs">
+                  <span className="text-stone-500 dark:text-stone-400">On pace</span>
+                  <span className={cx("font-medium", colors.text)}>{onPacePercent}%</span>
+                </div>
+                <div className="h-2 bg-stone-200 dark:bg-stone-700 rounded-full overflow-hidden">
+                  <div
+                    className={cx(
+                      "h-full rounded-full transition-all duration-500",
+                      status === "green" ? "bg-green-500" :
+                      status === "amber" ? "bg-amber-500" :
+                      "bg-red-500"
+                    )}
+                    style={{ width: `${onPacePercent}%` }}
+                  />
+                </div>
+              </div>
+
+              <div className="text-xs text-stone-500 dark:text-stone-400">
+                {stats.totalQuestions} questions
+              </div>
+            </div>
+          )}
+        </div>
+      </FadeInStagger>
+    );
+  };
 
   return (
     <div className="relative rounded-sm border-2 border-stone-200 bg-white p-5 dark:border-stone-700 dark:bg-stone-900 h-full">
@@ -831,6 +1050,7 @@ function TimeAnalyticsCard({
           <h3 className="font-serif text-lg font-bold text-stone-900 dark:text-stone-100">
             Time Analytics
           </h3>
+          <InfoTooltip infoKey="timeAnalytics" />
         </div>
 
         {!hasEnoughTests ? (
@@ -843,44 +1063,67 @@ function TimeAnalyticsCard({
               {testCount === 0 ? "No tests completed yet" : `${testCount} of ${MIN_TESTS_REQUIRED} tests completed`}
             </p>
           </div>
-        ) : !analytics || total === 0 ? (
+        ) : !analytics || !bySection ? (
           <div className="py-6 text-center text-stone-500 text-sm">
             Complete some practice tests to see time analytics.
           </div>
         ) : (
           <div className="space-y-4">
-            {/* Time Stats Row */}
-            <div className="grid grid-cols-3 gap-3">
-              <FadeInStagger index={0} baseDelay={100}>
-                <div className="rounded-sm border border-stone-200 p-3 dark:border-stone-700">
-                  <div className="text-xs text-stone-500">Avg Time</div>
-                  <div className="text-xl font-bold text-stone-900 dark:text-stone-100">
+            {/* Overall Stats */}
+            <FadeInStagger index={0} baseDelay={50}>
+              <div className="flex items-center justify-between p-3 rounded-sm bg-stone-50 dark:bg-stone-800/50 border border-stone-200 dark:border-stone-700">
+                <div>
+                  <div className="text-xs text-stone-500 dark:text-stone-400">Overall Average</div>
+                  <div className="text-2xl font-bold text-stone-900 dark:text-stone-100">
                     {formatTime(analytics.avgTimePerQuestion)}
                   </div>
                 </div>
-              </FadeInStagger>
-              <FadeInStagger index={1} baseDelay={100}>
-                <div className="rounded-sm border border-red-200 bg-red-50 p-3 dark:border-red-800 dark:bg-red-900/20">
-                  <div className="text-xs text-red-600 dark:text-red-400">Rushed</div>
-                  <div className="text-xl font-bold text-red-700 dark:text-red-400">
-                    <AnimatedCounter value={analytics.questionsRushed} delay={200} />
+                <div className="text-right">
+                  <div className="text-xs text-stone-500 dark:text-stone-400">Questions</div>
+                  <div className="text-lg font-semibold text-stone-700 dark:text-stone-300">
+                    {totalQuestions}
                   </div>
                 </div>
-              </FadeInStagger>
-              <FadeInStagger index={2} baseDelay={100}>
-                <div className="rounded-sm border border-amber-200 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-900/20">
-                  <div className="text-xs text-amber-600 dark:text-amber-400">Over 2 min</div>
-                  <div className="text-xl font-bold text-amber-700 dark:text-amber-400">
-                    <AnimatedCounter value={analytics.questionsOverPace} delay={200} />
-                  </div>
-                </div>
-              </FadeInStagger>
+              </div>
+            </FadeInStagger>
+
+            {/* Section-specific pacing cards */}
+            <div className="grid grid-cols-2 gap-3">
+              <SectionPacingCard
+                title="Logical Reasoning"
+                shortTitle="LR"
+                stats={bySection.logicalReasoning}
+                targetPace={LSAT_PACE_LR}
+                amberThreshold={LSAT_AMBER_THRESHOLD_LR}
+                index={1}
+              />
+              <SectionPacingCard
+                title="Reading Comprehension"
+                shortTitle="RC"
+                stats={bySection.readingComprehension}
+                targetPace={LSAT_PACE_RC}
+                amberThreshold={LSAT_AMBER_THRESHOLD_RC}
+                index={2}
+              />
             </div>
 
-            {/* Donut Chart */}
-            <div className="flex justify-center">
-              <AnimatedDonutChart data={distributionData} size={130} />
-            </div>
+            {/* Legend */}
+            <FadeInStagger index={3} baseDelay={100}>
+              <div className="flex items-center justify-center gap-4 text-xs text-stone-500 dark:text-stone-400 pt-2">
+                <div className="flex items-center gap-1">
+                  <div className="w-2 h-2 rounded-full bg-green-500" />
+                  <span>On pace</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-2 h-2 rounded-full bg-amber-500" />
+                  <span>Slightly over</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-2 h-2 rounded-full bg-red-500" />
+                  <span>Over pace</span>
+                </div>
+              </div>
+            </FadeInStagger>
           </div>
         )}
       </div>
@@ -904,6 +1147,7 @@ function ErrorPatternsCard({
           <h3 className="font-serif text-lg font-bold text-stone-900 dark:text-stone-100">
             Error Patterns
           </h3>
+          <InfoTooltip infoKey="errorPatterns" />
         </div>
 
         {patterns.length === 0 ? (
@@ -979,6 +1223,7 @@ function FatigueAnalysisCard({
           <h3 className="font-serif text-lg font-bold text-stone-900 dark:text-stone-100">
             Endurance & Stats
           </h3>
+          <InfoTooltip infoKey="fatigue" />
         </div>
 
         {/* Quick Stats */}
@@ -1068,6 +1313,97 @@ function ProLockOverlay() {
         <Crown size={12} />
         Upgrade
       </Link>
+    </div>
+  );
+}
+
+// YouTube Video Card Component
+function VideoCard({ video }: { video: VideoResource }) {
+  return (
+    <a
+      href={video.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="flex flex-col rounded-sm border-2 border-stone-200 bg-white p-4 transition hover:border-[#1a365d] hover:shadow-md dark:border-stone-700 dark:bg-stone-900 dark:hover:border-amber-500"
+    >
+      {/* Weakness Tag */}
+      <span className="mb-2 inline-flex self-start items-center gap-1 rounded-sm bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700 dark:bg-red-900/30 dark:text-red-400">
+        <XCircle size={12} />
+        {video.displayName}
+      </span>
+
+      {/* Video Title */}
+      <h4 className="font-semibold text-sm text-stone-900 dark:text-stone-100 mb-2 line-clamp-2">
+        {video.title}
+      </h4>
+
+      {/* Channel & Duration */}
+      <div className="mt-auto flex items-center gap-2 text-xs text-stone-500 dark:text-stone-400">
+        <span className="font-medium">{video.channel}</span>
+        <span>•</span>
+        <span>{video.duration}</span>
+      </div>
+    </a>
+  );
+}
+
+// YouTube Resources Section
+function YouTubeResourcesSection({
+  weaknesses,
+  isLocked,
+}: {
+  weaknesses: QuestionTypeStats[];
+  isLocked: boolean;
+}) {
+  // Get videos for user's weaknesses
+  const weaknessTypes = weaknesses.slice(0, 5).map((w) => w.type);
+  const recommendedVideos = getVideosForWeaknesses(weaknessTypes);
+
+  // If no weakness-specific videos, show all available
+  const videosToShow = recommendedVideos.length > 0 ? recommendedVideos : getAllVideos();
+  const isShowingAll = recommendedVideos.length === 0;
+
+  if (videosToShow.length === 0) return null;
+
+  return (
+    <div className="relative mt-6 rounded-sm border-2 border-stone-200 bg-white p-6 dark:border-stone-700 dark:bg-stone-900">
+      {isLocked && <ProLockOverlay />}
+      <div className={isLocked ? "opacity-30 blur-sm pointer-events-none" : ""}>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <svg
+              className="w-5 h-5 text-red-600 dark:text-red-400"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+            >
+              <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+            </svg>
+            <h3 className="font-serif text-lg font-bold text-stone-900 dark:text-stone-100">
+              {isShowingAll ? "LSAT Video Resources" : "Videos for Your Weak Areas"}
+            </h3>
+          </div>
+          {!isShowingAll && (
+            <span className="text-xs text-stone-500 dark:text-stone-400">
+              Based on your weaknesses
+            </span>
+          )}
+        </div>
+
+        <p className="text-sm text-stone-600 dark:text-stone-400 mb-4">
+          {isShowingAll
+            ? "Watch these curated videos to improve your LSAT performance."
+            : "These videos explain the question types you're struggling with most."}
+        </p>
+
+        {/* Horizontal scrolling video grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+          {videosToShow.map((video, idx) => (
+            <FadeInStagger key={video.questionType} index={idx} baseDelay={100} staggerDelay={50}>
+              <VideoCard video={video} />
+            </FadeInStagger>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
@@ -1307,8 +1643,10 @@ export default function AdvancedAnalyticsPage() {
 
   useEffect(() => {
     if (user) {
-      const tier = getUserTier(user);
-      setUserTier(tier);
+      // Use secure server verification for subscription tier
+      verifySubscriptionTier(user).then((tier) => {
+        setUserTier(tier);
+      });
     } else {
       setUserTier("free");
     }
@@ -1463,6 +1801,9 @@ export default function AdvancedAnalyticsPage() {
           <ErrorPatternsCard patterns={errorPatterns} isLocked={!isProOrFounder} />
           <FatigueAnalysisCard analysis={fatigueAnalysis} progress={progress} isLocked={!isProOrFounder} />
         </div>
+
+        {/* YouTube Video Resources Section */}
+        <YouTubeResourcesSection weaknesses={weaknesses} isLocked={!isProOrFounder} />
 
         {/* Back to Dashboard */}
         <div className="mt-8 text-center">

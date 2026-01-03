@@ -39,14 +39,19 @@ import {
   getWrongAnswerQuestionIds,
   getWeakTopics,
   setCurrentUserId,
+  loadInProgressTest,
+  loadAllInProgressTests,
+  clearInProgressTest,
+  InProgressTest,
 } from "@/lib/user-progress";
 import GoalTracker from "@/components/GoalTracker";
 import DailyDrills from "@/components/DailyDrills";
 import { logicalReasoningQuestions, readingComprehensionQuestions } from "@/lib/sample-questions";
 import { LR_TYPE_DESCRIPTIONS, RC_TYPE_DESCRIPTIONS } from "@/lib/lsat-types";
-import { onAuthChange, logOut, User as FirebaseUser } from "@/lib/firebase";
+import { onAuthChange, logOut, resendVerificationEmail, User as FirebaseUser } from "@/lib/firebase";
+import { Mail, AlertTriangle } from "lucide-react";
 import { useTheme } from "@/components/ThemeProvider";
-import { getUserTier, getTierDisplayInfo, canAccessFeature, SubscriptionTier, getTrialInfo, getSubscriptionInfo, saveSubscriptionInfo, syncSubscriptionFromStripe } from "@/lib/subscription";
+import { getUserTier, verifySubscriptionTier, getTierDisplayInfo, canAccessFeature, SubscriptionTier, getTrialInfo, getSubscriptionInfo, saveSubscriptionInfo, syncSubscriptionFromStripe } from "@/lib/subscription";
 
 function cx(...classes: (string | boolean | undefined)[]) {
   return classes.filter(Boolean).join(" ");
@@ -923,6 +928,11 @@ export default function DashboardPage() {
   const [authLoading, setAuthLoading] = useState(true);
   const [previousStats, setPreviousStats] = useState<PreviousStats | null>(null);
   const [userTier, setUserTier] = useState<SubscriptionTier>("free");
+  const [showAllTests, setShowAllTests] = useState(false);
+  const [inProgressTest, setInProgressTest] = useState<InProgressTest | null>(null);
+  const [allInProgressTests, setAllInProgressTests] = useState<InProgressTest[]>([]);
+  const [verificationSent, setVerificationSent] = useState(false);
+  const [sendingVerification, setSendingVerification] = useState(false);
 
   // Listen to auth state and set current user ID for storage
   useEffect(() => {
@@ -946,10 +956,12 @@ export default function DashboardPage() {
   }, []);
 
   // Get user's subscription tier (guests are treated as free tier)
+  // Uses secure server verification to prevent localStorage tampering
   useEffect(() => {
     if (user) {
-      const tier = getUserTier(user);
-      setUserTier(tier);
+      verifySubscriptionTier(user).then((tier) => {
+        setUserTier(tier);
+      });
     } else {
       setUserTier("free");
     }
@@ -962,9 +974,13 @@ export default function DashboardPage() {
     const userId = user?.uid;
     const loaded = loadUserProgress(userId);
     const prevStats = loadPreviousStats();
+    const inProgress = loadInProgressTest(userId);
+    const allInProgress = loadAllInProgressTests(userId);
 
     setPreviousStats(prevStats);
     setProgress(loaded);
+    setInProgressTest(inProgress);
+    setAllInProgressTests(allInProgress);
     setIsLoading(false);
   }, [user, authLoading]);
 
@@ -996,6 +1012,23 @@ export default function DashboardPage() {
       console.error("Sign out error:", error);
     }
   };
+
+  // Handle resending verification email
+  const handleResendVerification = async () => {
+    if (!user || sendingVerification) return;
+    setSendingVerification(true);
+    try {
+      await resendVerificationEmail(user);
+      setVerificationSent(true);
+    } catch (error) {
+      console.error("Failed to resend verification email:", error);
+    } finally {
+      setSendingVerification(false);
+    }
+  };
+
+  // Check if user needs to verify email (signed in via email/password and not verified)
+  const needsEmailVerification = user && !user.emailVerified && user.providerData?.[0]?.providerId === "password";
 
   if (authLoading || isLoading || !progress) {
     return (
@@ -1054,14 +1087,6 @@ export default function DashboardPage() {
             </span>
           </Link>
           <div className="flex items-center gap-3">
-            <Link
-              href="/test-select"
-              className="inline-flex items-center gap-2 rounded-sm bg-[#1a365d] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#2d4a7c] dark:bg-amber-500 dark:text-stone-900 dark:hover:bg-amber-400"
-            >
-              Start Practice
-              <ArrowRight size={16} />
-            </Link>
-
             {/* Theme Toggle */}
             <button
               onClick={toggleTheme}
@@ -1119,6 +1144,43 @@ export default function DashboardPage() {
                   : "Try a free practice test to see how LSATprep can help you succeed."}
               </p>
             </div>
+
+        {/* Email Verification Banner - shows when user hasn't verified email */}
+        {needsEmailVerification && (
+          <div className="mb-8 rounded-sm border-2 border-amber-400 bg-gradient-to-r from-amber-50 to-yellow-50 p-4 dark:border-amber-500/50 dark:from-amber-900/20 dark:to-yellow-900/20">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="rounded-sm bg-amber-100 p-2 dark:bg-amber-500/20">
+                  <AlertTriangle size={20} className="text-amber-600 dark:text-amber-400" />
+                </div>
+                <div>
+                  <div className="font-semibold text-amber-900 dark:text-amber-100">
+                    Please verify your email
+                  </div>
+                  <p className="text-sm text-amber-700 dark:text-amber-300">
+                    {verificationSent
+                      ? "Verification email sent! Check your inbox and spam folder."
+                      : `We sent a verification email to ${user?.email}. Click the link to verify your account.`}
+                  </p>
+                </div>
+              </div>
+              {!verificationSent && (
+                <button
+                  onClick={handleResendVerification}
+                  disabled={sendingVerification}
+                  className="inline-flex items-center gap-2 whitespace-nowrap rounded-sm bg-amber-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {sendingVerification ? (
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  ) : (
+                    <Mail size={16} />
+                  )}
+                  Resend Email
+                </button>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Guest Upgrade Banner - shows when guest has exhausted free tests */}
         {isGuest && guestExhaustedFreeTests && (
@@ -1244,6 +1306,61 @@ export default function DashboardPage() {
           />
         </div>
 
+        {/* Resume In-Progress Test Alert */}
+        {inProgressTest && (
+          <div className="mb-8 rounded-sm border-2 border-amber-400 bg-amber-50 p-4 dark:border-amber-500 dark:bg-amber-500/10">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-start gap-3">
+                <div className="rounded-full bg-amber-100 p-2 dark:bg-amber-500/20">
+                  <Clock size={20} className="text-amber-600 dark:text-amber-400" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-amber-800 dark:text-amber-200">
+                    Unfinished Test
+                  </h3>
+                  <p className="text-sm text-amber-700 dark:text-amber-300">
+                    {inProgressTest.testName} • {Object.keys(inProgressTest.answers).length}/{inProgressTest.totalQuestions} questions answered
+                  </p>
+                  <p className="text-xs text-amber-600 dark:text-amber-400">
+                    Started {new Date(inProgressTest.startedAt).toLocaleDateString()}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                {/* Show "View All" button when multiple uncompleted tests exist */}
+                {allInProgressTests.length > 1 && (
+                  <Link
+                    href="/uncompleted-tests"
+                    className="rounded-sm border border-amber-400 px-3 py-2 text-xs font-medium text-amber-700 transition hover:bg-amber-100 dark:border-amber-500 dark:text-amber-300 dark:hover:bg-amber-500/20"
+                  >
+                    View All ({allInProgressTests.length})
+                  </Link>
+                )}
+                <button
+                  onClick={() => {
+                    clearInProgressTest(user?.uid, inProgressTest.testId);
+                    const remaining = allInProgressTests.filter(t => t.testId !== inProgressTest.testId);
+                    setAllInProgressTests(remaining);
+                    setInProgressTest(remaining.length > 0 ? remaining.sort((a, b) =>
+                      new Date(b.lastUpdatedAt).getTime() - new Date(a.lastUpdatedAt).getTime()
+                    )[0] : null);
+                  }}
+                  className="rounded-sm border border-amber-400 px-4 py-2 text-sm font-medium text-amber-700 transition hover:bg-amber-100 dark:border-amber-500 dark:text-amber-300 dark:hover:bg-amber-500/20"
+                >
+                  Discard
+                </button>
+                <a
+                  href={`/practice?type=${inProgressTest.testType}&resume=true&testId=${inProgressTest.testId}`}
+                  className="inline-flex items-center gap-2 rounded-sm bg-amber-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 dark:bg-amber-500 dark:text-stone-900 dark:hover:bg-amber-400"
+                >
+                  Resume Test
+                  <ArrowRight size={16} />
+                </a>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Quick Actions */}
         <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {/* 1. Start New Test */}
@@ -1332,26 +1449,6 @@ export default function DashboardPage() {
           )}
         </div>
 
-        {/* Goal Progress Widget */}
-        <div className="mb-8">
-          <div className="mb-4">
-            <h2 className="font-serif text-xl font-bold text-stone-900 dark:text-stone-100">
-              Goals and Score Insights
-            </h2>
-          </div>
-          <GoalTracker progress={progress} user={user} compact />
-        </div>
-
-        {/* Daily Drills Section */}
-        <div className="mb-8">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="font-serif text-xl font-bold text-stone-900 dark:text-stone-100">
-              Daily Drills
-            </h2>
-          </div>
-          <DailyDrills progress={progress} userId={user?.uid} compact />
-        </div>
-
         {/* Advanced Insights Banner */}
         {hasCompletedTests && (
           <div className="mb-8">
@@ -1393,15 +1490,45 @@ export default function DashboardPage() {
           </div>
         )}
 
+        {/* Goal Progress Widget */}
+        <div className="mb-8">
+          <div className="mb-4">
+            <h2 className="font-serif text-xl font-bold text-stone-900 dark:text-stone-100">
+              Goals and Score Insights
+            </h2>
+          </div>
+          <GoalTracker progress={progress} user={user} compact />
+        </div>
+
+        {/* Daily Drills Section */}
+        <div className="mb-8">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="font-serif text-xl font-bold text-stone-900 dark:text-stone-100">
+              Daily Drills
+            </h2>
+          </div>
+          <DailyDrills progress={progress} userId={user?.uid} compact />
+        </div>
+
         {/* Test History */}
         <div className="mb-8">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="font-serif text-xl font-bold text-stone-900 dark:text-stone-100">
               Test History
             </h2>
-            {progress.completedTests.length > 5 && (
-              <button className="text-sm font-medium text-[#1a365d] hover:underline dark:text-amber-400">
-                View All
+            {progress.completedTests.length > 3 && (
+              <button
+                onClick={() => setShowAllTests(!showAllTests)}
+                className="inline-flex items-center gap-2 rounded-sm border-2 border-stone-200 bg-stone-50 px-3 py-1.5 text-sm font-medium text-stone-700 transition hover:border-[#1a365d] hover:bg-stone-100 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-300 dark:hover:border-amber-500"
+              >
+                {showAllTests ? "Show Less" : `Show All (${progress.completedTests.length})`}
+                <ChevronDown
+                  size={16}
+                  className={cx(
+                    "transition-transform duration-200",
+                    showAllTests && "rotate-180"
+                  )}
+                />
               </button>
             )}
           </div>
@@ -1425,7 +1552,7 @@ export default function DashboardPage() {
               {progress.completedTests
                 .slice()
                 .reverse()
-                .slice(0, 5)
+                .slice(0, showAllTests ? undefined : 3)
                 .map((test, index) => (
                   <TestHistoryItem key={test.id} test={test} index={index} />
                 ))}

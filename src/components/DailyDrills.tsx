@@ -810,10 +810,10 @@ export default function DailyDrills({ progress, userId, compact = false }: Daily
           </button>
         </div>
 
-        {/* View all drills link */}
+        {/* View all drills link - Highlighted */}
         <button
           onClick={() => router.push('/drills')}
-          className="mt-4 w-full flex items-center justify-center gap-2 rounded-sm border-2 border-stone-200 py-2 text-sm font-medium text-stone-600 transition hover:border-[#1a365d] hover:text-[#1a365d] dark:border-stone-700 dark:text-stone-400 dark:hover:border-amber-500 dark:hover:text-amber-400"
+          className="mt-4 w-full flex items-center justify-center gap-2 rounded-sm bg-gradient-to-r from-[#1a365d] to-[#2d4a7c] py-2.5 text-sm font-semibold text-white transition hover:from-[#2d4a7c] hover:to-[#1a365d] shadow-sm dark:from-amber-500 dark:to-orange-500 dark:text-stone-900 dark:hover:from-amber-400 dark:hover:to-orange-400"
         >
           View All Drills
           <ChevronRight size={16} />

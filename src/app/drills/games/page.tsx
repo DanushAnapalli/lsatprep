@@ -64,6 +64,9 @@ export default function GamesDrillPage() {
     setSession(createGameSession(type, 5));
     setCorrectCount(0);
     setIsComplete(false);
+    // Reset UI state from previous game
+    setSelectedAnswer(null);
+    setShowResult(false);
   };
 
   const handleAnswer = (index: number) => {

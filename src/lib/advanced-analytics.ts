@@ -19,11 +19,32 @@ export interface QuestionTypeStats {
   isWeakness: boolean; // <70% accuracy with 3+ attempts
 }
 
+export interface TimeBucketStats {
+  count: number;
+  correct: number;
+  accuracy: number;
+}
+
+// LSAT Standard Pacing Constants
+export const LSAT_PACE_LR = 85;  // 1:25 per LR question
+export const LSAT_PACE_RC = 100; // 1:40 per RC question (includes passage reading time)
+export const LSAT_AMBER_THRESHOLD_LR = 105; // 25% over target
+export const LSAT_AMBER_THRESHOLD_RC = 125; // 25% over target
+
+export interface SectionTimeStats {
+  avgTimePerQuestion: number;
+  targetPace: number;
+  questionsOnPace: number;
+  questionsSlightlyOver: number;
+  questionsOver: number;
+  totalQuestions: number;
+}
+
 export interface TimeAnalytics {
   avgTimePerQuestion: number;
   recommendedPace: number; // 85 seconds for LR, varies for RC
   questionsOverPace: number; // >2 min
-  questionsRushed: number; // <30 sec
+  questionsRushed: number; // <30 sec (kept for backwards compatibility)
   timeDistribution: {
     under30s: number;
     thirtyTo60s: number;
@@ -31,8 +52,22 @@ export interface TimeAnalytics {
     ninetyTo120s: number;
     over120s: number;
   };
+  // Accuracy per time bucket - shows if speed correlates with accuracy
+  accuracyByTime: {
+    under30s: TimeBucketStats;
+    thirtyTo60s: TimeBucketStats;
+    sixtyTo90s: TimeBucketStats;
+    ninetyTo120s: TimeBucketStats;
+    over120s: TimeBucketStats;
+  };
+  overallAccuracy: number;
   slowestQuestionTypes: { type: string; avgTime: number }[];
   fastestQuestionTypes: { type: string; avgTime: number }[];
+  // Section-specific pacing based on LSAT standards
+  bySection: {
+    logicalReasoning: SectionTimeStats;
+    readingComprehension: SectionTimeStats;
+  };
 }
 
 export interface ScoreTrend {
@@ -157,7 +192,7 @@ const RECOMMENDED_PACE_LR = 85; // 1:25 per question
 const RECOMMENDED_PACE_RC = 100; // ~1:40 per question (includes reading time)
 
 export function getTimeAnalytics(progress: UserProgress): TimeAnalytics {
-  const allQuestions: { time: number; type: string; sectionType: string }[] = [];
+  const allQuestions: { time: number; type: string; sectionType: string; isCorrect: boolean }[] = [];
 
   for (const test of progress.completedTests) {
     for (const section of test.sections) {
@@ -167,11 +202,22 @@ export function getTimeAnalytics(progress: UserProgress): TimeAnalytics {
             time: q.timeSpent,
             type: q.questionType,
             sectionType: section.type,
+            isCorrect: q.isCorrect,
           });
         }
       }
     }
   }
+
+  const emptyBucket: TimeBucketStats = { count: 0, correct: 0, accuracy: 0 };
+  const emptySectionStats: SectionTimeStats = {
+    avgTimePerQuestion: 0,
+    targetPace: 0,
+    questionsOnPace: 0,
+    questionsSlightlyOver: 0,
+    questionsOver: 0,
+    totalQuestions: 0,
+  };
 
   if (allQuestions.length === 0) {
     return {
@@ -186,15 +232,27 @@ export function getTimeAnalytics(progress: UserProgress): TimeAnalytics {
         ninetyTo120s: 0,
         over120s: 0,
       },
+      accuracyByTime: {
+        under30s: { ...emptyBucket },
+        thirtyTo60s: { ...emptyBucket },
+        sixtyTo90s: { ...emptyBucket },
+        ninetyTo120s: { ...emptyBucket },
+        over120s: { ...emptyBucket },
+      },
+      overallAccuracy: 0,
       slowestQuestionTypes: [],
       fastestQuestionTypes: [],
+      bySection: {
+        logicalReasoning: { ...emptySectionStats, targetPace: LSAT_PACE_LR },
+        readingComprehension: { ...emptySectionStats, targetPace: LSAT_PACE_RC },
+      },
     };
   }
 
   const totalTime = allQuestions.reduce((sum, q) => sum + q.time, 0);
   const avgTime = totalTime / allQuestions.length;
 
-  // Count distribution
+  // Count distribution and track accuracy per bucket
   const distribution = {
     under30s: 0,
     thirtyTo60s: 0,
@@ -203,24 +261,64 @@ export function getTimeAnalytics(progress: UserProgress): TimeAnalytics {
     over120s: 0,
   };
 
+  const accuracyBuckets = {
+    under30s: { count: 0, correct: 0 },
+    thirtyTo60s: { count: 0, correct: 0 },
+    sixtyTo90s: { count: 0, correct: 0 },
+    ninetyTo120s: { count: 0, correct: 0 },
+    over120s: { count: 0, correct: 0 },
+  };
+
   let overPace = 0;
   let rushed = 0;
+  let totalCorrect = 0;
 
   for (const q of allQuestions) {
+    if (q.isCorrect) totalCorrect++;
+
     if (q.time < 30) {
       distribution.under30s++;
+      accuracyBuckets.under30s.count++;
+      if (q.isCorrect) accuracyBuckets.under30s.correct++;
       rushed++;
     } else if (q.time < 60) {
       distribution.thirtyTo60s++;
+      accuracyBuckets.thirtyTo60s.count++;
+      if (q.isCorrect) accuracyBuckets.thirtyTo60s.correct++;
     } else if (q.time < 90) {
       distribution.sixtyTo90s++;
+      accuracyBuckets.sixtyTo90s.count++;
+      if (q.isCorrect) accuracyBuckets.sixtyTo90s.correct++;
     } else if (q.time < 120) {
       distribution.ninetyTo120s++;
+      accuracyBuckets.ninetyTo120s.count++;
+      if (q.isCorrect) accuracyBuckets.ninetyTo120s.correct++;
     } else {
       distribution.over120s++;
+      accuracyBuckets.over120s.count++;
+      if (q.isCorrect) accuracyBuckets.over120s.correct++;
       overPace++;
     }
   }
+
+  // Calculate accuracy for each bucket
+  const calcAccuracy = (bucket: { count: number; correct: number }): TimeBucketStats => ({
+    count: bucket.count,
+    correct: bucket.correct,
+    accuracy: bucket.count > 0 ? Math.round((bucket.correct / bucket.count) * 100) : 0,
+  });
+
+  const accuracyByTime = {
+    under30s: calcAccuracy(accuracyBuckets.under30s),
+    thirtyTo60s: calcAccuracy(accuracyBuckets.thirtyTo60s),
+    sixtyTo90s: calcAccuracy(accuracyBuckets.sixtyTo90s),
+    ninetyTo120s: calcAccuracy(accuracyBuckets.ninetyTo120s),
+    over120s: calcAccuracy(accuracyBuckets.over120s),
+  };
+
+  const overallAccuracy = allQuestions.length > 0
+    ? Math.round((totalCorrect / allQuestions.length) * 100)
+    : 0;
 
   // Calculate average time by question type
   const typeTimeTotals: Map<string, { total: number; count: number }> = new Map();
@@ -239,14 +337,67 @@ export function getTimeAnalytics(progress: UserProgress): TimeAnalytics {
     }))
     .sort((a, b) => b.avgTime - a.avgTime);
 
+  // Calculate section-specific pacing stats based on LSAT standards
+  const lrQuestions = allQuestions.filter(q => q.sectionType === "logical-reasoning");
+  const rcQuestions = allQuestions.filter(q => q.sectionType === "reading-comprehension");
+
+  const calculateSectionStats = (
+    questions: typeof allQuestions,
+    targetPace: number,
+    amberThreshold: number
+  ): SectionTimeStats => {
+    if (questions.length === 0) {
+      return {
+        avgTimePerQuestion: 0,
+        targetPace,
+        questionsOnPace: 0,
+        questionsSlightlyOver: 0,
+        questionsOver: 0,
+        totalQuestions: 0,
+      };
+    }
+
+    const totalTime = questions.reduce((sum, q) => sum + q.time, 0);
+    let onPace = 0;
+    let slightlyOver = 0;
+    let over = 0;
+
+    for (const q of questions) {
+      if (q.time <= targetPace) {
+        onPace++;
+      } else if (q.time <= amberThreshold) {
+        slightlyOver++;
+      } else {
+        over++;
+      }
+    }
+
+    return {
+      avgTimePerQuestion: totalTime / questions.length,
+      targetPace,
+      questionsOnPace: onPace,
+      questionsSlightlyOver: slightlyOver,
+      questionsOver: over,
+      totalQuestions: questions.length,
+    };
+  };
+
+  const bySection = {
+    logicalReasoning: calculateSectionStats(lrQuestions, LSAT_PACE_LR, LSAT_AMBER_THRESHOLD_LR),
+    readingComprehension: calculateSectionStats(rcQuestions, LSAT_PACE_RC, LSAT_AMBER_THRESHOLD_RC),
+  };
+
   return {
     avgTimePerQuestion: avgTime,
     recommendedPace: RECOMMENDED_PACE_LR,
     questionsOverPace: overPace,
     questionsRushed: rushed,
     timeDistribution: distribution,
+    accuracyByTime,
+    overallAccuracy,
     slowestQuestionTypes: typeAvgTimes.slice(0, 3),
     fastestQuestionTypes: typeAvgTimes.slice(-3).reverse(),
+    bySection,
   };
 }
 
@@ -402,7 +553,7 @@ export function detectErrorPatterns(progress: UserProgress): ErrorPattern[] {
     patterns.push({
       patternName: "Extreme Answer Preference",
       description: `You chose the most extreme answers (A or E) in ${Math.round(extremeRate)}% of your wrong answers.`,
-      frequency: extremeRate,
+      frequency: Math.round(extremeRate),
       examples: ["Often picking the 'strongest' or 'weakest' option"],
       recommendation: "Extreme answers are often trap choices. Look for more moderate, nuanced options.",
     });
@@ -424,7 +575,7 @@ export function detectErrorPatterns(progress: UserProgress): ErrorPattern[] {
     patterns.push({
       patternName: "Answer Position Bias",
       description: `You chose "${mostCommonWrong[0]}" in ${Math.round(mostCommonRate)}% of your wrong answers.`,
-      frequency: mostCommonRate,
+      frequency: Math.round(mostCommonRate),
       examples: [`Gravitating toward answer choice ${mostCommonWrong[0]}`],
       recommendation: `Be aware of your bias toward ${mostCommonWrong[0]}. Make sure you're evaluating each answer choice equally.`,
     });
@@ -461,7 +612,7 @@ export function detectErrorPatterns(progress: UserProgress): ErrorPattern[] {
     patterns.push({
       patternName: "Question Type Weakness",
       description: `You miss ${Math.round(topProblem.errorRate)}% of "${topProblem.type.replace(/-/g, " ")}" questions.`,
-      frequency: topProblem.errorRate,
+      frequency: Math.round(topProblem.errorRate),
       examples: problematicTypes.slice(0, 3).map(p => `${p.type}: ${Math.round(p.errorRate)}% error rate`),
       recommendation: `Focus your study on ${topProblem.type.replace(/-/g, " ")} questions. Review the strategy for this question type.`,
     });
@@ -490,7 +641,7 @@ export function detectErrorPatterns(progress: UserProgress): ErrorPattern[] {
     patterns.push({
       patternName: "Near-Miss Pattern",
       description: `${Math.round(nearMissRate)}% of your wrong answers were adjacent to the correct answer.`,
-      frequency: nearMissRate,
+      frequency: Math.round(nearMissRate),
       examples: ["Often narrowing down to 2 choices but picking the wrong one"],
       recommendation: "You're good at eliminating obviously wrong answers. Focus on distinguishing between the final 2 contenders more carefully.",
     });

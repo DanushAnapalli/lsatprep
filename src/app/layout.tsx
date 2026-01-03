@@ -3,6 +3,10 @@ import { Geist, Geist_Mono } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import ErrorBoundary from "@/components/ErrorBoundary";
+import { TimerProvider } from "@/components/TimerProvider";
+import StudyTimer from "@/components/StudyTimer";
+import TimerAlert from "@/components/TimerAlert";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
 
@@ -39,7 +43,13 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <ThemeProvider>
-          {children}
+          <TimerProvider>
+            <TimerAlert />
+            <ErrorBoundary>
+              {children}
+            </ErrorBoundary>
+            <StudyTimer />
+          </TimerProvider>
           <SpeedInsights />
           <Analytics />
         </ThemeProvider>

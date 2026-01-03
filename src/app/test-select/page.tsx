@@ -14,7 +14,6 @@ import {
   CheckCircle2,
   Sparkles,
   Target,
-  ListChecks,
   TrendingUp,
   RotateCcw,
 } from "lucide-react";
@@ -118,10 +117,6 @@ function TestOptionCard({
             <span className="flex items-center gap-1 rounded-sm bg-stone-100 px-2 py-1 dark:bg-stone-800">
               <Clock size={12} />
               {option.time}
-            </span>
-            <span className="flex items-center gap-1 rounded-sm bg-stone-100 px-2 py-1 dark:bg-stone-800">
-              <ListChecks size={12} />
-              {option.questionCount} questions
             </span>
           </div>
         </div>

@@ -334,6 +334,7 @@ export default function ReviewDrillPage() {
                     <p className="text-sm text-stone-600 dark:text-stone-400 leading-relaxed">
                       {currentQuestion.explanation}
                     </p>
+
                   </motion.div>
                 )}
               </AnimatePresence>

@@ -543,12 +543,12 @@ export default function GoalTracker({
             </div>
           )}
 
-          {/* View Details Link */}
+          {/* View Details Link - Highlighted */}
           <a
             href="/goals"
-            className="mt-4 flex items-center justify-center gap-1 rounded-sm border border-stone-200 py-2 text-sm font-medium text-[#1a365d] transition hover:bg-stone-50 dark:border-stone-700 dark:text-amber-400 dark:hover:bg-stone-800"
+            className="mt-4 flex items-center justify-center gap-1 rounded-sm bg-gradient-to-r from-[#1a365d] to-[#2d4a7c] py-2.5 text-sm font-semibold text-white transition hover:from-[#2d4a7c] hover:to-[#1a365d] shadow-sm dark:from-amber-500 dark:to-orange-500 dark:text-stone-900 dark:hover:from-amber-400 dark:hover:to-orange-400"
           >
-            View Full Goal Details
+            View All Goal Details
             <ChevronRight size={14} />
           </a>
         </div>

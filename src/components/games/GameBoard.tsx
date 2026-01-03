@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   LogicGame,
@@ -48,8 +48,19 @@ export function GameBoard({ game, onComplete, showTimer = true }: GameBoardProps
   const [flaggedQuestions, setFlaggedQuestions] = useState<Record<string, boolean>>({});
   const [showRules, setShowRules] = useState(true);
   const [isComplete, setIsComplete] = useState(false);
-  const [startTime] = useState(Date.now());
+  const [startTime, setStartTime] = useState(Date.now());
   const [boardState, setBoardState] = useState<BoardState | null>(null);
+
+  // Reset all state when a new game is loaded
+  useEffect(() => {
+    setCurrentQuestionIndex(0);
+    setAnswers({});
+    setFlaggedQuestions({});
+    setShowRules(true);
+    setIsComplete(false);
+    setStartTime(Date.now());
+    setBoardState(null);
+  }, [game.setup.id]);
 
   const currentQuestion = questions[currentQuestionIndex];
 
