@@ -936,27 +936,30 @@ export default function DashboardPage() {
 
   // Listen to auth state and set current user ID for storage
   useEffect(() => {
-    const unsubscribe = onAuthChange(async (firebaseUser) => {
+    const unsubscribe = onAuthChange((firebaseUser) => {
       setUser(firebaseUser);
       // Set current user ID for user-specific localStorage
       setCurrentUserId(firebaseUser?.uid || null);
+      // Set auth loading to false immediately - don't block on sync operations
+      setAuthLoading(false);
 
+      // Run sync operations in background (non-blocking)
       if (firebaseUser?.uid) {
         // Sync all data from Firestore on login (handles cross-device sync)
-        const { syncAllDataFromFirestore } = await import("@/lib/user-progress");
-        await syncAllDataFromFirestore(firebaseUser.uid);
+        import("@/lib/user-progress").then(({ syncAllDataFromFirestore }) => {
+          syncAllDataFromFirestore(firebaseUser.uid).catch(() => {});
+        });
       }
 
       // Sync subscription status from Stripe (restores access if localStorage was cleared)
       if (firebaseUser?.email) {
-        const restored = await syncSubscriptionFromStripe(firebaseUser.email);
-        if (restored) {
-          // Update tier state after sync
-          setUserTier(getUserTier(firebaseUser));
-        }
+        syncSubscriptionFromStripe(firebaseUser.email).then((restored) => {
+          if (restored) {
+            // Update tier state after sync
+            setUserTier(getUserTier(firebaseUser));
+          }
+        }).catch(() => {});
       }
-
-      setAuthLoading(false);
     });
     return () => unsubscribe();
   }, []);
