@@ -33,21 +33,27 @@ export async function POST(request: NextRequest) {
     );
 
     if (activeSubscription) {
-      // Type assertion needed for Stripe SDK compatibility
-      const subData = activeSubscription as unknown as {
-        current_period_end?: number;
-        cancel_at_period_end?: boolean;
-      };
+      // Access subscription fields directly
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const sub = activeSubscription as any;
+      const currentPeriodEnd = sub.current_period_end;
+      const cancelAtPeriodEnd = sub.cancel_at_period_end;
+      const trialEnd = sub.trial_end;
+      const isTrialing = activeSubscription.status === "trialing";
 
       return NextResponse.json({
         hasActiveSubscription: true,
         subscriptionId: activeSubscription.id,
         customerId: customerId,
         status: activeSubscription.status,
-        currentPeriodEnd: subData.current_period_end
-          ? new Date(subData.current_period_end * 1000).toISOString()
+        isTrialing,
+        trialEnd: trialEnd
+          ? new Date(trialEnd * 1000).toISOString()
           : null,
-        cancelAtPeriodEnd: subData.cancel_at_period_end || false,
+        currentPeriodEnd: currentPeriodEnd
+          ? new Date(currentPeriodEnd * 1000).toISOString()
+          : null,
+        cancelAtPeriodEnd: cancelAtPeriodEnd || false,
       });
     }
 

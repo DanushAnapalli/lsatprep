@@ -2,8 +2,8 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { CheckCircle, Loader2, Gift, Calendar } from "lucide-react";
-import { setSubscriptionTier, startTrial, TRIAL_PERIOD_DAYS } from "@/lib/subscription";
+import { CheckCircle, Loader2, Calendar } from "lucide-react";
+import { setSubscriptionTier, startTrial, saveSubscriptionInfo, TRIAL_PERIOD_DAYS } from "@/lib/subscription";
 
 function SuccessContent() {
   const searchParams = useSearchParams();
@@ -33,6 +33,15 @@ function SuccessContent() {
         const data = await response.json();
 
         if (data.success) {
+          // Save subscription info for billing portal access
+          saveSubscriptionInfo({
+            subscriptionId: data.subscriptionId,
+            customerId: data.customerId,
+            status: data.isTrialing ? "trialing" : "active",
+            currentPeriodEnd: data.currentPeriodEnd,
+            cancelAtPeriodEnd: false,
+          });
+
           // Check if this is a trial subscription
           if (data.isTrialing) {
             setIsTrialStart(true);
@@ -77,9 +86,9 @@ function SuccessContent() {
   if (error) {
     return (
       <div className="min-h-screen bg-stone-50 dark:bg-stone-950 flex items-center justify-center p-4">
-        <div className="bg-white dark:bg-stone-900 rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
+        <div className="bg-white dark:bg-stone-900 rounded-lg border border-stone-200 dark:border-stone-800 p-8 max-w-md w-full text-center">
           <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-            <span className="text-3xl">!</span>
+            <span className="text-2xl font-bold text-red-600 dark:text-red-400">!</span>
           </div>
           <h1 className="text-2xl font-bold text-stone-900 dark:text-stone-100 mb-2">
             Something went wrong
@@ -87,7 +96,7 @@ function SuccessContent() {
           <p className="text-stone-600 dark:text-stone-400 mb-6">{error}</p>
           <button
             onClick={() => router.push("/dashboard")}
-            className="px-6 py-3 bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 rounded-xl font-medium hover:opacity-90 transition-opacity"
+            className="px-6 py-3 bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 rounded-md font-medium hover:bg-stone-800 dark:hover:bg-stone-200 transition-colors"
           >
             Go to Dashboard
           </button>
@@ -100,19 +109,19 @@ function SuccessContent() {
   if (isTrialStart) {
     return (
       <div className="min-h-screen bg-stone-50 dark:bg-stone-950 flex items-center justify-center p-4">
-        <div className="bg-white dark:bg-stone-900 rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
-          <div className="w-16 h-16 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Gift className="w-10 h-10 text-white" />
+        <div className="bg-white dark:bg-stone-900 rounded-lg border border-stone-200 dark:border-stone-800 p-8 max-w-md w-full text-center">
+          <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+            <CheckCircle className="w-10 h-10 text-green-600 dark:text-green-400" />
           </div>
           <h1 className="text-2xl font-bold text-stone-900 dark:text-stone-100 mb-2">
-            Your Free Trial Has Started!
+            Your Free Trial Has Started
           </h1>
           <p className="text-stone-600 dark:text-stone-400 mb-4">
             Enjoy {TRIAL_PERIOD_DAYS} days of unlimited access to all Pro features.
           </p>
 
           {/* Trial info box */}
-          <div className="mb-6 p-4 rounded-xl bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 border border-amber-200 dark:border-amber-800">
+          <div className="mb-6 p-4 rounded-md bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
             <div className="flex items-center justify-center gap-2 mb-2">
               <Calendar className="w-5 h-5 text-amber-600 dark:text-amber-400" />
               <span className="font-medium text-amber-800 dark:text-amber-300">
@@ -127,13 +136,13 @@ function SuccessContent() {
           <div className="space-y-3">
             <button
               onClick={() => router.push("/practice")}
-              className="w-full px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white rounded-xl font-medium transition-colors shadow-lg shadow-amber-500/25"
+              className="w-full px-6 py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-md font-medium transition-colors"
             >
               Start Practicing Now
             </button>
             <button
               onClick={() => router.push("/dashboard")}
-              className="w-full px-6 py-3 bg-stone-200 dark:bg-stone-800 text-stone-900 dark:text-stone-100 rounded-xl font-medium hover:opacity-90 transition-opacity"
+              className="w-full px-6 py-3 bg-stone-200 dark:bg-stone-800 text-stone-900 dark:text-stone-100 rounded-md font-medium hover:bg-stone-300 dark:hover:bg-stone-700 transition-colors"
             >
               Go to Dashboard
             </button>
@@ -146,12 +155,12 @@ function SuccessContent() {
   // Regular subscription success view
   return (
     <div className="min-h-screen bg-stone-50 dark:bg-stone-950 flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-stone-900 rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
+      <div className="bg-white dark:bg-stone-900 rounded-lg border border-stone-200 dark:border-stone-800 p-8 max-w-md w-full text-center">
         <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
           <CheckCircle className="w-10 h-10 text-green-600 dark:text-green-400" />
         </div>
         <h1 className="text-2xl font-bold text-stone-900 dark:text-stone-100 mb-2">
-          Welcome to Pro!
+          Welcome to Pro
         </h1>
         <p className="text-stone-600 dark:text-stone-400 mb-6">
           Your subscription is now active. You have unlimited access to all LSAT prep features.
@@ -159,13 +168,13 @@ function SuccessContent() {
         <div className="space-y-3">
           <button
             onClick={() => router.push("/practice")}
-            className="w-full px-6 py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-medium transition-colors"
+            className="w-full px-6 py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-md font-medium transition-colors"
           >
             Start Practicing
           </button>
           <button
             onClick={() => router.push("/dashboard")}
-            className="w-full px-6 py-3 bg-stone-200 dark:bg-stone-800 text-stone-900 dark:text-stone-100 rounded-xl font-medium hover:opacity-90 transition-opacity"
+            className="w-full px-6 py-3 bg-stone-200 dark:bg-stone-800 text-stone-900 dark:text-stone-100 rounded-md font-medium hover:bg-stone-300 dark:hover:bg-stone-700 transition-colors"
           >
             Go to Dashboard
           </button>

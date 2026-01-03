@@ -30,10 +30,22 @@ export async function POST(request: NextRequest) {
       const isTrialing = subscription?.status === "trialing";
       const trialEnd = subscription?.trial_end;
 
+      // Get customer ID from session
+      const customerId = typeof session.customer === "string"
+        ? session.customer
+        : session.customer?.id || null;
+
+      // Get current period end from subscription
+      const subData = subscription as unknown as { current_period_end?: number };
+      const currentPeriodEnd = subData?.current_period_end
+        ? new Date(subData.current_period_end * 1000).toISOString()
+        : null;
+
       return NextResponse.json({
         success: true,
         userId: session.metadata?.userId,
         customerEmail: session.customer_email,
+        customerId,
         subscriptionId:
           typeof session.subscription === "string"
             ? session.subscription
@@ -41,6 +53,7 @@ export async function POST(request: NextRequest) {
         isTrialing,
         trialEnd,
         subscriptionStatus: subscription?.status,
+        currentPeriodEnd,
       });
     }
 

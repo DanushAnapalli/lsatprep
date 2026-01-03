@@ -15,9 +15,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Create a billing portal session
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://lsatprep.org';
     const session = await stripe.billingPortal.sessions.create({
       customer: customerId,
-      return_url: `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/profile`,
+      return_url: `${baseUrl}/subscription`,
     });
 
     return NextResponse.json({
