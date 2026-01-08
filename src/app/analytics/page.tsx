@@ -1761,10 +1761,10 @@ export default function AdvancedAnalyticsPage() {
                 <Lock size={20} className="text-amber-600 dark:text-amber-400" />
                 <div>
                   <div className="font-semibold text-amber-900 dark:text-amber-100 text-sm">
-                    Unlock Advanced Insights
+                    Unlock All Pro Insights
                   </div>
                   <p className="text-xs text-amber-700 dark:text-amber-300">
-                    Upgrade to Pro for detailed analytics, error patterns, and fatigue analysis.
+                    Upgrade for AI journey analysis, video resources, time analytics, and error pattern detection.
                   </p>
                 </div>
               </div>
@@ -1779,7 +1779,7 @@ export default function AdvancedAnalyticsPage() {
           </div>
         )}
 
-        {/* YouTube Video Resources Section - Prominent placement at top */}
+        {/* YouTube Video Resources Section - Prominent placement at top (Pro only) */}
         <YouTubeResourcesSection weaknesses={weaknesses} isLocked={!isProOrFounder} />
 
         {/* 6-Panel Grid Dashboard */}
@@ -1792,8 +1792,10 @@ export default function AdvancedAnalyticsPage() {
             errorPatterns={errorPatterns}
             isLocked={!isProOrFounder}
           />
-          <PerformanceSnapshot summary={summary} scoreTrend={scoreTrend} isLocked={!isProOrFounder} />
-          <StrengthsWeaknessesCard strengths={strengths} weaknesses={weaknesses} isLocked={!isProOrFounder} />
+          {/* Free: Performance Snapshot - basic metrics everyone can see */}
+          <PerformanceSnapshot summary={summary} scoreTrend={scoreTrend} isLocked={false} />
+          {/* Free: Strengths & Weaknesses - helps users understand what to work on */}
+          <StrengthsWeaknessesCard strengths={strengths} weaknesses={weaknesses} isLocked={false} />
 
           {/* Row 2 */}
           <TimeAnalyticsCard
@@ -1802,7 +1804,8 @@ export default function AdvancedAnalyticsPage() {
             testCount={progress?.completedTests?.length || 0}
           />
           <ErrorPatternsCard patterns={errorPatterns} isLocked={!isProOrFounder} />
-          <FatigueAnalysisCard analysis={fatigueAnalysis} progress={progress} isLocked={!isProOrFounder} />
+          {/* Free: Endurance & Stats - basic stats everyone can see */}
+          <FatigueAnalysisCard analysis={fatigueAnalysis} progress={progress} isLocked={false} />
         </div>
 
         {/* Back to Dashboard */}

@@ -254,17 +254,27 @@ export function saveUserProgress(progress: UserProgress, userId?: string): void 
 }
 
 // Sync progress from Firestore (call on login to restore from cloud)
+// This function MERGES data from cloud and local storage to ensure no data is lost
 export async function syncProgressFromFirestore(userId: string): Promise<UserProgress | null> {
   if (typeof window === "undefined" || !userId) return null;
 
   try {
-    const { loadProgressFromFirestore } = await import("./firebase");
+    const { loadProgressFromFirestore, saveProgressToFirestore } = await import("./firebase");
     const cloudProgress = await loadProgressFromFirestore(userId);
 
-    if (!cloudProgress) return null;
+    // Load local progress
+    const localProgress = loadUserProgress(userId);
 
-    // Convert to UserProgress format
-    const progress: UserProgress = {
+    // If no cloud data, just save local to cloud and return
+    if (!cloudProgress) {
+      if (localProgress.completedTests.length > 0) {
+        saveProgressToFirestore(userId, localProgress);
+      }
+      return localProgress;
+    }
+
+    // Convert cloud data to UserProgress format
+    const cloudData: UserProgress = {
       completedTests: (cloudProgress.completedTests as CompletedTest[]).map((test) => ({
         ...test,
         completedAt: new Date(test.completedAt),
@@ -284,25 +294,95 @@ export async function syncProgressFromFirestore(userId: string): Promise<UserPro
       createdAt: cloudProgress.createdAt,
     };
 
-    // Compare with localStorage - use the one with more data
-    const localProgress = loadUserProgress(userId);
-    const localTestCount = localProgress.completedTests.length;
-    const cloudTestCount = progress.completedTests.length;
+    // MERGE data from both sources instead of picking one
+    // Merge completedTests by ID (keep unique tests from both)
+    const testMap = new Map<string, CompletedTest>();
+    localProgress.completedTests.forEach((test) => testMap.set(test.id, test));
+    cloudData.completedTests.forEach((test) => {
+      // If test exists in both, keep the one with more recent completedAt
+      const existing = testMap.get(test.id);
+      if (!existing || new Date(test.completedAt) > new Date(existing.completedAt)) {
+        testMap.set(test.id, test);
+      }
+    });
+    const mergedTests = Array.from(testMap.values()).sort(
+      (a, b) => new Date(a.completedAt).getTime() - new Date(b.completedAt).getTime()
+    );
 
-    if (cloudTestCount > localTestCount) {
-      // Cloud has more data - use it and save to localStorage
-      const storageKey = getUserStorageKey(userId);
-      localStorage.setItem(storageKey, JSON.stringify(progress));
-      return progress;
-    } else if (localTestCount > cloudTestCount) {
-      // Local has more data - sync to Firestore
-      import("./firebase").then(({ saveProgressToFirestore }) => {
-        saveProgressToFirestore(userId, localProgress);
-      });
-      return localProgress;
+    // Merge wrongAnswers by questionId + testId
+    const wrongMap = new Map<string, WrongAnswer>();
+    localProgress.wrongAnswers.forEach((wa) => {
+      const key = `${wa.questionId}_${wa.testId}`;
+      wrongMap.set(key, wa);
+    });
+    cloudData.wrongAnswers.forEach((wa) => {
+      const key = `${wa.questionId}_${wa.testId}`;
+      const existing = wrongMap.get(key);
+      // Keep the one with masteredAt if available, or the more recent one
+      if (!existing) {
+        wrongMap.set(key, wa);
+      } else if (wa.masteredAt && !existing.masteredAt) {
+        wrongMap.set(key, wa);
+      } else if (existing.masteredAt && !wa.masteredAt) {
+        // Keep existing (has mastered info)
+      } else if (new Date(wa.timestamp) > new Date(existing.timestamp)) {
+        wrongMap.set(key, wa);
+      }
+    });
+    const mergedWrongAnswers = Array.from(wrongMap.values());
+
+    // Merge seenQuestionIds (union of both)
+    const mergedSeenIds = [...new Set([...localProgress.seenQuestionIds, ...cloudData.seenQuestionIds])];
+
+    // Recalculate stats from merged tests
+    const totalQuestions = mergedTests.reduce((sum, t) => sum + t.totalQuestions, 0);
+    const totalCorrect = mergedTests.reduce((sum, t) => sum + t.correctAnswers, 0);
+    const allScores = mergedTests.map((t) => t.scaledScore);
+    const averageScore = allScores.length > 0 ? Math.round(allScores.reduce((a, b) => a + b, 0) / allScores.length) : 0;
+    const highestScore = allScores.length > 0 ? Math.max(...allScores) : 0;
+
+    // Use the higher improvementTestsTaken
+    const improvementTestsTaken = Math.max(localProgress.improvementTestsTaken, cloudData.improvementTestsTaken);
+
+    // Use the earliest createdAt
+    const createdAt = new Date(localProgress.createdAt) < new Date(cloudData.createdAt)
+      ? localProgress.createdAt
+      : cloudData.createdAt;
+
+    // Use the latest lastActiveAt
+    const lastActiveAt = new Date(localProgress.lastActiveAt) > new Date(cloudData.lastActiveAt)
+      ? localProgress.lastActiveAt
+      : cloudData.lastActiveAt;
+
+    const mergedProgress: UserProgress = {
+      completedTests: mergedTests,
+      wrongAnswers: mergedWrongAnswers,
+      seenQuestionIds: mergedSeenIds,
+      improvementTestsTaken,
+      totalQuestionsAnswered: totalQuestions,
+      totalCorrect,
+      averageScore,
+      highestScore,
+      lastActiveAt,
+      createdAt,
+    };
+
+    // Check if we actually merged any new data
+    const localTestIds = new Set(localProgress.completedTests.map((t) => t.id));
+    const cloudTestIds = new Set(cloudData.completedTests.map((t) => t.id));
+    const hasNewLocalTests = [...localTestIds].some((id) => !cloudTestIds.has(id));
+    const hasNewCloudTests = [...cloudTestIds].some((id) => !localTestIds.has(id));
+
+    // Save merged data to localStorage
+    const storageKey = getUserStorageKey(userId);
+    localStorage.setItem(storageKey, JSON.stringify(mergedProgress));
+
+    // If local had tests not in cloud, sync back to Firestore
+    if (hasNewLocalTests || mergedTests.length !== cloudData.completedTests.length) {
+      saveProgressToFirestore(userId, mergedProgress);
     }
 
-    return localProgress;
+    return mergedProgress;
   } catch {
     return null;
   }
