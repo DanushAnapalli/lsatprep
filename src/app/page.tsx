@@ -39,6 +39,12 @@ import {
   Activity,
   Clock,
   XCircle,
+  Play,
+  Pause,
+  Volume2,
+  VolumeX,
+  Maximize,
+  RotateCcw,
 } from "lucide-react";
 import {
   signInWithEmail,
@@ -853,6 +859,195 @@ function AnalyticsPreviewCard() {
   );
 }
 
+// Demo Video Player Component
+function DemoVideoPlayer() {
+  const videoRef = React.useRef<HTMLVideoElement>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isMuted, setIsMuted] = useState(true);
+  const [progress, setProgress] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [showControls, setShowControls] = useState(true);
+  const [hasStarted, setHasStarted] = useState(false);
+
+  const togglePlay = () => {
+    if (videoRef.current) {
+      if (isPlaying) {
+        videoRef.current.pause();
+      } else {
+        videoRef.current.play();
+        setHasStarted(true);
+      }
+      setIsPlaying(!isPlaying);
+    }
+  };
+
+  const toggleMute = () => {
+    if (videoRef.current) {
+      videoRef.current.muted = !isMuted;
+      setIsMuted(!isMuted);
+    }
+  };
+
+  const handleTimeUpdate = () => {
+    if (videoRef.current) {
+      const progress = (videoRef.current.currentTime / videoRef.current.duration) * 100;
+      setProgress(progress);
+    }
+  };
+
+  const handleLoadedMetadata = () => {
+    if (videoRef.current) {
+      setDuration(videoRef.current.duration);
+    }
+  };
+
+  const handleSeek = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (videoRef.current) {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const clickX = e.clientX - rect.left;
+      const percentage = clickX / rect.width;
+      videoRef.current.currentTime = percentage * videoRef.current.duration;
+    }
+  };
+
+  const handleVideoEnd = () => {
+    setIsPlaying(false);
+    setHasStarted(false);
+    if (videoRef.current) {
+      videoRef.current.currentTime = 0;
+    }
+  };
+
+  const restartVideo = () => {
+    if (videoRef.current) {
+      videoRef.current.currentTime = 0;
+      videoRef.current.play();
+      setIsPlaying(true);
+      setHasStarted(true);
+    }
+  };
+
+  const toggleFullscreen = () => {
+    if (videoRef.current) {
+      if (document.fullscreenElement) {
+        document.exitFullscreen();
+      } else {
+        videoRef.current.requestFullscreen();
+      }
+    }
+  };
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  return (
+    <div
+      className={cx(
+        "relative overflow-hidden rounded-sm border-4 shadow-2xl",
+        "border-[#1a365d] bg-stone-900",
+        "dark:border-amber-500/50"
+      )}
+      onMouseEnter={() => setShowControls(true)}
+      onMouseLeave={() => isPlaying && setShowControls(false)}
+    >
+      {/* Video Element */}
+      <video
+        ref={videoRef}
+        className="w-full aspect-video bg-stone-900"
+        onTimeUpdate={handleTimeUpdate}
+        onLoadedMetadata={handleLoadedMetadata}
+        onEnded={handleVideoEnd}
+        muted={isMuted}
+        playsInline
+        preload="metadata"
+        poster="/demo-thumbnail.svg"
+      >
+        <source src="/demo-video.mp4" type="video/mp4" />
+        Your browser does not support the video tag.
+      </video>
+
+      {/* Play Button Overlay (shown when not started) */}
+      {!hasStarted && (
+        <div
+          className="absolute inset-0 flex items-center justify-center bg-stone-900/60 cursor-pointer"
+          onClick={togglePlay}
+        >
+          <div className="flex flex-col items-center gap-4">
+            <div className={cx(
+              "flex h-20 w-20 items-center justify-center rounded-full border-4 transition-transform hover:scale-110",
+              "border-white/80 bg-[#1a365d]/90 text-white",
+              "dark:border-amber-400/80 dark:bg-amber-500/90 dark:text-stone-900"
+            )}>
+              <Play size={36} className="ml-1" />
+            </div>
+            <div className="text-center">
+              <div className="text-lg font-semibold text-white">Watch How It Works</div>
+              <div className="text-sm text-stone-300">60 second tour</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Controls Overlay */}
+      <div
+        className={cx(
+          "absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 transition-opacity duration-300",
+          showControls || !isPlaying ? "opacity-100" : "opacity-0"
+        )}
+      >
+        {/* Progress Bar */}
+        <div
+          className="h-1.5 w-full bg-white/30 rounded-full cursor-pointer mb-3 group"
+          onClick={handleSeek}
+        >
+          <div
+            className="h-full bg-amber-500 rounded-full relative"
+            style={{ width: `${progress}%` }}
+          >
+            <div className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
+          </div>
+        </div>
+
+        {/* Control Buttons */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={togglePlay}
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20 text-white transition hover:bg-white/30"
+            >
+              {isPlaying ? <Pause size={20} /> : <Play size={20} className="ml-0.5" />}
+            </button>
+            <button
+              onClick={restartVideo}
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white/80 transition hover:bg-white/20 hover:text-white"
+            >
+              <RotateCcw size={16} />
+            </button>
+            <button
+              onClick={toggleMute}
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white/80 transition hover:bg-white/20 hover:text-white"
+            >
+              {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+            </button>
+            <div className="text-xs text-white/70 font-mono">
+              {formatTime(videoRef.current?.currentTime || 0)} / {formatTime(duration)}
+            </div>
+          </div>
+          <button
+            onClick={toggleFullscreen}
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white/80 transition hover:bg-white/20 hover:text-white"
+          >
+            <Maximize size={16} />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function LawThemeLSATLanding() {
   const router = useRouter();
   const [isSignInOpen, setIsSignInOpen] = useState(false);
@@ -1090,6 +1285,38 @@ export default function LawThemeLSATLanding() {
               <AnalyticsPreviewCard />
             </motion.div>
           </div>
+
+          {/* Demo Video Section */}
+          <section id="demo" className="mt-24">
+            <ExhibitLabel label="Platform Tour" />
+
+            <div className="text-center mb-8">
+              <h2 className="font-serif text-3xl font-bold tracking-tight text-stone-900 dark:text-stone-100">
+                See LSATprep in Action
+              </h2>
+              <p className="mt-3 max-w-2xl mx-auto text-base leading-relaxed text-stone-600 dark:text-stone-400">
+                Take a 60-second tour of our dashboard, analytics, practice tests, and goal-setting features.
+              </p>
+            </div>
+
+            <div className="max-w-4xl mx-auto">
+              <DemoVideoPlayer />
+              <div className="mt-4 flex items-center justify-center gap-6 text-sm text-stone-500 dark:text-stone-400">
+                <div className="flex items-center gap-2">
+                  <BarChart3 size={16} className="text-[#1a365d] dark:text-amber-400" />
+                  <span>Analytics Dashboard</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Target size={16} className="text-[#1a365d] dark:text-amber-400" />
+                  <span>Goal Tracking</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Brain size={16} className="text-[#1a365d] dark:text-amber-400" />
+                  <span>Practice Tests</span>
+                </div>
+              </div>
+            </div>
+          </section>
 
           {/* Features */}
           <section id="features" className="mt-24">
