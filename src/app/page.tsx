@@ -965,6 +965,7 @@ function DemoVideoPlayer() {
         preload="metadata"
         poster="/demo-thumbnail.svg"
       >
+        <source src="/demo-video.mov" type="video/quicktime" />
         <source src="/demo-video.mp4" type="video/mp4" />
         Your browser does not support the video tag.
       </video>
@@ -985,7 +986,7 @@ function DemoVideoPlayer() {
             </div>
             <div className="text-center">
               <div className="text-lg font-semibold text-white">Watch How It Works</div>
-              <div className="text-sm text-stone-300">60 second tour</div>
+              <div className="text-sm text-stone-300">90 second tour</div>
             </div>
           </div>
         </div>
@@ -1295,7 +1296,7 @@ export default function LawThemeLSATLanding() {
                 See LSATprep in Action
               </h2>
               <p className="mt-3 max-w-2xl mx-auto text-base leading-relaxed text-stone-600 dark:text-stone-400">
-                Take a 60-second tour of our dashboard, analytics, practice tests, and goal-setting features.
+                Take a 90-second tour of our dashboard, analytics, practice tests, and goal-setting features.
               </p>
             </div>
 
