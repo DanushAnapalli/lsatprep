@@ -965,7 +965,6 @@ function DemoVideoPlayer() {
         preload="metadata"
         poster="/demo-thumbnail.svg"
       >
-        <source src="/demo-video.mov" type="video/quicktime" />
         <source src="/demo-video.mp4" type="video/mp4" />
         Your browser does not support the video tag.
       </video>
