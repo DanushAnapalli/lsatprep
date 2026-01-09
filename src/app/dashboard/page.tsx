@@ -934,6 +934,9 @@ export default function DashboardPage() {
   const [verificationSent, setVerificationSent] = useState(false);
   const [sendingVerification, setSendingVerification] = useState(false);
 
+  // Track if we've completed the initial Firestore sync
+  const [hasSyncedFromCloud, setHasSyncedFromCloud] = useState(false);
+
   // Listen to auth state and set current user ID for storage
   useEffect(() => {
     const unsubscribe = onAuthChange((firebaseUser) => {
@@ -943,12 +946,30 @@ export default function DashboardPage() {
       // Set auth loading to false immediately - don't block on sync operations
       setAuthLoading(false);
 
-      // Run sync operations in background (non-blocking)
+      // Run sync operations - WAIT for Firestore sync before showing data
       if (firebaseUser?.uid) {
         // Sync all data from Firestore on login (handles cross-device sync)
         import("@/lib/user-progress").then(({ syncAllDataFromFirestore }) => {
-          syncAllDataFromFirestore(firebaseUser.uid).catch(() => {});
+          syncAllDataFromFirestore(firebaseUser.uid)
+            .then((result) => {
+              // After sync completes, reload the merged data into state
+              if (result?.progress) {
+                setProgress(result.progress);
+                // Also reload in-progress tests
+                import("@/lib/user-progress").then(({ loadAllInProgressTests, loadInProgressTest }) => {
+                  setAllInProgressTests(loadAllInProgressTests(firebaseUser.uid));
+                  setInProgressTest(loadInProgressTest(firebaseUser.uid));
+                });
+              }
+              setHasSyncedFromCloud(true);
+            })
+            .catch(() => {
+              setHasSyncedFromCloud(true);
+            });
         });
+      } else {
+        // No user, no cloud sync needed
+        setHasSyncedFromCloud(true);
       }
 
       // Sync subscription status from Stripe (restores access if localStorage was cleared)

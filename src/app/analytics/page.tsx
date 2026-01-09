@@ -1632,11 +1632,37 @@ export default function AdvancedAnalyticsPage() {
   const [fatigueAnalysis, setFatigueAnalysis] = useState<FatigueAnalysis | null>(null);
   const [summary, setSummary] = useState<AnalyticsSummary | null>(null);
 
+  // Helper function to update all analytics state from progress
+  const updateAnalyticsFromProgress = (loaded: UserProgress) => {
+    setProgress(loaded);
+    setStrengths(getTopStrengths(loaded));
+    setWeaknesses(getTopWeaknesses(loaded));
+    setTimeAnalytics(getTimeAnalytics(loaded));
+    setScoreTrend(getScoreTrendAnalysis(loaded));
+    setErrorPatterns(detectErrorPatterns(loaded));
+    setFatigueAnalysis(analyzeFatigue(loaded));
+    setSummary(getAnalyticsSummary(loaded));
+  };
+
   useEffect(() => {
     const unsubscribe = onAuthChange((firebaseUser) => {
       setUser(firebaseUser);
       setCurrentUserId(firebaseUser?.uid || null);
       setAuthLoading(false);
+
+      // Sync from Firestore to get merged cross-device data
+      if (firebaseUser?.uid) {
+        import("@/lib/user-progress").then(({ syncAllDataFromFirestore }) => {
+          syncAllDataFromFirestore(firebaseUser.uid)
+            .then((result) => {
+              // After sync completes, reload the merged data into state
+              if (result?.progress) {
+                updateAnalyticsFromProgress(result.progress);
+              }
+            })
+            .catch(() => {});
+        });
+      }
     });
     return () => unsubscribe();
   }, []);
@@ -1657,15 +1683,7 @@ export default function AdvancedAnalyticsPage() {
 
     const userId = user?.uid;
     const loaded = loadUserProgress(userId);
-    setProgress(loaded);
-
-    setStrengths(getTopStrengths(loaded));
-    setWeaknesses(getTopWeaknesses(loaded));
-    setTimeAnalytics(getTimeAnalytics(loaded));
-    setScoreTrend(getScoreTrendAnalysis(loaded));
-    setErrorPatterns(detectErrorPatterns(loaded));
-    setFatigueAnalysis(analyzeFatigue(loaded));
-    setSummary(getAnalyticsSummary(loaded));
+    updateAnalyticsFromProgress(loaded);
 
     setIsLoading(false);
   }, [user, authLoading]);
