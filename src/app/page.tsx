@@ -41,8 +41,6 @@ import {
   XCircle,
   Play,
   Pause,
-  Volume2,
-  VolumeX,
   Maximize,
   RotateCcw,
 } from "lucide-react";
@@ -862,12 +860,14 @@ function AnalyticsPreviewCard() {
 // Demo Video Player Component
 function DemoVideoPlayer() {
   const videoRef = React.useRef<HTMLVideoElement>(null);
+  const progressRef = React.useRef<HTMLDivElement>(null);
+  const containerRef = React.useRef<HTMLDivElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [isMuted, setIsMuted] = useState(true);
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
   const [showControls, setShowControls] = useState(true);
   const [hasStarted, setHasStarted] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
   const togglePlay = () => {
     if (videoRef.current) {
@@ -881,15 +881,8 @@ function DemoVideoPlayer() {
     }
   };
 
-  const toggleMute = () => {
-    if (videoRef.current) {
-      videoRef.current.muted = !isMuted;
-      setIsMuted(!isMuted);
-    }
-  };
-
   const handleTimeUpdate = () => {
-    if (videoRef.current) {
+    if (videoRef.current && !isDragging) {
       const progress = (videoRef.current.currentTime / videoRef.current.duration) * 100;
       setProgress(progress);
     }
@@ -901,14 +894,66 @@ function DemoVideoPlayer() {
     }
   };
 
-  const handleSeek = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (videoRef.current) {
-      const rect = e.currentTarget.getBoundingClientRect();
-      const clickX = e.clientX - rect.left;
+  // Seek to position based on mouse/touch position
+  const seekToPosition = (clientX: number) => {
+    if (videoRef.current && progressRef.current) {
+      const rect = progressRef.current.getBoundingClientRect();
+      const clickX = Math.max(0, Math.min(clientX - rect.left, rect.width));
       const percentage = clickX / rect.width;
       videoRef.current.currentTime = percentage * videoRef.current.duration;
+      setProgress(percentage * 100);
     }
   };
+
+  const handleProgressMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    setIsDragging(true);
+    seekToPosition(e.clientX);
+  };
+
+  // Global mouse move and mouse up handlers for scrubbing
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (isDragging) {
+        seekToPosition(e.clientX);
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+    };
+
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging]);
+
+  // Keyboard shortcuts for arrow keys (±5 seconds)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Only handle if video container is focused or video has started
+      if (!videoRef.current || !hasStarted) return;
+
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        videoRef.current.currentTime = Math.max(0, videoRef.current.currentTime - 5);
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        videoRef.current.currentTime = Math.min(videoRef.current.duration, videoRef.current.currentTime + 5);
+      } else if (e.key === ' ') {
+        e.preventDefault();
+        togglePlay();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [hasStarted, isPlaying]);
 
   const handleVideoEnd = () => {
     setIsPlaying(false);
@@ -928,12 +973,19 @@ function DemoVideoPlayer() {
   };
 
   const toggleFullscreen = () => {
-    if (videoRef.current) {
+    if (containerRef.current) {
       if (document.fullscreenElement) {
         document.exitFullscreen();
       } else {
-        videoRef.current.requestFullscreen();
+        containerRef.current.requestFullscreen();
       }
+    }
+  };
+
+  // Skip forward/backward 5 seconds
+  const skipTime = (seconds: number) => {
+    if (videoRef.current) {
+      videoRef.current.currentTime = Math.max(0, Math.min(videoRef.current.duration, videoRef.current.currentTime + seconds));
     }
   };
 
@@ -945,6 +997,7 @@ function DemoVideoPlayer() {
 
   return (
     <div
+      ref={containerRef}
       className={cx(
         "relative overflow-hidden rounded-sm border-4 shadow-2xl",
         "border-[#1a365d] bg-stone-900",
@@ -952,15 +1005,17 @@ function DemoVideoPlayer() {
       )}
       onMouseEnter={() => setShowControls(true)}
       onMouseLeave={() => isPlaying && setShowControls(false)}
+      tabIndex={0}
     >
-      {/* Video Element */}
+      {/* Video Element - Click to play/pause */}
       <video
         ref={videoRef}
-        className="w-full aspect-video bg-stone-900"
+        className="w-full aspect-video bg-stone-900 cursor-pointer"
         onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={handleLoadedMetadata}
         onEnded={handleVideoEnd}
-        muted={isMuted}
+        onClick={() => hasStarted && togglePlay()}
+        muted
         playsInline
         preload="metadata"
         poster="/demo-thumbnail.svg"
@@ -972,22 +1027,10 @@ function DemoVideoPlayer() {
       {/* Play Button Overlay (shown when not started) */}
       {!hasStarted && (
         <div
-          className="absolute inset-0 flex items-center justify-center bg-stone-900/60 cursor-pointer"
+          className="absolute inset-0 flex items-center justify-center cursor-pointer"
           onClick={togglePlay}
         >
-          <div className="flex flex-col items-center gap-4">
-            <div className={cx(
-              "flex h-20 w-20 items-center justify-center rounded-full border-4 transition-transform hover:scale-110",
-              "border-white/80 bg-[#1a365d]/90 text-white",
-              "dark:border-amber-400/80 dark:bg-amber-500/90 dark:text-stone-900"
-            )}>
-              <Play size={36} className="ml-1" />
-            </div>
-            <div className="text-center">
-              <div className="text-lg font-semibold text-white">Watch How It Works</div>
-              <div className="text-sm text-stone-300">90 second tour</div>
-            </div>
-          </div>
+          {/* No additional overlay - thumbnail already has play button */}
         </div>
       )}
 
@@ -998,47 +1041,66 @@ function DemoVideoPlayer() {
           showControls || !isPlaying ? "opacity-100" : "opacity-0"
         )}
       >
-        {/* Progress Bar */}
+        {/* Progress Bar - Draggable */}
         <div
-          className="h-1.5 w-full bg-white/30 rounded-full cursor-pointer mb-3 group"
-          onClick={handleSeek}
+          ref={progressRef}
+          className="h-2 w-full bg-white/30 rounded-full cursor-pointer mb-3 group"
+          onMouseDown={handleProgressMouseDown}
         >
           <div
-            className="h-full bg-amber-500 rounded-full relative"
+            className="h-full bg-amber-500 rounded-full relative pointer-events-none"
             style={{ width: `${progress}%` }}
           >
-            <div className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className={cx(
+              "absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full shadow-md transition-opacity",
+              isDragging ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+            )} />
           </div>
         </div>
 
         {/* Control Buttons */}
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            {/* Skip backward 5s */}
+            <button
+              onClick={() => skipTime(-5)}
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white/80 transition hover:bg-white/20 hover:text-white text-xs font-bold"
+              title="Skip back 5 seconds (Left Arrow)"
+            >
+              -5s
+            </button>
+            {/* Play/Pause */}
             <button
               onClick={togglePlay}
               className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20 text-white transition hover:bg-white/30"
             >
               {isPlaying ? <Pause size={20} /> : <Play size={20} className="ml-0.5" />}
             </button>
+            {/* Skip forward 5s */}
+            <button
+              onClick={() => skipTime(5)}
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white/80 transition hover:bg-white/20 hover:text-white text-xs font-bold"
+              title="Skip forward 5 seconds (Right Arrow)"
+            >
+              +5s
+            </button>
+            {/* Restart */}
             <button
               onClick={restartVideo}
               className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white/80 transition hover:bg-white/20 hover:text-white"
+              title="Restart"
             >
               <RotateCcw size={16} />
             </button>
-            <button
-              onClick={toggleMute}
-              className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white/80 transition hover:bg-white/20 hover:text-white"
-            >
-              {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
-            </button>
-            <div className="text-xs text-white/70 font-mono">
+            {/* Time display */}
+            <div className="text-xs text-white/70 font-mono ml-2">
               {formatTime(videoRef.current?.currentTime || 0)} / {formatTime(duration)}
             </div>
           </div>
           <button
             onClick={toggleFullscreen}
             className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white/80 transition hover:bg-white/20 hover:text-white"
+            title="Fullscreen"
           >
             <Maximize size={16} />
           </button>
