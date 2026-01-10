@@ -1018,7 +1018,7 @@ function DemoVideoPlayer() {
         muted
         playsInline
         preload="metadata"
-        poster="/demo-thumbnail.svg"
+        poster="/demo-thumbnail.jpg"
       >
         <source src="/demo-video.mp4" type="video/mp4" />
         Your browser does not support the video tag.
