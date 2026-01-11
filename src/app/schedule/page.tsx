@@ -601,8 +601,8 @@ export default function SchedulePage() {
     try {
       await logOut();
       router.push("/");
-    } catch (error) {
-      console.error("Sign out error:", error);
+    } catch {
+      // Silent fail - user can retry
     }
   };
 

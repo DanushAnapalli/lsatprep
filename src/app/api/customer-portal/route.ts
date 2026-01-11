@@ -1,10 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
+import { authenticateRequest, unauthorizedResponse, forbiddenResponse } from "@/lib/auth-middleware";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 export async function POST(request: NextRequest) {
   try {
+    // Authenticate the request
+    const authResult = await authenticateRequest(request);
+
+    if (!authResult.authenticated || !authResult.user) {
+      return unauthorizedResponse("Authentication required");
+    }
+
     const { customerId } = await request.json();
 
     if (!customerId) {
@@ -12,6 +20,19 @@ export async function POST(request: NextRequest) {
         { error: "Customer ID is required" },
         { status: 400 }
       );
+    }
+
+    // Verify the customer belongs to the authenticated user
+    const customer = await stripe.customers.retrieve(customerId);
+
+    // Type guard for deleted customer
+    if ("deleted" in customer && customer.deleted) {
+      return forbiddenResponse("Customer not found");
+    }
+
+    // Verify email matches authenticated user
+    if (customer.email?.toLowerCase() !== authResult.user.email?.toLowerCase()) {
+      return forbiddenResponse("Customer does not belong to this user");
     }
 
     // Create a billing portal session
@@ -24,8 +45,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       url: session.url,
     });
-  } catch (error) {
-    console.error("Error creating customer portal session:", error);
+  } catch {
     return NextResponse.json(
       { error: "Failed to create portal session" },
       { status: 500 }

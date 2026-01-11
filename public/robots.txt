@@ -1,0 +1,23 @@
+# https://www.robotstxt.org/robotstxt.html
+User-agent: *
+Allow: /
+Allow: /admissions
+Allow: /examples
+
+# Disallow protected/dynamic pages
+Disallow: /api/
+Disallow: /dashboard/
+Disallow: /practice/
+Disallow: /profile/
+Disallow: /analytics/
+Disallow: /goals/
+Disallow: /schedule/
+Disallow: /subscription/
+Disallow: /drills/
+Disallow: /test-select/
+Disallow: /test-review/
+Disallow: /uncompleted-tests/
+Disallow: /auth/
+
+# Sitemap location
+Sitemap: https://lsatprep.org/sitemap.xml

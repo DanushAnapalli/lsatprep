@@ -1,10 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
+import { authenticateRequest, unauthorizedResponse } from "@/lib/auth-middleware";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 export async function POST(request: NextRequest) {
   try {
+    // Authenticate the request
+    const authResult = await authenticateRequest(request);
+
+    if (!authResult.authenticated || !authResult.user) {
+      return unauthorizedResponse(authResult.error || "Authentication required");
+    }
+
     const { sessionId } = await request.json();
 
     if (!sessionId) {
@@ -17,6 +25,14 @@ export async function POST(request: NextRequest) {
     const session = await stripe.checkout.sessions.retrieve(sessionId, {
       expand: ["subscription"],
     });
+
+    // Verify the session belongs to the authenticated user
+    if (session.customer_email?.toLowerCase() !== authResult.user.email?.toLowerCase()) {
+      return NextResponse.json(
+        { error: "Session does not belong to this user" },
+        { status: 403 }
+      );
+    }
 
     // For trial subscriptions, payment_status is "no_payment_required"
     // For regular subscriptions, payment_status is "paid"
@@ -61,8 +77,7 @@ export async function POST(request: NextRequest) {
       success: false,
       error: "Payment not completed",
     });
-  } catch (error) {
-    console.error("Error verifying session:", error);
+  } catch {
     return NextResponse.json(
       { error: "Failed to verify session" },
       { status: 500 }

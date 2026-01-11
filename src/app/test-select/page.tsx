@@ -28,6 +28,8 @@ import {
 } from "@/lib/user-progress";
 import { logicalReasoningQuestions, readingComprehensionQuestions } from "@/lib/sample-questions";
 import { onAuthChange, User as FirebaseUser } from "@/lib/firebase";
+import { authenticatedFetch } from "@/lib/auth-client";
+import { Crown, Lock } from "lucide-react";
 
 function cx(...classes: (string | boolean | undefined)[]) {
   return classes.filter(Boolean).join(" ");
@@ -50,6 +52,8 @@ interface TestOption {
   available: boolean;
   highlight?: boolean;
   badge?: string;
+  limitReached?: boolean;
+  limitMessage?: string;
 }
 
 // ============================================
@@ -68,21 +72,30 @@ function TestOptionCard({
   disabled?: boolean;
 }) {
   const Icon = option.icon;
+  const isBlocked = option.limitReached;
 
   return (
     <button
       onClick={onSelect}
-      disabled={disabled || !option.available}
+      disabled={disabled || !option.available || isBlocked}
       className={cx(
         "relative w-full rounded-sm border-2 p-6 text-left transition",
-        selected
+        selected && !isBlocked
           ? "border-[#1a365d] bg-[#1a365d]/5 dark:border-amber-500 dark:bg-amber-500/10"
+          : isBlocked
+          ? "border-red-200 bg-red-50/50 dark:border-red-900/50 dark:bg-red-900/10 cursor-not-allowed"
           : "border-stone-200 bg-white hover:border-stone-300 dark:border-stone-700 dark:bg-stone-900 dark:hover:border-stone-600",
-        !option.available && "cursor-not-allowed opacity-50",
-        option.highlight && !selected && "border-amber-400 dark:border-amber-500/50"
+        !option.available && !isBlocked && "cursor-not-allowed opacity-50",
+        option.highlight && !selected && !isBlocked && "border-amber-400 dark:border-amber-500/50"
       )}
     >
-      {option.badge && (
+      {isBlocked && (
+        <div className="absolute -top-3 right-4 flex items-center gap-1 rounded-sm bg-red-500 px-3 py-1 text-xs font-bold uppercase tracking-wider text-white">
+          <Lock size={12} />
+          Limit Reached
+        </div>
+      )}
+      {option.badge && !isBlocked && (
         <div className="absolute -top-3 right-4 rounded-sm bg-amber-500 px-3 py-1 text-xs font-bold uppercase tracking-wider text-stone-900">
           {option.badge}
         </div>
@@ -92,29 +105,46 @@ function TestOptionCard({
         <div
           className={cx(
             "rounded-sm p-3",
-            selected
+            isBlocked
+              ? "bg-red-100 text-red-500 dark:bg-red-900/30 dark:text-red-400"
+              : selected
               ? "bg-[#1a365d] text-white dark:bg-amber-500 dark:text-stone-900"
               : "bg-stone-100 text-stone-600 dark:bg-stone-800 dark:text-stone-400"
           )}
         >
-          <Icon size={24} />
+          {isBlocked ? <Lock size={24} /> : <Icon size={24} />}
         </div>
         <div className="flex-1">
           <div className="flex items-center gap-2">
-            <h3 className="font-serif text-lg font-bold text-stone-900 dark:text-stone-100">
+            <h3 className={cx(
+              "font-serif text-lg font-bold",
+              isBlocked ? "text-stone-500 dark:text-stone-500" : "text-stone-900 dark:text-stone-100"
+            )}>
               {option.title}
             </h3>
-            {selected && (
+            {selected && !isBlocked && (
               <CheckCircle2 size={20} className="text-[#1a365d] dark:text-amber-400" />
             )}
           </div>
-          <p className="mt-1 text-sm text-stone-600 dark:text-stone-400">{option.description}</p>
+          {isBlocked ? (
+            <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+              {option.limitMessage || "You've reached your free tier limit for this test type."}
+            </p>
+          ) : (
+            <p className="mt-1 text-sm text-stone-600 dark:text-stone-400">{option.description}</p>
+          )}
           <div className="mt-3 flex flex-wrap gap-3 text-xs">
-            <span className="flex items-center gap-1 rounded-sm bg-stone-100 px-2 py-1 dark:bg-stone-800">
+            <span className={cx(
+              "flex items-center gap-1 rounded-sm px-2 py-1",
+              isBlocked ? "bg-stone-100 text-stone-400 dark:bg-stone-800 dark:text-stone-500" : "bg-stone-100 dark:bg-stone-800"
+            )}>
               <Layers size={12} />
               {option.sections}
             </span>
-            <span className="flex items-center gap-1 rounded-sm bg-stone-100 px-2 py-1 dark:bg-stone-800">
+            <span className={cx(
+              "flex items-center gap-1 rounded-sm px-2 py-1",
+              isBlocked ? "bg-stone-100 text-stone-400 dark:bg-stone-800 dark:text-stone-500" : "bg-stone-100 dark:bg-stone-800"
+            )}>
               <Clock size={12} />
               {option.time}
             </span>
@@ -141,8 +171,17 @@ function TestSelectContent() {
   );
   const [isLoading, setIsLoading] = useState(true);
   const [allowRepeats, setAllowRepeats] = useState(false);
+  const [isTimed, setIsTimed] = useState(true);
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
+
+  // Limit checking state
+  const [limitsLoading, setLimitsLoading] = useState(true);
+  const [lrRemaining, setLrRemaining] = useState<number>(3);
+  const [rcRemaining, setRcRemaining] = useState<number>(3);
+  const [userTier, setUserTier] = useState<"free" | "pro" | "founder">("free");
+  const [lrCompleted, setLrCompleted] = useState<number>(0);
+  const [rcCompleted, setRcCompleted] = useState<number>(0);
 
   // Listen to auth state
   useEffect(() => {
@@ -162,7 +201,65 @@ function TestSelectContent() {
     setIsLoading(false);
   }, [user, authLoading]);
 
-  if (isLoading || !progress) {
+  // Check limits from server when auth is loaded
+  useEffect(() => {
+    if (authLoading) return;
+
+    const checkLimits = async () => {
+      // For authenticated users, check limits from server
+      if (user) {
+        try {
+          // Check for full test (this gives us both LR and RC remaining)
+          const response = await authenticatedFetch("/api/check-limits", {
+            method: "POST",
+            body: JSON.stringify({ testType: "full" }),
+          });
+
+          if (response.ok) {
+            const result = await response.json();
+            if (!result.error) {
+              setUserTier(result.tier);
+              setLrRemaining(result.lrRemaining);
+              setRcRemaining(result.rcRemaining);
+              setLrCompleted(result.lrCompleted);
+              setRcCompleted(result.rcCompleted);
+            }
+          }
+        } catch {
+          // On error, fall back to client-side progress counts
+          const loaded = loadUserProgress(user?.uid);
+          const lrTests = loaded.completedTests.filter(
+            (test) => test.sections.some((s) => s.type === "logical-reasoning")
+          ).length;
+          const rcTests = loaded.completedTests.filter(
+            (test) => test.sections.some((s) => s.type === "reading-comprehension")
+          ).length;
+          setLrCompleted(lrTests);
+          setRcCompleted(rcTests);
+          setLrRemaining(Math.max(0, 3 - lrTests));
+          setRcRemaining(Math.max(0, 3 - rcTests));
+        }
+      } else {
+        // For guests, use localStorage progress
+        const loaded = loadUserProgress(undefined);
+        const lrTests = loaded.completedTests.filter(
+          (test) => test.sections.some((s) => s.type === "logical-reasoning")
+        ).length;
+        const rcTests = loaded.completedTests.filter(
+          (test) => test.sections.some((s) => s.type === "reading-comprehension")
+        ).length;
+        setLrCompleted(lrTests);
+        setRcCompleted(rcTests);
+        setLrRemaining(Math.max(0, 3 - lrTests));
+        setRcRemaining(Math.max(0, 3 - rcTests));
+      }
+      setLimitsLoading(false);
+    };
+
+    checkLimits();
+  }, [user, authLoading]);
+
+  if (isLoading || !progress || limitsLoading) {
     return (
       <div className="min-h-screen bg-stone-50 dark:bg-stone-950">
         <div className="flex min-h-screen items-center justify-center">
@@ -171,6 +268,13 @@ function TestSelectContent() {
       </div>
     );
   }
+
+  // Determine which tests are blocked due to limits
+  const isPro = userTier === "pro" || userTier === "founder";
+  const lrBlocked = !isPro && lrRemaining <= 0;
+  const rcBlocked = !isPro && rcRemaining <= 0;
+  const fullBlocked = !isPro && (lrRemaining <= 0 || rcRemaining <= 0);
+  const anyLimitReached = lrBlocked || rcBlocked;
 
   const wrongAnswerIds = getWrongAnswerQuestionIds(progress);
   const weakTopics = getWeakTopics(progress);
@@ -204,6 +308,8 @@ function TestSelectContent() {
       time: "~105 min",
       questionCount: Math.min(totalQuestionCount, 76),
       available: unseenIds.length >= 10 || totalQuestionCount >= 10,
+      limitReached: fullBlocked,
+      limitMessage: `You've used all ${3} free practice tests. Upgrade to Pro for unlimited tests!`,
     },
     {
       id: "lr-only",
@@ -214,6 +320,8 @@ function TestSelectContent() {
       time: "~35-70 min",
       questionCount: lrQuestionCount,
       available: lrQuestionCount >= 5,
+      limitReached: lrBlocked,
+      limitMessage: `You've completed ${lrCompleted}/3 free LR practice sets. Upgrade to Pro for unlimited practice!`,
     },
     {
       id: "rc-only",
@@ -224,6 +332,8 @@ function TestSelectContent() {
       time: "~35 min",
       questionCount: rcQuestionCount,
       available: rcQuestionCount >= 4,
+      limitReached: rcBlocked,
+      limitMessage: `You've completed ${rcCompleted}/3 free RC practice sets. Upgrade to Pro for unlimited practice!`,
     },
   ];
 
@@ -272,11 +382,20 @@ function TestSelectContent() {
   const handleStartTest = () => {
     if (!selectedType) return;
 
+    // Double-check limits before starting (prevents race conditions)
+    if (selectedType === "full" && fullBlocked) return;
+    if (selectedType === "lr-only" && lrBlocked) return;
+    if (selectedType === "rc-only" && rcBlocked) return;
+
     const params = new URLSearchParams();
     params.set("type", selectedType);
 
     if (allowRepeats) {
       params.set("allowRepeats", "true");
+    }
+
+    if (!isTimed) {
+      params.set("untimed", "true");
     }
 
     if (selectedType === "improvement") {
@@ -290,6 +409,12 @@ function TestSelectContent() {
 
     router.push(`/practice?${params.toString()}`);
   };
+
+  // Check if the currently selected test is blocked
+  const selectedTestBlocked =
+    (selectedType === "full" && fullBlocked) ||
+    (selectedType === "lr-only" && lrBlocked) ||
+    (selectedType === "rc-only" && rcBlocked);
 
   return (
     <div className="min-h-screen bg-stone-50 dark:bg-stone-950">
@@ -328,6 +453,50 @@ function TestSelectContent() {
             Choose how you want to practice. Questions won&apos;t repeat until you&apos;ve seen them all.
           </p>
         </div>
+
+        {/* Upgrade Banner - shown when any limit is reached */}
+        {anyLimitReached && !isPro && (
+          <div className="mb-6 rounded-sm border-2 border-amber-400 bg-gradient-to-r from-amber-50 to-amber-100 p-4 dark:border-amber-500/50 dark:from-amber-900/20 dark:to-amber-800/20">
+            <div className="flex items-start gap-4">
+              <div className="rounded-sm bg-amber-500 p-2 text-white">
+                <Crown size={24} />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-serif font-bold text-stone-900 dark:text-stone-100">
+                  Unlock Unlimited Practice
+                </h3>
+                <p className="mt-1 text-sm text-stone-600 dark:text-stone-400">
+                  You&apos;ve reached your free tier limit. Upgrade to Pro for unlimited practice tests,
+                  advanced analytics, argument mapping, and more.
+                </p>
+                <div className="mt-3 flex flex-wrap items-center gap-3">
+                  <Link
+                    href="/subscription"
+                    className="inline-flex items-center gap-2 rounded-sm bg-amber-500 px-4 py-2 text-sm font-bold text-stone-900 transition hover:bg-amber-400"
+                  >
+                    <Crown size={16} />
+                    Upgrade to Pro
+                  </Link>
+                  <span className="text-xs text-stone-500 dark:text-stone-400">
+                    LR: {lrCompleted}/3 used | RC: {rcCompleted}/3 used
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Free tier usage indicator - shown when not at limit */}
+        {!isPro && !anyLimitReached && (lrCompleted > 0 || rcCompleted > 0) && (
+          <div className="mb-6 rounded-sm border border-stone-200 bg-stone-50 p-3 dark:border-stone-700 dark:bg-stone-900">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-stone-600 dark:text-stone-400">Free tier usage:</span>
+              <span className="font-medium text-stone-700 dark:text-stone-300">
+                LR: {lrCompleted}/3 | RC: {rcCompleted}/3
+              </span>
+            </div>
+          </div>
+        )}
 
         {/* Test Options */}
         <div className="space-y-4">
@@ -383,6 +552,49 @@ function TestSelectContent() {
           </div>
         )}
 
+        {/* Timed/Untimed Toggle */}
+        {selectedType && (
+          <div className="mt-6 rounded-sm border-2 border-stone-200 bg-white p-4 dark:border-stone-700 dark:bg-stone-900">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <div className="flex items-center gap-2 font-medium text-stone-900 dark:text-stone-100">
+                  <Clock size={18} className="text-amber-500" />
+                  Timer Mode
+                </div>
+                <p className="text-sm text-stone-500">
+                  {isTimed
+                    ? "Standard LSAT timing will be enforced"
+                    : "No time limit - practice at your own pace"}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setIsTimed(true)}
+                  className={cx(
+                    "rounded-sm px-4 py-2 text-sm font-medium transition",
+                    isTimed
+                      ? "bg-[#1a365d] text-white dark:bg-amber-500 dark:text-stone-900"
+                      : "bg-stone-100 text-stone-600 hover:bg-stone-200 dark:bg-stone-800 dark:text-stone-400"
+                  )}
+                >
+                  Timed
+                </button>
+                <button
+                  onClick={() => setIsTimed(false)}
+                  className={cx(
+                    "rounded-sm px-4 py-2 text-sm font-medium transition",
+                    !isTimed
+                      ? "bg-[#1a365d] text-white dark:bg-amber-500 dark:text-stone-900"
+                      : "bg-stone-100 text-stone-600 hover:bg-stone-200 dark:bg-stone-800 dark:text-stone-400"
+                  )}
+                >
+                  Untimed
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Action Buttons */}
         <div className="mt-8 flex justify-center gap-4">
           <Link
@@ -394,16 +606,25 @@ function TestSelectContent() {
           </Link>
           <button
             onClick={handleStartTest}
-            disabled={!selectedType}
+            disabled={!selectedType || selectedTestBlocked}
             className={cx(
               "inline-flex items-center gap-2 rounded-sm px-8 py-3 font-bold transition",
-              selectedType
+              selectedType && !selectedTestBlocked
                 ? "bg-[#1a365d] text-white hover:bg-[#2d4a7c] dark:bg-amber-500 dark:text-stone-900 dark:hover:bg-amber-400"
                 : "cursor-not-allowed bg-stone-300 text-stone-500 dark:bg-stone-700 dark:text-stone-500"
             )}
           >
-            Start Test
-            <ArrowRight size={18} />
+            {selectedTestBlocked ? (
+              <>
+                <Lock size={18} />
+                Upgrade to Start
+              </>
+            ) : (
+              <>
+                Start Test
+                <ArrowRight size={18} />
+              </>
+            )}
           </button>
         </div>
 

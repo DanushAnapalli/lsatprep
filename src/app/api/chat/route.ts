@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { logicalReasoningQuestions, readingComprehensionQuestions } from "@/lib/sample-questions";
+import { authenticateRequest, unauthorizedResponse } from "@/lib/auth-middleware";
+import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limiter";
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -71,6 +73,32 @@ ${JSON.stringify(questionsContext.rcQuestions, null, 2)}
 
 export async function POST(request: NextRequest) {
   try {
+    // Authenticate the request
+    const authResult = await authenticateRequest(request);
+
+    if (!authResult.authenticated || !authResult.user) {
+      return unauthorizedResponse("Authentication required to use chat");
+    }
+
+    // Rate limit by user ID
+    const rateLimitResult = checkRateLimit(
+      `chat:${authResult.user.uid}`,
+      RATE_LIMITS.chat
+    );
+
+    if (!rateLimitResult.allowed) {
+      return NextResponse.json(
+        { error: "Too many requests. Please wait before sending more messages." },
+        {
+          status: 429,
+          headers: {
+            "X-RateLimit-Remaining": "0",
+            "X-RateLimit-Reset": rateLimitResult.resetTime.toString(),
+          }
+        }
+      );
+    }
+
     const { messages, userProgress } = await request.json();
 
     if (!messages || !Array.isArray(messages)) {
@@ -109,8 +137,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ response });
   } catch (error: unknown) {
-    console.error("Chat API error:", error);
-
     // Check for specific Anthropic errors
     if (error instanceof Error) {
       const errorMessage = error.message.toLowerCase();

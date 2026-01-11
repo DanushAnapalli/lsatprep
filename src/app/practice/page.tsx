@@ -57,7 +57,8 @@ import {
   InProgressTest,
 } from "@/lib/user-progress";
 import { onAuthChange, User as FirebaseUser } from "@/lib/firebase";
-import { getUserTier, canStartLRTest, canStartRCTest, TIER_LIMITS, SubscriptionTier } from "@/lib/subscription";
+import { getUserTier, TIER_LIMITS, SubscriptionTier } from "@/lib/subscription";
+import { authenticatedFetch } from "@/lib/auth-client";
 import BlindReviewPhase from "@/components/BlindReviewPhase";
 import { BlindReviewResult } from "@/lib/blind-review";
 
@@ -269,15 +270,26 @@ function Timer({
   isPaused,
   onPause,
   onResume,
+  isUntimed,
 }: {
   timeRemaining: number;
   isPaused: boolean;
   onPause: () => void;
   onResume: () => void;
+  isUntimed?: boolean;
 }) {
   const minutes = Math.floor(timeRemaining / 60);
   const seconds = timeRemaining % 60;
-  const isLowTime = timeRemaining < 300;
+  const isLowTime = !isUntimed && timeRemaining < 300;
+
+  // Untimed mode display - simple infinity sign, non-distracting
+  if (isUntimed) {
+    return (
+      <span className="text-2xl text-stone-400 dark:text-stone-500" title="Untimed mode">
+        ∞
+      </span>
+    );
+  }
 
   return (
     <div
@@ -443,6 +455,7 @@ function PracticeContent() {
   const weakTypesParam = searchParams.get("weakTypes");
   const allowRepeatsParam = searchParams.get("allowRepeats") === "true";
   const resumeTest = searchParams.get("resume") === "true";
+  const isUntimed = searchParams.get("untimed") === "true";
 
   // Memoize the question IDs array to prevent infinite re-renders
   const specificQuestionIds = useMemo(() => {
@@ -467,7 +480,7 @@ function PracticeContent() {
   const [showExplanation, setShowExplanation] = useState(false);
   const [testCompleted, setTestCompleted] = useState(false);
   const [sectionResults, setSectionResults] = useState<SectionResult[]>([]);
-  const [testStartTime] = useState(Date.now);
+  const [testStartTime] = useState(() => Date.now());
   const [isLoading, setIsLoading] = useState(true);
   const [initialized, setInitialized] = useState(false);
   const [isResumed, setIsResumed] = useState(false);
@@ -483,6 +496,7 @@ function PracticeContent() {
   const [userTier, setUserTier] = useState<SubscriptionTier>("free");
   const [tierBlocked, setTierBlocked] = useState<string | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [serverLimitsChecked, setServerLimitsChecked] = useState(false);
 
   // Use refs to avoid stale closure issues in timer
   const sectionsRef = useRef<Section[]>([]);
@@ -580,86 +594,212 @@ function PracticeContent() {
       }
     }
 
-    // Check tier limits for free users and guests
-    const currentTier = user ? getUserTier(user) : "free";
+    // Server-side limit check for authenticated users
+    // For guests, use client-side check with localStorage counts
     const isGuest = !user;
 
-    // Founders and Pro users bypass ALL limits - skip tier check entirely
-    if (currentTier === "founder" || currentTier === "pro") {
-      // No limits - proceed directly to building sections
-    } else {
-      // Count completed tests for free users only
-      const completedLRTests = loadedProgress.completedTests.filter(
-        (test) => test.sections.some((s) => s.type === "logical-reasoning")
-      ).length;
-      const completedRCTests = loadedProgress.completedTests.filter(
-        (test) => test.sections.some((s) => s.type === "reading-comprehension")
-      ).length;
+    const checkLimitsAndInitialize = async () => {
+      // For authenticated users, verify limits server-side (secure)
+      if (user && testType !== "improvement" && testType !== "targeted") {
+        try {
+          const response = await authenticatedFetch("/api/check-limits", {
+            method: "POST",
+            body: JSON.stringify({ testType }),
+          });
 
-      // Check tier limits for both guests and free users
-      // Guests and free users get 3 LR section tests + 3 RC section tests free
-      const tierLimits = TIER_LIMITS.free;
+          if (response.ok) {
+            const limitResult = await response.json();
 
-      if (testType === "lr-only" && completedLRTests >= tierLimits.lrSetsAllowed) {
-        setTierBlocked(isGuest ? "GUEST_LR_LIMIT" : "You've reached your free limit of 3 LR practice sets. Upgrade to Pro for unlimited practice!");
-        setIsLoading(false);
-        setInitialized(true);
-        return;
+            // If server returned an error flag, use client-side fallback
+            if (limitResult.error) {
+              // Use client-side count check as fallback
+              const completedLRTests = loadedProgress.completedTests.filter(
+                (test) => test.sections.some((s) => s.type === "logical-reasoning")
+              ).length;
+              const completedRCTests = loadedProgress.completedTests.filter(
+                (test) => test.sections.some((s) => s.type === "reading-comprehension")
+              ).length;
+
+              const tierLimits = TIER_LIMITS.free;
+
+              if (testType === "lr-only" && completedLRTests >= tierLimits.lrSetsAllowed) {
+                setTierBlocked("You've reached your free limit of 3 LR practice sets. Upgrade to Pro for unlimited practice!");
+                setIsLoading(false);
+                setInitialized(true);
+                return;
+              }
+
+              if (testType === "rc-only" && completedRCTests >= tierLimits.rcSetsAllowed) {
+                setTierBlocked("You've reached your free limit of 3 RC practice sets. Upgrade to Pro for unlimited practice!");
+                setIsLoading(false);
+                setInitialized(true);
+                return;
+              }
+
+              if (testType === "full" && (completedLRTests >= tierLimits.lrSetsAllowed || completedRCTests >= tierLimits.rcSetsAllowed)) {
+                setTierBlocked("You've reached your free practice limit. Upgrade to Pro for unlimited full practice tests!");
+                setIsLoading(false);
+                setInitialized(true);
+                return;
+              }
+
+              // If we got here, allow the test
+              setUserTier(getUserTier(user));
+            } else {
+              setUserTier(limitResult.tier);
+              setServerLimitsChecked(true);
+
+              if (!limitResult.canStart) {
+                setTierBlocked(limitResult.reason || "You've reached your free limit. Upgrade to Pro for unlimited practice!");
+                setIsLoading(false);
+                setInitialized(true);
+                return;
+              }
+            }
+          } else {
+            // Server returned an error - use client-side count check as fallback
+            const completedLRTests = loadedProgress.completedTests.filter(
+              (test) => test.sections.some((s) => s.type === "logical-reasoning")
+            ).length;
+            const completedRCTests = loadedProgress.completedTests.filter(
+              (test) => test.sections.some((s) => s.type === "reading-comprehension")
+            ).length;
+
+            const tierLimits = TIER_LIMITS.free;
+
+            if (testType === "lr-only" && completedLRTests >= tierLimits.lrSetsAllowed) {
+              setTierBlocked("You've reached your free limit of 3 LR practice sets. Upgrade to Pro for unlimited practice!");
+              setIsLoading(false);
+              setInitialized(true);
+              return;
+            }
+
+            if (testType === "rc-only" && completedRCTests >= tierLimits.rcSetsAllowed) {
+              setTierBlocked("You've reached your free limit of 3 RC practice sets. Upgrade to Pro for unlimited practice!");
+              setIsLoading(false);
+              setInitialized(true);
+              return;
+            }
+
+            if (testType === "full" && (completedLRTests >= tierLimits.lrSetsAllowed || completedRCTests >= tierLimits.rcSetsAllowed)) {
+              setTierBlocked("You've reached your free practice limit. Upgrade to Pro for unlimited full practice tests!");
+              setIsLoading(false);
+              setInitialized(true);
+              return;
+            }
+
+            // If we got here, allow the test (user hasn't hit local limit)
+            setUserTier(getUserTier(user));
+          }
+        } catch {
+          // On network error, use client-side count check as secure fallback
+          const completedLRTests = loadedProgress.completedTests.filter(
+            (test) => test.sections.some((s) => s.type === "logical-reasoning")
+          ).length;
+          const completedRCTests = loadedProgress.completedTests.filter(
+            (test) => test.sections.some((s) => s.type === "reading-comprehension")
+          ).length;
+
+          const tierLimits = TIER_LIMITS.free;
+
+          if (testType === "lr-only" && completedLRTests >= tierLimits.lrSetsAllowed) {
+            setTierBlocked("You've reached your free limit of 3 LR practice sets. Upgrade to Pro for unlimited practice!");
+            setIsLoading(false);
+            setInitialized(true);
+            return;
+          }
+
+          if (testType === "rc-only" && completedRCTests >= tierLimits.rcSetsAllowed) {
+            setTierBlocked("You've reached your free limit of 3 RC practice sets. Upgrade to Pro for unlimited practice!");
+            setIsLoading(false);
+            setInitialized(true);
+            return;
+          }
+
+          if (testType === "full" && (completedLRTests >= tierLimits.lrSetsAllowed || completedRCTests >= tierLimits.rcSetsAllowed)) {
+            setTierBlocked("You've reached your free practice limit. Upgrade to Pro for unlimited full practice tests!");
+            setIsLoading(false);
+            setInitialized(true);
+            return;
+          }
+
+          // If we got here, allow the test
+          setUserTier(getUserTier(user));
+        }
+      } else if (isGuest) {
+        // For guests, use client-side localStorage count (they can't bypass since they have no account)
+        const completedLRTests = loadedProgress.completedTests.filter(
+          (test) => test.sections.some((s) => s.type === "logical-reasoning")
+        ).length;
+        const completedRCTests = loadedProgress.completedTests.filter(
+          (test) => test.sections.some((s) => s.type === "reading-comprehension")
+        ).length;
+
+        const tierLimits = TIER_LIMITS.free;
+
+        if (testType === "lr-only" && completedLRTests >= tierLimits.lrSetsAllowed) {
+          setTierBlocked("GUEST_LR_LIMIT");
+          setIsLoading(false);
+          setInitialized(true);
+          return;
+        }
+
+        if (testType === "rc-only" && completedRCTests >= tierLimits.rcSetsAllowed) {
+          setTierBlocked("GUEST_RC_LIMIT");
+          setIsLoading(false);
+          setInitialized(true);
+          return;
+        }
+
+        if (testType === "full" && (completedLRTests >= tierLimits.lrSetsAllowed || completedRCTests >= tierLimits.rcSetsAllowed)) {
+          setTierBlocked("GUEST_FULL_LIMIT");
+          setIsLoading(false);
+          setInitialized(true);
+          return;
+        }
       }
 
-      if (testType === "rc-only" && completedRCTests >= tierLimits.rcSetsAllowed) {
-        setTierBlocked(isGuest ? "GUEST_RC_LIMIT" : "You've reached your free limit of 3 RC practice sets. Upgrade to Pro for unlimited practice!");
-        setIsLoading(false);
-        setInitialized(true);
-        return;
+      // Save current stats as the baseline for dashboard comparison
+      // This way, after completing this test, dashboard will show the gains from THIS test
+      const totalStudyTime = loadedProgress.completedTests.reduce((acc, test) => acc + test.timeUsed, 0);
+      const dashboardStats = {
+        averageScore: loadedProgress.averageScore,
+        highestScore: loadedProgress.highestScore,
+        totalQuestionsAnswered: loadedProgress.totalQuestionsAnswered,
+        totalCorrect: loadedProgress.totalCorrect,
+        testsCompleted: loadedProgress.completedTests.length,
+        studyTimeSeconds: totalStudyTime,
+        timestamp: Date.now(),
+      };
+      localStorage.setItem("lsatprep-dashboard-stats", JSON.stringify(dashboardStats));
+
+      const builtSections = buildTestSections(testType, loadedProgress, specificQuestionIds, allowRepeatsParam, weakTypes);
+      setSections(builtSections);
+      sectionsRef.current = builtSections;
+
+      // Set test name for new tests
+      const newTestName = testType === "improvement"
+        ? "Review Missed Questions"
+        : testType === "targeted"
+        ? "Targeted Practice"
+        : testType === "lr-only"
+        ? "Logical Reasoning Practice"
+        : testType === "rc-only"
+        ? "Reading Comprehension Practice"
+        : "Full Practice Test";
+      setTestName(newTestName);
+
+      if (builtSections.length > 0) {
+        const initialTime = builtSections[0].timeLimit;
+        setTimeRemaining(initialTime);
+        timeRemainingRef.current = initialTime;
       }
 
-      if (testType === "full" && (completedLRTests >= tierLimits.lrSetsAllowed || completedRCTests >= tierLimits.rcSetsAllowed)) {
-        setTierBlocked(isGuest ? "GUEST_FULL_LIMIT" : "You've reached your free practice limit. Upgrade to Pro for unlimited full practice tests!");
-        setIsLoading(false);
-        setInitialized(true);
-        return;
-      }
-    }
-
-    // Save current stats as the baseline for dashboard comparison
-    // This way, after completing this test, dashboard will show the gains from THIS test
-    const totalStudyTime = loadedProgress.completedTests.reduce((acc, test) => acc + test.timeUsed, 0);
-    const dashboardStats = {
-      averageScore: loadedProgress.averageScore,
-      highestScore: loadedProgress.highestScore,
-      totalQuestionsAnswered: loadedProgress.totalQuestionsAnswered,
-      totalCorrect: loadedProgress.totalCorrect,
-      testsCompleted: loadedProgress.completedTests.length,
-      studyTimeSeconds: totalStudyTime,
-      timestamp: Date.now(),
+      setIsLoading(false);
+      setInitialized(true);
     };
-    localStorage.setItem("lsatprep-dashboard-stats", JSON.stringify(dashboardStats));
 
-    const builtSections = buildTestSections(testType, loadedProgress, specificQuestionIds, allowRepeatsParam, weakTypes);
-    setSections(builtSections);
-    sectionsRef.current = builtSections;
-
-    // Set test name for new tests
-    const newTestName = testType === "improvement"
-      ? "Review Missed Questions"
-      : testType === "targeted"
-      ? "Targeted Practice"
-      : testType === "lr-only"
-      ? "Logical Reasoning Practice"
-      : testType === "rc-only"
-      ? "Reading Comprehension Practice"
-      : "Full Practice Test";
-    setTestName(newTestName);
-
-    if (builtSections.length > 0) {
-      const initialTime = builtSections[0].timeLimit;
-      setTimeRemaining(initialTime);
-      timeRemainingRef.current = initialTime;
-    }
-
-    setIsLoading(false);
-    setInitialized(true);
+    checkLimitsAndInitialize();
   }, [testType, specificQuestionIds, allowRepeatsParam, weakTypes, initialized, user, authLoading, resumeTest]);
 
   // Auto-save test progress to localStorage whenever state changes
@@ -785,9 +925,10 @@ function PracticeContent() {
     }
   }, []);
 
-  // Timer effect - clean implementation
+  // Timer effect - clean implementation (skip if untimed)
   useEffect(() => {
-    if (isPaused || isReviewMode || testCompleted || !currentSection || isLoading) {
+    // Skip countdown if untimed mode
+    if (isUntimed || isPaused || isReviewMode || testCompleted || !currentSection || isLoading) {
       return;
     }
 
@@ -803,14 +944,14 @@ function PracticeContent() {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [isPaused, isReviewMode, testCompleted, currentSection, isLoading]);
+  }, [isUntimed, isPaused, isReviewMode, testCompleted, currentSection, isLoading]);
 
-  // Handle time running out
+  // Handle time running out (only in timed mode)
   useEffect(() => {
-    if (timeRemaining === 0 && !testCompleted && !isReviewMode) {
+    if (!isUntimed && timeRemaining === 0 && !testCompleted && !isReviewMode) {
       handleSectionComplete();
     }
-  }, [timeRemaining, testCompleted, isReviewMode, handleSectionComplete]);
+  }, [isUntimed, timeRemaining, testCompleted, isReviewMode, handleSectionComplete]);
 
   // Handle answer selection
   const handleSelectAnswer = useCallback(
@@ -1045,7 +1186,44 @@ function PracticeContent() {
 
     // Clear the in-progress test since we've completed it
     clearInProgressTest(user?.uid);
-  }, [testCompleted, user]); // Only run when test completes
+
+    // Record test completion server-side for authenticated users (secure limit tracking)
+    // Only record for countable test types (not improvement/targeted/custom)
+    if (user && testType !== "improvement" && testType !== "targeted" && testType !== "custom") {
+      const recordTestType = testType === "lr-only" ? "lr" : testType === "rc-only" ? "rc" : "full";
+
+      // Record with retry logic for reliability
+      const recordTest = async (retryCount = 0) => {
+        try {
+          const response = await authenticatedFetch("/api/record-test", {
+            method: "POST",
+            body: JSON.stringify({ testType: recordTestType }),
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            console.error("Failed to record test completion:", response.status, errorData);
+
+            // Retry once on server error
+            if (retryCount < 1 && response.status >= 500) {
+              console.log("Retrying test record...");
+              setTimeout(() => recordTest(retryCount + 1), 1000);
+            }
+          }
+        } catch (error) {
+          console.error("Error recording test completion:", error);
+
+          // Retry once on network error
+          if (retryCount < 1) {
+            console.log("Retrying test record after network error...");
+            setTimeout(() => recordTest(retryCount + 1), 1000);
+          }
+        }
+      };
+
+      recordTest();
+    }
+  }, [testCompleted, user, testType]); // Only run when test completes
 
   // Calculate final results
   const finalResults = useMemo(() => {
@@ -1163,7 +1341,7 @@ function PracticeContent() {
                   className="flex w-full items-center justify-center gap-2 rounded-sm bg-amber-500 px-6 py-3 font-semibold text-white transition hover:bg-amber-600"
                 >
                   <Crown size={18} />
-                  Upgrade to Pro - $15/mo
+                  Upgrade to Pro - $25/mo
                 </a>
                 <Link
                   href="/dashboard"
@@ -1401,6 +1579,7 @@ function PracticeContent() {
               isPaused={isPaused}
               onPause={() => setIsPaused(true)}
               onResume={() => setIsPaused(false)}
+              isUntimed={isUntimed}
             />
           )}
 
@@ -1458,8 +1637,17 @@ function PracticeContent() {
               </span>
             </div>
 
-            {/* Stimulus */}
+            {/* Stimulus / Passage */}
             <div className="mb-4 rounded-sm border-2 border-stone-200 bg-white p-4 dark:border-stone-700 dark:bg-stone-800 sm:mb-6 sm:p-6">
+              {/* Same Passage indicator for RC questions */}
+              {currentQuestion.sectionType === "reading-comprehension" &&
+               currentQuestionIndex > 0 &&
+               currentSection?.questions[currentQuestionIndex - 1]?.passageId === currentQuestion.passageId && (
+                <div className="mb-3 inline-flex items-center gap-2 rounded bg-amber-100 px-3 py-1.5 dark:bg-amber-900/40">
+                  <BookOpen size={14} className="text-amber-600 dark:text-amber-400" />
+                  <span className="text-xs font-semibold text-amber-700 dark:text-amber-300">Same Passage</span>
+                </div>
+              )}
               <p className="whitespace-pre-wrap text-sm leading-relaxed text-stone-800 dark:text-stone-200 sm:text-base">
                 {currentQuestion.stimulus}
               </p>

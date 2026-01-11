@@ -644,7 +644,7 @@ function JourneyCard({
 
   return (
     <div className="relative rounded-sm border-2 border-stone-200 bg-white p-5 dark:border-stone-700 dark:bg-stone-900 h-full flex flex-col">
-      {isLocked && <ProLockOverlay />}
+      {isLocked && <ProLockOverlay featureName="AI Journey Analysis" />}
       <div className={isLocked ? "opacity-30 blur-sm pointer-events-none flex-1" : "flex-1"}>
         <div className="flex items-center gap-2 mb-4">
           <Sparkles size={18} className="text-[#1a365d] dark:text-amber-400" />
@@ -749,7 +749,7 @@ function PerformanceSnapshot({
 
   return (
     <div className="relative rounded-sm border-2 border-stone-200 bg-white p-5 dark:border-stone-700 dark:bg-stone-900 h-full flex flex-col">
-      {isLocked && <ProLockOverlay />}
+      {isLocked && <ProLockOverlay featureName="Performance Snapshot" />}
       <div className={isLocked ? "opacity-30 blur-sm pointer-events-none flex-1" : "flex-1 flex flex-col"}>
         <div className="flex items-center gap-2 mb-4">
           <Activity size={18} className="text-[#1a365d] dark:text-amber-400" />
@@ -809,7 +809,7 @@ function StrengthsWeaknessesCard({
 }) {
   return (
     <div className="relative rounded-sm border-2 border-stone-200 bg-white p-5 dark:border-stone-700 dark:bg-stone-900 h-full">
-      {isLocked && <ProLockOverlay />}
+      {isLocked && <ProLockOverlay featureName="Strengths & Weaknesses" />}
       <div className={isLocked ? "opacity-30 blur-sm pointer-events-none" : ""}>
         <div className="flex items-center gap-2 mb-4">
           <Target size={18} className="text-[#1a365d] dark:text-amber-400" />
@@ -1043,7 +1043,7 @@ function TimeAnalyticsCard({
 
   return (
     <div className="relative rounded-sm border-2 border-stone-200 bg-white p-5 dark:border-stone-700 dark:bg-stone-900 h-full">
-      {isLocked && <ProLockOverlay />}
+      {isLocked && <ProLockOverlay featureName="Time Analytics" />}
       <div className={isLocked ? "opacity-30 blur-sm pointer-events-none" : ""}>
         <div className="flex items-center gap-2 mb-4">
           <Timer size={18} className="text-[#1a365d] dark:text-amber-400" />
@@ -1140,7 +1140,7 @@ function ErrorPatternsCard({
 }) {
   return (
     <div className="relative rounded-sm border-2 border-stone-200 bg-white p-5 dark:border-stone-700 dark:bg-stone-900 h-full">
-      {isLocked && <ProLockOverlay />}
+      {isLocked && <ProLockOverlay featureName="Error Pattern Detection" />}
       <div className={isLocked ? "opacity-30 blur-sm pointer-events-none" : ""}>
         <div className="flex items-center gap-2 mb-4">
           <AlertTriangle size={18} className="text-[#1a365d] dark:text-amber-400" />
@@ -1216,7 +1216,7 @@ function FatigueAnalysisCard({
 
   return (
     <div className="relative rounded-sm border-2 border-stone-200 bg-white p-5 dark:border-stone-700 dark:bg-stone-900 h-full">
-      {isLocked && <ProLockOverlay />}
+      {isLocked && <ProLockOverlay featureName="Endurance Analysis" />}
       <div className={isLocked ? "opacity-30 blur-sm pointer-events-none" : ""}>
         <div className="flex items-center gap-2 mb-4">
           <Battery size={18} className="text-[#1a365d] dark:text-amber-400" />
@@ -1301,11 +1301,12 @@ function FatigueAnalysisCard({
   );
 }
 
-function ProLockOverlay() {
+function ProLockOverlay({ featureName }: { featureName: string }) {
   return (
     <div className="absolute inset-0 z-10 flex flex-col items-center justify-center rounded-sm bg-white/80 dark:bg-stone-900/80 backdrop-blur-sm">
       <Lock size={28} className="mb-2 text-amber-500" />
-      <p className="mb-2 text-xs font-semibold text-stone-700 dark:text-stone-300">Pro Feature</p>
+      <p className="mb-1 text-sm font-bold text-stone-900 dark:text-stone-100">{featureName}</p>
+      <p className="mb-3 text-xs text-stone-600 dark:text-stone-400">Pro Feature</p>
       <Link
         href="/subscription"
         className="flex items-center gap-1 rounded-sm bg-amber-500 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-amber-600"
@@ -1367,7 +1368,7 @@ function YouTubeResourcesSection({
 
   return (
     <div className="relative mb-6 rounded-sm border-2 border-stone-200 bg-white p-6 dark:border-stone-700 dark:bg-stone-900">
-      {isLocked && <ProLockOverlay />}
+      {isLocked && <ProLockOverlay featureName="Video Resources" />}
       <div className={isLocked ? "opacity-30 blur-sm pointer-events-none" : ""}>
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
@@ -1692,8 +1693,8 @@ export default function AdvancedAnalyticsPage() {
     try {
       await logOut();
       router.push("/");
-    } catch (error) {
-      console.error("Sign out error:", error);
+    } catch {
+      // Silent fail - user can retry
     }
   };
 

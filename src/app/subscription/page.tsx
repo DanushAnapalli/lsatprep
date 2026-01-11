@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { getUserTier, getTierDisplayInfo, getSubscriptionInfo, saveSubscriptionInfo, SubscriptionInfo, syncSubscriptionFromStripe } from "@/lib/subscription";
+import { authenticatedFetch } from "@/lib/auth-client";
 import { Check, Crown, Loader2, ArrowLeft, Calendar, CreditCard, ExternalLink, RefreshCw } from "lucide-react";
 
 const TRIAL_DAYS = 5;
@@ -17,8 +18,6 @@ export default function SubscriptionPage() {
   const [currentTier, setCurrentTier] = useState<"free" | "pro" | "founder">("free");
   const [trialInfo, setTrialInfo] = useState<{ isTrialing: boolean; daysLeft: number; trialEndDate: string | null } | null>(null);
   const [subscriptionInfo, setSubscriptionInfo] = useState<SubscriptionInfo | null>(null);
-  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
-  const [isCancelling, setIsCancelling] = useState(false);
   const [isLoadingPortal, setIsLoadingPortal] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
   const [restoreMessage, setRestoreMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
@@ -32,12 +31,10 @@ export default function SubscriptionPage() {
         setCurrentTier(tier);
 
         // For Pro users, sync subscription info from Stripe to get accurate dates
-        if ((tier === "pro" || tier === "founder") && user.email) {
+        if ((tier === "pro" || tier === "founder")) {
           try {
-            const response = await fetch("/api/check-subscription", {
+            const response = await authenticatedFetch("/api/check-subscription", {
               method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ email: user.email }),
             });
 
             if (response.ok) {
@@ -103,12 +100,9 @@ export default function SubscriptionPage() {
     setCheckoutLoading(true);
 
     try {
-      const response = await fetch("/api/create-checkout-session", {
+      const response = await authenticatedFetch("/api/create-checkout-session", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          userId: user.uid,
-          userEmail: user.email,
           billingPeriod: billingPeriod,
         }),
       });
@@ -116,7 +110,6 @@ export default function SubscriptionPage() {
       const data = await response.json();
 
       if (!response.ok || data.error) {
-        console.error("Checkout error:", data.error || response.statusText);
         alert(`Failed to start checkout: ${data.error || "Unknown error"}`);
         setCheckoutLoading(false);
         return;
@@ -129,43 +122,9 @@ export default function SubscriptionPage() {
         alert("No checkout URL received. Please try again.");
         setCheckoutLoading(false);
       }
-    } catch (error) {
-      console.error("Checkout error:", error);
-      alert(`Failed to start checkout: ${error instanceof Error ? error.message : "Unknown error"}`);
+    } catch {
+      alert("Failed to start checkout. Please try again.");
       setCheckoutLoading(false);
-    }
-  };
-
-  const handleCancelSubscription = async () => {
-    if (!subscriptionInfo?.subscriptionId) return;
-
-    setIsCancelling(true);
-    try {
-      const response = await fetch("/api/cancel-subscription", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ subscriptionId: subscriptionInfo.subscriptionId }),
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        const updatedInfo: SubscriptionInfo = {
-          ...subscriptionInfo,
-          cancelAtPeriodEnd: true,
-          currentPeriodEnd: data.subscription.currentPeriodEnd,
-        };
-        saveSubscriptionInfo(updatedInfo);
-        setSubscriptionInfo(updatedInfo);
-        setShowCancelConfirm(false);
-      } else {
-        alert("Failed to cancel subscription. Please try again.");
-      }
-    } catch (error) {
-      console.error("Cancel error:", error);
-      alert("Failed to cancel subscription. Please try again.");
-    } finally {
-      setIsCancelling(false);
     }
   };
 
@@ -177,9 +136,8 @@ export default function SubscriptionPage() {
 
     setIsLoadingPortal(true);
     try {
-      const response = await fetch("/api/customer-portal", {
+      const response = await authenticatedFetch("/api/customer-portal", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ customerId: subscriptionInfo.customerId }),
       });
 
@@ -190,8 +148,7 @@ export default function SubscriptionPage() {
       } else {
         alert("Failed to open billing portal. Please try again.");
       }
-    } catch (error) {
-      console.error("Portal error:", error);
+    } catch {
       alert("Failed to open billing portal. Please try again.");
     } finally {
       setIsLoadingPortal(false);
@@ -199,22 +156,20 @@ export default function SubscriptionPage() {
   };
 
   const handleRestoreSubscription = async () => {
-    if (!user?.email) return;
+    if (!user) return;
 
     setIsRestoring(true);
     setRestoreMessage(null);
 
     try {
-      const restored = await syncSubscriptionFromStripe(user.email);
+      const restored = await syncSubscriptionFromStripe();
       if (restored) {
         setCurrentTier(getUserTier(user));
         setSubscriptionInfo(getSubscriptionInfo());
 
         // Fetch accurate trial info from Stripe
-        const response = await fetch("/api/check-subscription", {
+        const response = await authenticatedFetch("/api/check-subscription", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: user.email }),
         });
 
         if (response.ok) {
@@ -241,8 +196,7 @@ export default function SubscriptionPage() {
       } else {
         setRestoreMessage({ type: "error", text: "No active subscription found for this email." });
       }
-    } catch (error) {
-      console.error("Restore error:", error);
+    } catch {
       setRestoreMessage({ type: "error", text: "Failed to restore subscription. Please try again." });
     } finally {
       setIsRestoring(false);
@@ -262,14 +216,14 @@ export default function SubscriptionPage() {
 
   const features = [
     { name: "Unlimited Practice Tests", free: false, pro: true },
-    { name: "All LR Question Sets", free: false, pro: true },
-    { name: "All RC Question Sets", free: false, pro: true },
+    { name: "All 70+ LR Question Sets", free: false, pro: true },
+    { name: "All 50+ RC Question Sets", free: false, pro: true },
     { name: "Full Analytics Dashboard", free: false, pro: true },
     { name: "Advanced Review Features", free: false, pro: true },
     { name: "Argument Mapping", free: false, pro: true },
     { name: "Adaptive Drills", free: false, pro: true },
-    { name: "1 LR Practice Set", free: true, pro: true },
-    { name: "1 RC Practice Set", free: true, pro: true },
+    { name: "3 LR Practice Sets", free: true, pro: false },
+    { name: "3 RC Practice Sets", free: true, pro: false },
     { name: "Basic Progress Tracking", free: true, pro: true },
   ];
 
@@ -401,40 +355,7 @@ export default function SubscriptionPage() {
                 )}
                 Manage Billing
               </button>
-              {!subscriptionInfo.cancelAtPeriodEnd && (
-                <button
-                  onClick={() => setShowCancelConfirm(true)}
-                  className="px-4 py-2 rounded-md text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                >
-                  Cancel
-                </button>
-              )}
             </div>
-
-            {/* Cancel Confirmation Dialog */}
-            {showCancelConfirm && (
-              <div className="mt-4 p-4 rounded-md border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20">
-                <p className="text-sm text-red-800 dark:text-red-300 mb-3">
-                  Cancel your subscription? You&apos;ll keep access until the end of your billing period.
-                </p>
-                <div className="flex gap-3">
-                  <button
-                    onClick={handleCancelSubscription}
-                    disabled={isCancelling}
-                    className="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium bg-red-600 hover:bg-red-700 text-white transition-colors disabled:opacity-50"
-                  >
-                    {isCancelling && <Loader2 className="w-4 h-4 animate-spin" />}
-                    Yes, Cancel
-                  </button>
-                  <button
-                    onClick={() => setShowCancelConfirm(false)}
-                    className="px-4 py-2 rounded-md text-sm font-medium bg-stone-200 dark:bg-stone-700 text-stone-700 dark:text-stone-300 hover:bg-stone-300 dark:hover:bg-stone-600 transition-colors"
-                  >
-                    Keep Subscription
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
         )}
 
@@ -518,9 +439,9 @@ export default function SubscriptionPage() {
             </div>
             <div className="mb-6 text-sm text-stone-500 dark:text-stone-400">
               {billingPeriod === "monthly" ? (
-                <>then $15/month</>
+                <>then $25/month</>
               ) : (
-                <>then $135/year <span className="text-green-600 dark:text-green-400">(save $45)</span></>
+                <>then $225/year <span className="text-green-600 dark:text-green-400">(save $75)</span></>
               )}
             </div>
 

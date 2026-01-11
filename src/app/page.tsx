@@ -196,7 +196,6 @@ function SignInModal({
       onClose();
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : "Google sign-in failed";
-      console.error("Google sign-in error:", err);
       if (errorMessage.includes("auth/popup-closed-by-user")) {
         setError(null); // User closed popup, not an error
       } else {
@@ -1567,7 +1566,7 @@ export default function LawThemeLSATLanding() {
                   Popular
                 </div>
                 <div className="text-xs font-bold uppercase tracking-widest text-[#1a365d] dark:text-amber-400">Pro</div>
-                <div className="mt-2 font-serif text-4xl font-bold text-stone-900 dark:text-stone-100">$15</div>
+                <div className="mt-2 font-serif text-4xl font-bold text-stone-900 dark:text-stone-100">$25</div>
                 <div className="mt-1 text-sm text-stone-500">per month</div>
                 <div className="mt-6 space-y-3 text-sm text-stone-600 dark:text-stone-400">
                   {[

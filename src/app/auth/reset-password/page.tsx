@@ -51,8 +51,7 @@ function ResetPasswordForm() {
         const userEmail = await verifyResetCode(oobCode);
         setEmail(userEmail);
         setIsVerifying(false);
-      } catch (err) {
-        console.error("Reset code verification failed:", err);
+      } catch {
         setError("This password reset link has expired or already been used.");
         setIsVerifying(false);
       }
@@ -96,7 +95,6 @@ function ResetPasswordForm() {
       await confirmReset(oobCode, password);
       setSuccess(true);
     } catch (err: unknown) {
-      console.error("Password reset failed:", err);
       const errorMessage = err instanceof Error ? err.message : "Failed to reset password";
 
       if (errorMessage.includes("expired") || errorMessage.includes("invalid")) {

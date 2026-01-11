@@ -1,6 +1,7 @@
 // Subscription tier management
 
 import { User } from "firebase/auth";
+import { authenticatedFetch } from "./auth-client";
 
 export type SubscriptionTier = "free" | "pro" | "founder";
 
@@ -14,10 +15,8 @@ export interface TrialInfo {
   daysLeft: number;
 }
 
-// Founder emails - add your email here for unlimited access
-const FOUNDER_EMAILS: string[] = [
-  "adigamesacc12@gmail.com",
-];
+// Founder status is now verified server-side only (subscription-server.ts)
+// Do NOT add founder emails to client code - they would be exposed in the bundle
 
 export interface TierLimits {
   lrSetsAllowed: number;      // Number of LR practice sets allowed
@@ -73,10 +72,14 @@ let verifiedTierCache: {
 
 const CACHE_DURATION_MS = 5 * 60 * 1000; // 5 minutes
 
-// Check if user is a founder based on email
+// Check if user is a founder (from verified cache only - set by server)
 export function isFounder(user: User | null): boolean {
   if (!user?.email) return false;
-  return FOUNDER_EMAILS.includes(user.email.toLowerCase());
+  // Only trust server-verified founder status from cache
+  if (verifiedTierCache && verifiedTierCache.email === user.email.toLowerCase()) {
+    return verifiedTierCache.tier === "founder";
+  }
+  return false;
 }
 
 // Get user's subscription tier (uses cached value or localStorage as fallback)
@@ -111,11 +114,6 @@ export function getUserTier(user: User | null): SubscriptionTier {
 
 // Verify subscription tier with the server (secure - can't be bypassed)
 export async function verifySubscriptionTier(user: User | null): Promise<SubscriptionTier> {
-  // Founders always get founder tier
-  if (isFounder(user)) {
-    return "founder";
-  }
-
   if (!user?.email) {
     return "free";
   }
@@ -131,12 +129,10 @@ export async function verifySubscriptionTier(user: User | null): Promise<Subscri
     }
   }
 
-  // Verify with server
+  // Verify with server using authenticated request
   try {
-    const response = await fetch("/api/check-subscription", {
+    const response = await authenticatedFetch("/api/check-subscription", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: user.email }),
     });
 
     if (!response.ok) {
@@ -144,7 +140,8 @@ export async function verifySubscriptionTier(user: User | null): Promise<Subscri
     }
 
     const data = await response.json();
-    const tier: SubscriptionTier = data.hasActiveSubscription ? "pro" : "free";
+    // Server now returns tier directly (free, pro, or founder)
+    const tier: SubscriptionTier = data.tier || (data.hasActiveSubscription ? "pro" : "free");
 
     // Update verified cache
     verifiedTierCache = {
@@ -239,12 +236,8 @@ export function getTierDisplayInfo(tier: SubscriptionTier): {
   }
 }
 
-// Add founder email programmatically
-export function addFounderEmail(email: string): void {
-  if (!FOUNDER_EMAILS.includes(email.toLowerCase())) {
-    FOUNDER_EMAILS.push(email.toLowerCase());
-  }
-}
+// Founder emails are managed server-side only in subscription-server.ts
+// This function is deprecated - founder status is verified via /api/check-subscription
 
 // ============================================
 // TRIAL MANAGEMENT
@@ -401,25 +394,24 @@ export function clearSubscriptionInfo(): void {
 // ============================================
 
 // Sync subscription status from Stripe (restores access if user has active subscription)
-export async function syncSubscriptionFromStripe(email: string): Promise<boolean> {
-  if (!email || typeof window === "undefined") return false;
+export async function syncSubscriptionFromStripe(): Promise<boolean> {
+  if (typeof window === "undefined") return false;
 
   try {
-    const response = await fetch("/api/check-subscription", {
+    const response = await authenticatedFetch("/api/check-subscription", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email }),
     });
 
     if (!response.ok) {
-      console.error("Failed to check subscription:", response.status);
       return false;
     }
 
     const data = await response.json();
 
     if (data.hasActiveSubscription) {
-      setSubscriptionTier("pro");
+      // Set tier based on response (could be "pro" or "founder")
+      const tier = data.tier || "pro";
+      setSubscriptionTier(tier);
       saveSubscriptionInfo({
         subscriptionId: data.subscriptionId,
         customerId: data.customerId,
@@ -430,8 +422,7 @@ export async function syncSubscriptionFromStripe(email: string): Promise<boolean
       return true;
     }
     return false;
-  } catch (error) {
-    console.error("Failed to sync subscription from Stripe:", error);
+  } catch {
     return false;
   }
 }

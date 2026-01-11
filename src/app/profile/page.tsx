@@ -34,6 +34,7 @@ import {
   clearSubscriptionInfo,
   setSubscriptionTier,
 } from "@/lib/subscription";
+import { authenticatedFetch } from "@/lib/auth-client";
 
 function cx(...classes: (string | boolean | undefined)[]) {
   return classes.filter(Boolean).join(" ");
@@ -50,6 +51,7 @@ export default function ProfilePage() {
   const [isCancelling, setIsCancelling] = useState(false);
   const [cancelError, setCancelError] = useState<string | null>(null);
   const [isLoadingPortal, setIsLoadingPortal] = useState(false);
+  const [portalError, setPortalError] = useState<string | null>(null);
 
   // Listen to auth state
   useEffect(() => {
@@ -78,8 +80,8 @@ export default function ProfilePage() {
     try {
       await logOut();
       router.push("/");
-    } catch (error) {
-      console.error("Error signing out:", error);
+    } catch {
+      // Silent fail - user can retry
     }
   };
 
@@ -90,9 +92,8 @@ export default function ProfilePage() {
     setCancelError(null);
 
     try {
-      const response = await fetch("/api/cancel-subscription", {
+      const response = await authenticatedFetch("/api/cancel-subscription", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ subscriptionId: subscriptionInfo.subscriptionId }),
       });
 
@@ -116,6 +117,8 @@ export default function ProfilePage() {
 
   const handleManagePayment = async () => {
     const info = getSubscriptionInfo();
+    setPortalError(null);
+
     if (!info.customerId) {
       // No customer ID, redirect to subscription page
       router.push("/subscription");
@@ -125,9 +128,8 @@ export default function ProfilePage() {
     setIsLoadingPortal(true);
 
     try {
-      const response = await fetch("/api/customer-portal", {
+      const response = await authenticatedFetch("/api/customer-portal", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ customerId: info.customerId }),
       });
 
@@ -135,11 +137,13 @@ export default function ProfilePage() {
 
       if (data.url) {
         window.location.href = data.url;
+      } else if (data.error) {
+        setPortalError(data.error);
       } else {
-        console.error("Failed to get portal URL");
+        setPortalError("Failed to open billing portal. Please try again.");
       }
-    } catch (error) {
-      console.error("Error opening customer portal:", error);
+    } catch {
+      setPortalError("An error occurred. Please try again.");
     } finally {
       setIsLoadingPortal(false);
     }
@@ -432,6 +436,12 @@ export default function ProfilePage() {
                       </>
                     )}
                   </button>
+                  {portalError && (
+                    <div className="mt-3 flex items-center gap-2 text-sm text-red-600 dark:text-red-400">
+                      <AlertCircle size={14} />
+                      {portalError}
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="rounded-sm border border-stone-200 p-4 text-center dark:border-stone-700">

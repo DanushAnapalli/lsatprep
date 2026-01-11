@@ -52,18 +52,51 @@ function getQuestionById(id: string): Question | undefined {
 }
 
 // Question Review Card Component
+// Format time for individual questions (seconds to readable)
+function formatQuestionTime(seconds: number): string {
+  if (seconds < 60) {
+    return `${seconds}s`;
+  }
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return secs > 0 ? `${mins}m ${secs}s` : `${mins}m`;
+}
+
+// Get time color based on whether it's fast, normal, or slow for LSAT
+function getTimeColor(seconds: number, isCorrect: boolean): string {
+  // LSAT average is about 1:30 per question (90 seconds)
+  if (seconds <= 60) {
+    return "text-green-600 dark:text-green-400"; // Fast
+  } else if (seconds <= 120) {
+    return "text-amber-600 dark:text-amber-400"; // Normal
+  } else {
+    return "text-red-600 dark:text-red-400"; // Slow
+  }
+}
+
+// Get ordinal suffix for a number (1st, 2nd, 3rd, 4th, etc.)
+function getOrdinalSuffix(n: number): string {
+  const s = ["th", "st", "nd", "rd"];
+  const v = n % 100;
+  return n + (s[(v - 20) % 10] || s[v] || s[0]);
+}
+
 function QuestionReviewCard({
   answeredQuestion,
   questionNumber,
   isExpanded,
   onToggle,
   sectionType,
+  averageTime,
+  previousPassageId,
 }: {
   answeredQuestion: AnsweredQuestion;
   questionNumber: number;
   isExpanded: boolean;
   onToggle: () => void;
   sectionType: "logical-reasoning" | "reading-comprehension";
+  averageTime: number;
+  previousPassageId?: string;
 }) {
   const question = getQuestionById(answeredQuestion.questionId);
 
@@ -72,6 +105,8 @@ function QuestionReviewCard({
   }
 
   const isCorrect = answeredQuestion.isCorrect;
+  const timeSpent = answeredQuestion.timeSpent || 0;
+  const timeColor = getTimeColor(timeSpent, isCorrect);
 
   return (
     <div
@@ -107,7 +142,14 @@ function QuestionReviewCard({
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-4">
+          {/* Time spent indicator */}
+          <div className="flex items-center gap-1 text-sm">
+            <Clock size={14} className={timeColor} />
+            <span className={cx("font-medium", timeColor)}>
+              {formatQuestionTime(timeSpent)}
+            </span>
+          </div>
           {isCorrect ? (
             <CheckCircle2 className="text-green-500" size={20} />
           ) : (
@@ -124,6 +166,15 @@ function QuestionReviewCard({
           <div>
             <div className="text-xs font-semibold text-stone-500 uppercase mb-2">Passage</div>
             <div className="text-sm leading-relaxed whitespace-pre-wrap text-stone-700 dark:text-stone-300 bg-white dark:bg-stone-800 p-4 rounded border border-stone-200 dark:border-stone-700">
+              {/* Same Passage indicator for RC questions */}
+              {sectionType === "reading-comprehension" &&
+               previousPassageId &&
+               previousPassageId === question.passageId && (
+                <div className="mb-3 inline-flex items-center gap-2 rounded bg-amber-100 px-3 py-1.5 dark:bg-amber-900/40">
+                  <BookOpen size={14} className="text-amber-600 dark:text-amber-400" />
+                  <span className="text-xs font-semibold text-amber-700 dark:text-amber-300">Same Passage</span>
+                </div>
+              )}
               {question.stimulus}
             </div>
           </div>
@@ -364,7 +415,7 @@ export default function TestReviewPage() {
               </div>
               <div className="text-center">
                 <div className="text-3xl font-bold text-stone-700 dark:text-stone-300">
-                  {test.percentile}th
+                  {getOrdinalSuffix(test.percentile)}
                 </div>
                 <div className="text-xs text-stone-500">Percentile</div>
               </div>
@@ -396,6 +447,78 @@ export default function TestReviewPage() {
             </div>
           </div>
         </div>
+
+        {/* Timing Analytics */}
+        {(() => {
+          const questionTimes = allQuestions.map(q => q.timeSpent || 0);
+          const totalTime = questionTimes.reduce((a, b) => a + b, 0);
+          const avgTime = questionTimes.length > 0 ? Math.round(totalTime / questionTimes.length) : 0;
+          const fastQuestions = questionTimes.filter(t => t <= 60).length;
+          const normalQuestions = questionTimes.filter(t => t > 60 && t <= 120).length;
+          const slowQuestions = questionTimes.filter(t => t > 120).length;
+          const correctTimes = allQuestions.filter(q => q.isCorrect).map(q => q.timeSpent || 0);
+          const incorrectTimes = allQuestions.filter(q => !q.isCorrect).map(q => q.timeSpent || 0);
+          const avgCorrectTime = correctTimes.length > 0 ? Math.round(correctTimes.reduce((a, b) => a + b, 0) / correctTimes.length) : 0;
+          const avgIncorrectTime = incorrectTimes.length > 0 ? Math.round(incorrectTimes.reduce((a, b) => a + b, 0) / incorrectTimes.length) : 0;
+
+          return (
+            <div className="mb-8 rounded-sm border-2 border-stone-200 bg-white p-6 dark:border-stone-700 dark:bg-stone-900">
+              <h2 className="flex items-center gap-2 text-lg font-semibold text-stone-900 dark:text-stone-100 mb-4">
+                <Clock size={20} className="text-amber-500" />
+                Timing Analytics
+              </h2>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
+                <div className="text-center p-3 bg-stone-50 dark:bg-stone-800 rounded">
+                  <div className="text-2xl font-bold text-stone-900 dark:text-stone-100">
+                    {formatQuestionTime(avgTime)}
+                  </div>
+                  <div className="text-xs text-stone-500">Avg per Question</div>
+                </div>
+                <div className="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded">
+                  <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                    {fastQuestions}
+                  </div>
+                  <div className="text-xs text-stone-500">Fast (&lt;1min)</div>
+                </div>
+                <div className="text-center p-3 bg-amber-50 dark:bg-amber-900/20 rounded">
+                  <div className="text-2xl font-bold text-amber-600 dark:text-amber-400">
+                    {normalQuestions}
+                  </div>
+                  <div className="text-xs text-stone-500">Normal (1-2min)</div>
+                </div>
+                <div className="text-center p-3 bg-red-50 dark:bg-red-900/20 rounded">
+                  <div className="text-2xl font-bold text-red-600 dark:text-red-400">
+                    {slowQuestions}
+                  </div>
+                  <div className="text-xs text-stone-500">Slow (&gt;2min)</div>
+                </div>
+              </div>
+
+              {/* Correct vs Incorrect timing comparison */}
+              <div className="grid grid-cols-2 gap-4 pt-4 border-t border-stone-200 dark:border-stone-700">
+                <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 size={16} className="text-green-500" />
+                    <span className="text-sm text-stone-600 dark:text-stone-400">Correct Answers</span>
+                  </div>
+                  <span className="font-bold text-green-600 dark:text-green-400">
+                    {formatQuestionTime(avgCorrectTime)} avg
+                  </span>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-red-50 dark:bg-red-900/20 rounded">
+                  <div className="flex items-center gap-2">
+                    <XCircle size={16} className="text-red-500" />
+                    <span className="text-sm text-stone-600 dark:text-stone-400">Incorrect Answers</span>
+                  </div>
+                  <span className="font-bold text-red-600 dark:text-red-400">
+                    {formatQuestionTime(avgIncorrectTime)} avg
+                  </span>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Filter and Controls */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
@@ -445,16 +568,30 @@ export default function TestReviewPage() {
               No questions match the current filter.
             </div>
           ) : (
-            filteredQuestions.map((question, index) => (
-              <QuestionReviewCard
-                key={question.questionId}
-                answeredQuestion={question}
-                questionNumber={index + 1}
-                isExpanded={!!expandedQuestions[question.questionId]}
-                onToggle={() => toggleQuestion(question.questionId)}
-                sectionType={question.sectionType as "logical-reasoning" | "reading-comprehension"}
-              />
-            ))
+            (() => {
+              const avgTime = allQuestions.length > 0
+                ? Math.round(allQuestions.reduce((sum, q) => sum + (q.timeSpent || 0), 0) / allQuestions.length)
+                : 90;
+              return filteredQuestions.map((question, index) => {
+                // Get previous question's passageId for "same passage" indicator
+                const prevQuestion = index > 0 ? filteredQuestions[index - 1] : null;
+                const prevQuestionData = prevQuestion ? getQuestionById(prevQuestion.questionId) : null;
+                const previousPassageId = prevQuestionData?.passageId;
+
+                return (
+                  <QuestionReviewCard
+                    key={question.questionId}
+                    answeredQuestion={question}
+                    questionNumber={index + 1}
+                    isExpanded={!!expandedQuestions[question.questionId]}
+                    onToggle={() => toggleQuestion(question.questionId)}
+                    sectionType={question.sectionType as "logical-reasoning" | "reading-comprehension"}
+                    averageTime={avgTime}
+                    previousPassageId={previousPassageId}
+                  />
+                );
+              });
+            })()
           )}
         </div>
 

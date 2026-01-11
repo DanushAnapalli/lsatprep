@@ -12,6 +12,7 @@ import {
   ChevronUp,
 } from "lucide-react";
 import { UserProgress } from "@/lib/user-progress";
+import { authenticatedFetch } from "@/lib/auth-client";
 
 interface Message {
   id: string;
@@ -173,11 +174,8 @@ How can I help you today?`,
     setIsLoading(true);
 
     try {
-      const response = await fetch("/api/chat", {
+      const response = await authenticatedFetch("/api/chat", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
         body: JSON.stringify({
           messages: [...messages, userMessage].map((m) => ({
             role: m.role,
@@ -201,8 +199,7 @@ How can I help you today?`,
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
-    } catch (error) {
-      console.error("Chat error:", error);
+    } catch {
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",

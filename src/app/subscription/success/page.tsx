@@ -4,6 +4,9 @@ import { Suspense, useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { CheckCircle, Loader2, Calendar } from "lucide-react";
 import { setSubscriptionTier, startTrial, saveSubscriptionInfo, TRIAL_PERIOD_DAYS } from "@/lib/subscription";
+import { authenticatedFetch } from "@/lib/auth-client";
+import { onAuthStateChanged } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 
 function SuccessContent() {
   const searchParams = useSearchParams();
@@ -12,8 +15,29 @@ function SuccessContent() {
   const [error, setError] = useState<string | null>(null);
   const [isTrialStart, setIsTrialStart] = useState(false);
   const [trialEndDate, setTrialEndDate] = useState<string>("");
+  const [authReady, setAuthReady] = useState(false);
+
+  // Wait for Firebase auth to be ready
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setAuthReady(true);
+      } else {
+        // If no user after auth loads, redirect to home
+        setTimeout(() => {
+          if (!auth.currentUser) {
+            setError("Please sign in to verify your subscription");
+            setVerifying(false);
+          }
+        }, 2000);
+      }
+    });
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => {
+    if (!authReady) return;
+
     const sessionId = searchParams.get("session_id");
 
     if (!sessionId) {
@@ -24,9 +48,8 @@ function SuccessContent() {
 
     const verifySession = async () => {
       try {
-        const response = await fetch("/api/verify-session", {
+        const response = await authenticatedFetch("/api/verify-session", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ sessionId }),
         });
 
@@ -62,15 +85,14 @@ function SuccessContent() {
           setError(data.error || "Verification failed");
           setVerifying(false);
         }
-      } catch (err) {
-        console.error("Verification error:", err);
+      } catch {
         setError("Failed to verify payment");
         setVerifying(false);
       }
     };
 
     verifySession();
-  }, [searchParams]);
+  }, [searchParams, authReady]);
 
   if (verifying) {
     return (
@@ -129,7 +151,7 @@ function SuccessContent() {
               </span>
             </div>
             <p className="text-xs text-amber-600 dark:text-amber-400">
-              You&apos;ll be charged $15/month after your trial ends. Cancel anytime.
+              You&apos;ll be charged $25/month after your trial ends. Cancel anytime.
             </p>
           </div>
 

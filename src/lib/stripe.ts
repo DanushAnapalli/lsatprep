@@ -15,7 +15,7 @@ export const getStripe = () => {
 // For now, we'll use Checkout with price_data
 export const STRIPE_PRICES = {
   PRO_MONTHLY: {
-    amount: 1500, // $15.00 in cents
+    amount: 2500, // $25.00 in cents
     currency: "usd",
     interval: "month" as const,
     productName: "LSATprep Pro",

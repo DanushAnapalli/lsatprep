@@ -57,6 +57,13 @@ function cx(...classes: (string | boolean | undefined)[]) {
   return classes.filter(Boolean).join(" ");
 }
 
+// Get ordinal suffix for a number (1st, 2nd, 3rd, 4th, etc.)
+function getOrdinalSuffix(n: number): string {
+  const s = ["th", "st", "nd", "rd"];
+  const v = n % 100;
+  return n + (s[(v - 20) % 10] || s[v] || s[0]);
+}
+
 // ============================================
 // USERNAME INPUT COMPONENT
 // ============================================
@@ -732,7 +739,7 @@ function TestHistoryItem({ test, index = 0 }: { test: CompletedTest; index?: num
       <div className="flex items-center gap-6">
         <div className="text-right">
           <div className="text-2xl font-bold text-[#1a365d] dark:text-amber-400">{test.scaledScore}</div>
-          <div className="text-xs text-stone-500">{test.percentile}th percentile</div>
+          <div className="text-xs text-stone-500">{getOrdinalSuffix(test.percentile)} percentile</div>
         </div>
         <div className="text-right">
           <div className="font-semibold text-stone-700 dark:text-stone-300">
@@ -973,8 +980,8 @@ export default function DashboardPage() {
       }
 
       // Sync subscription status from Stripe (restores access if localStorage was cleared)
-      if (firebaseUser?.email) {
-        syncSubscriptionFromStripe(firebaseUser.email).then((restored) => {
+      if (firebaseUser) {
+        syncSubscriptionFromStripe().then((restored) => {
           if (restored) {
             // Update tier state after sync
             setUserTier(getUserTier(firebaseUser));
@@ -1038,8 +1045,8 @@ export default function DashboardPage() {
     try {
       await logOut();
       router.push("/");
-    } catch (error) {
-      console.error("Sign out error:", error);
+    } catch {
+      // Silent fail - user can retry
     }
   };
 
@@ -1050,8 +1057,8 @@ export default function DashboardPage() {
     try {
       await resendVerificationEmail(user);
       setVerificationSent(true);
-    } catch (error) {
-      console.error("Failed to resend verification email:", error);
+    } catch {
+      // Silent fail - user can retry
     } finally {
       setSendingVerification(false);
     }

@@ -2,6 +2,7 @@
 // Handles test history, wrong answers, and question tracking
 
 import { Question, SectionType, LogicalReasoningQuestionType, ReadingComprehensionQuestionType } from "./lsat-types";
+import { logger } from "./logger";
 
 // ============================================
 // TYPES
@@ -227,7 +228,7 @@ export function loadUserProgress(userId?: string): UserProgress {
 
     return result;
   } catch (error) {
-    console.error("Error loading user progress:", error);
+    logger.error("Error loading user progress:", error);
     return getInitialProgress();
   }
 }
@@ -737,7 +738,7 @@ export function saveInProgressTest(test: InProgressTest, userId?: string): void 
       });
     }
   } catch (error) {
-    console.error("Error saving in-progress test:", error);
+    logger.error("Error saving in-progress test:", error);
   }
 }
 
@@ -773,7 +774,7 @@ export function loadAllInProgressTests(userId?: string): InProgressTest[] {
       lastUpdatedAt: new Date(test.lastUpdatedAt),
     }));
   } catch (error) {
-    console.error("Error loading in-progress tests:", error);
+    logger.error("Error loading in-progress tests:", error);
     return [];
   }
 }
