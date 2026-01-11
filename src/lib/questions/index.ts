@@ -75,6 +75,50 @@ import { lrQuestionsSet70 } from "./lr-questions-70";
 import { rcQuestionsSet1 } from "./rc-questions-1";
 import { rcQuestionsSet2 } from "./rc-questions-2";
 import { rcQuestionsSet3 } from "./rc-questions-3";
+import { rcQuestionsSet4 } from "./rc-questions-4";
+import { rcQuestionsSet5 } from "./rc-questions-5";
+import { rcQuestionsSet6 } from "./rc-questions-6";
+import { rcQuestionsSet7 } from "./rc-questions-7";
+import { rcQuestionsSet8 } from "./rc-questions-8";
+import { rcQuestionsSet9 } from "./rc-questions-9";
+import { rcQuestionsSet10 } from "./rc-questions-10";
+import { rcQuestionsSet11 } from "./rc-questions-11";
+import { rcQuestionsSet12 } from "./rc-questions-12";
+import { rcQuestionsSet13 } from "./rc-questions-13";
+import { rcQuestionsSet14 } from "./rc-questions-14";
+import { rcQuestionsSet15 } from "./rc-questions-15";
+import { rcQuestionsSet16 } from "./rc-questions-16";
+import { rcQuestionsSet17 } from "./rc-questions-17";
+import { rcQuestionsSet18 } from "./rc-questions-18";
+import { rcQuestionsSet19 } from "./rc-questions-19";
+import { rcQuestionsSet20 } from "./rc-questions-20";
+import { rcQuestionsSet21 } from "./rc-questions-21";
+import { rcQuestionsSet22 } from "./rc-questions-22";
+import { rcQuestionsSet23 } from "./rc-questions-23";
+import { rcQuestionsSet24 } from "./rc-questions-24";
+import { rcQuestionsSet25 } from "./rc-questions-25";
+import { rcQuestionsSet26 } from "./rc-questions-26";
+import { rcQuestionsSet27 } from "./rc-questions-27";
+import { rcQuestionsSet28 } from "./rc-questions-28";
+import { rcQuestionsSet29 } from "./rc-questions-29";
+import { rcQuestionsSet30 } from "./rc-questions-30";
+import { rcQuestionsSet31 } from "./rc-questions-31";
+import { rcQuestionsSet32 } from "./rc-questions-32";
+import { rcQuestionsSet33 } from "./rc-questions-33";
+import { rcQuestionsSet34 } from "./rc-questions-34";
+import { rcQuestionsSet35 } from "./rc-questions-35";
+import { rcQuestionsSet36 } from "./rc-questions-36";
+import { rcQuestionsSet37 } from "./rc-questions-37";
+import { rcQuestionsSet38 } from "./rc-questions-38";
+import { rcQuestionsSet39 } from "./rc-questions-39";
+import { rcQuestionsSet40 } from "./rc-questions-40";
+import { rcQuestionsSet41 } from "./rc-questions-41";
+import { rcQuestionsSet42 } from "./rc-questions-42";
+import { rcQuestionsSet43 } from "./rc-questions-43";
+import { rcQuestionsSet44 } from "./rc-questions-44";
+import { rcQuestionsSet45 } from "./rc-questions-45";
+import { rcQuestionsSet46 } from "./rc-questions-46";
+import { rcQuestionsSet47 } from "./rc-questions-47";
 
 // Combine all Logical Reasoning questions
 export const allLRQuestions: Question[] = [
@@ -155,6 +199,50 @@ export const allRCQuestions: Question[] = [
   ...rcQuestionsSet1,
   ...rcQuestionsSet2,
   ...rcQuestionsSet3,
+  ...rcQuestionsSet4,
+  ...rcQuestionsSet5,
+  ...rcQuestionsSet6,
+  ...rcQuestionsSet7,
+  ...rcQuestionsSet8,
+  ...rcQuestionsSet9,
+  ...rcQuestionsSet10,
+  ...rcQuestionsSet11,
+  ...rcQuestionsSet12,
+  ...rcQuestionsSet13,
+  ...rcQuestionsSet14,
+  ...rcQuestionsSet15,
+  ...rcQuestionsSet16,
+  ...rcQuestionsSet17,
+  ...rcQuestionsSet18,
+  ...rcQuestionsSet19,
+  ...rcQuestionsSet20,
+  ...rcQuestionsSet21,
+  ...rcQuestionsSet22,
+  ...rcQuestionsSet23,
+  ...rcQuestionsSet24,
+  ...rcQuestionsSet25,
+  ...rcQuestionsSet26,
+  ...rcQuestionsSet27,
+  ...rcQuestionsSet28,
+  ...rcQuestionsSet29,
+  ...rcQuestionsSet30,
+  ...rcQuestionsSet31,
+  ...rcQuestionsSet32,
+  ...rcQuestionsSet33,
+  ...rcQuestionsSet34,
+  ...rcQuestionsSet35,
+  ...rcQuestionsSet36,
+  ...rcQuestionsSet37,
+  ...rcQuestionsSet38,
+  ...rcQuestionsSet39,
+  ...rcQuestionsSet40,
+  ...rcQuestionsSet41,
+  ...rcQuestionsSet42,
+  ...rcQuestionsSet43,
+  ...rcQuestionsSet44,
+  ...rcQuestionsSet45,
+  ...rcQuestionsSet46,
+  ...rcQuestionsSet47,
 ];
 
 // Export combined totals
@@ -239,4 +327,48 @@ export {
   rcQuestionsSet1,
   rcQuestionsSet2,
   rcQuestionsSet3,
+  rcQuestionsSet4,
+  rcQuestionsSet5,
+  rcQuestionsSet6,
+  rcQuestionsSet7,
+  rcQuestionsSet8,
+  rcQuestionsSet9,
+  rcQuestionsSet10,
+  rcQuestionsSet11,
+  rcQuestionsSet12,
+  rcQuestionsSet13,
+  rcQuestionsSet14,
+  rcQuestionsSet15,
+  rcQuestionsSet16,
+  rcQuestionsSet17,
+  rcQuestionsSet18,
+  rcQuestionsSet19,
+  rcQuestionsSet20,
+  rcQuestionsSet21,
+  rcQuestionsSet22,
+  rcQuestionsSet23,
+  rcQuestionsSet24,
+  rcQuestionsSet25,
+  rcQuestionsSet26,
+  rcQuestionsSet27,
+  rcQuestionsSet28,
+  rcQuestionsSet29,
+  rcQuestionsSet30,
+  rcQuestionsSet31,
+  rcQuestionsSet32,
+  rcQuestionsSet33,
+  rcQuestionsSet34,
+  rcQuestionsSet35,
+  rcQuestionsSet36,
+  rcQuestionsSet37,
+  rcQuestionsSet38,
+  rcQuestionsSet39,
+  rcQuestionsSet40,
+  rcQuestionsSet41,
+  rcQuestionsSet42,
+  rcQuestionsSet43,
+  rcQuestionsSet44,
+  rcQuestionsSet45,
+  rcQuestionsSet46,
+  rcQuestionsSet47,
 };

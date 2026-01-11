@@ -597,18 +597,18 @@ function PracticeContent() {
       ).length;
 
       // Check tier limits for both guests and free users
-      // Guests and free users get 1 LR section test + 1 RC section test free
+      // Guests and free users get 3 LR section tests + 3 RC section tests free
       const tierLimits = TIER_LIMITS.free;
 
       if (testType === "lr-only" && completedLRTests >= tierLimits.lrSetsAllowed) {
-        setTierBlocked(isGuest ? "GUEST_LR_LIMIT" : "You've reached your free limit of 1 LR practice set. Upgrade to Pro for unlimited practice!");
+        setTierBlocked(isGuest ? "GUEST_LR_LIMIT" : "You've reached your free limit of 3 LR practice sets. Upgrade to Pro for unlimited practice!");
         setIsLoading(false);
         setInitialized(true);
         return;
       }
 
       if (testType === "rc-only" && completedRCTests >= tierLimits.rcSetsAllowed) {
-        setTierBlocked(isGuest ? "GUEST_RC_LIMIT" : "You've reached your free limit of 1 RC practice set. Upgrade to Pro for unlimited practice!");
+        setTierBlocked(isGuest ? "GUEST_RC_LIMIT" : "You've reached your free limit of 3 RC practice sets. Upgrade to Pro for unlimited practice!");
         setIsLoading(false);
         setInitialized(true);
         return;

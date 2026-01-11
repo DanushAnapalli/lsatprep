@@ -1541,7 +1541,7 @@ export default function LawThemeLSATLanding() {
                 <div className="mt-2 font-serif text-4xl font-bold text-stone-900 dark:text-stone-100">$0</div>
                 <div className="mt-1 text-sm text-stone-500">Free forever</div>
                 <div className="mt-6 space-y-3 text-sm text-stone-600 dark:text-stone-400">
-                  {["1 LR practice set", "1 RC practice set", "Basic review", "Limited analytics"].map(
+                  {["3 LR practice sets", "3 RC practice sets", "Basic review", "Limited analytics"].map(
                     (x, i) => (
                       <div key={x} className="flex items-center gap-3">
                         <CheckCircle2 size={16} className="text-stone-400" />
@@ -1629,20 +1629,20 @@ export default function LawThemeLSATLanding() {
             <div className="mt-10 grid gap-6 md:grid-cols-2">
               {[
                 {
-                  q: "Is this aligned with current LSAT format?",
-                  a: "Yes! Our materials are designed around current Logical Reasoning and Reading Comprehension sections, with writing support and comprehensive review tools.",
+                  q: "How does the free plan work?",
+                  a: "The free plan includes 3 Logical Reasoning practice sets and 3 Reading Comprehension practice sets, plus basic analytics and progress tracking. Upgrade to Pro for unlimited practice tests, advanced analytics, and detailed performance insights.",
                 },
                 {
-                  q: "Pattern recognition or memorization?",
-                  a: "Pattern recognition. You'll learn the underlying structure of arguments, what each question type demands, and how common traps are constructed.",
+                  q: "How many practice questions are available?",
+                  a: "We offer thousands of LSAT-style questions covering Logical Reasoning and Reading Comprehension, with new content added regularly. Each question includes detailed explanations.",
                 },
                 {
-                  q: "Works on large displays?",
-                  a: "Yes. The interface is designed desktop-first with a 16:9-friendly canvas—perfect for focused study sessions.",
+                  q: "Can I track my progress over time?",
+                  a: "Absolutely! Your dashboard shows your projected score, accuracy trends, time analytics, strengths and weaknesses, and study streaks. Pro users get even deeper insights with error pattern analysis.",
                 },
                 {
-                  q: "Can I create custom drills?",
-                  a: "Yes! Drill by question family, difficulty level, or time allocation.",
+                  q: "How do I contact support?",
+                  a: "For any questions, issues, or feedback, reach out to us at support@lsatprep.org. We typically respond within 24 hours and are happy to help with anything.",
                 },
               ].map((item, i) => (
                 <div

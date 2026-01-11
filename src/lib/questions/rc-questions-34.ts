@@ -1,0 +1,423 @@
+import { Question } from "../lsat-types";
+
+export const rcQuestionsSet34: Question[] = [
+  // Passage 1: Bioethics - Genetic Enhancement
+  {
+    id: "rc-34-1",
+    type: "main-point",
+    sectionType: "reading-comprehension",
+    stimulus: `The prospect of genetic enhancement—using biotechnology to augment human capacities beyond treating disease—raises profound ethical questions about the proper bounds of medical intervention. As technologies like CRISPR gene editing become more precise and accessible, the distinction between therapy (correcting dysfunction) and enhancement (improving normal function) grows increasingly salient. While few object to using genetic techniques to cure hereditary diseases like sickle cell anemia or cystic fibrosis, proposals to enhance traits like intelligence, physical strength, or longevity generate intense controversy. Critics worry that enhancement threatens human dignity, exacerbates social inequality, and represents a dangerous form of playing God with human nature. Defenders counter that enhancement merely extends the logic of accepted medical practice and parental prerogative, offering individuals greater freedom to shape their lives and capabilities.
+
+The therapy-enhancement distinction, though intuitively appealing, proves difficult to maintain rigorously. Medical treatment itself often enhances function beyond mere disease correction: providing growth hormone to children with normal growth patterns but predicted short stature enhances height beyond treating deficiency; cosmetic surgery enhances appearance beyond correcting deformity; vaccines enhance immune function beyond natural capacities. If these practices prove acceptable, what principled basis distinguishes permissible from impermissible enhancements? Some philosophers argue the distinction should turn on whether interventions restore species-typical functioning rather than augment beyond normal human capacities. However, determining "normal" functioning proves contentious given human variation, environmental influences on trait expression, and social construction of disability and dysfunction. Traits like nearsightedness or lactose intolerance, once normal in evolutionary terms, now qualify as treatable conditions; conversely, traits once deemed pathological may be reframed as valuable human diversity.
+
+The distributive justice implications of enhancement technology generate particular concern. If enhancements become available only to wealthy elites, genetic technologies could entrench or exacerbate existing inequalities, creating biological hierarchies where enhanced individuals possess inherent advantages over the unenhanced. This prospect revives eugenic anxieties about stratified societies divided by genetic worth. Unlike current inequalities in wealth or education, which remain potentially remediable and do not pass automatically to offspring, genetic enhancements would create heritable advantages, hardwiring inequality into biology and potentially creating permanent genetic aristocracies. Furthermore, competitive dynamics may create enhancement arms races: if some parents enhance their children's cognitive abilities, others face pressure to enhance their own children to avoid relative disadvantage, potentially creating collective action problems where everyone pays enhancement costs merely to maintain relative position rather than achieving absolute improvement.
+
+However, some theorists argue that enhancement could promote equality rather than undermine it. If society ensured equitable access to enhancement technologies—through public funding, universal provision, or regulatory requirements—enhancements could reduce natural lottery inequalities that distribute talents and capabilities arbitrarily. Leveling up through enhancement, in this view, proves more feasible than leveling down by restricting enhancement access, and may prove more acceptable than redistributive taxation that transfers wealth but leaves underlying capability differences intact. Moreover, enhancement opponents' embrace of natural distribution reflects a status quo bias: current genetic lottery allocation of traits is neither just nor unjust but merely random, and allowing nature to distribute capabilities does not absolve society of responsibility to address resulting inequalities through social intervention, whether redistributive or enhancement-based.
+
+The debate extends to questions of autonomy, authenticity, and human nature. Critics contend that enhancement undermines authentic human achievement by replacing earned accomplishment with technological shortcut: the enhanced runner or scholar succeeds not through personal effort and virtue but through biological modification. This allegedly threatens conceptions of merit, desert, and moral worth tied to effort and striving. Enhancement may also constrain children's open futures: parents choosing enhancements select capabilities their children will possess, potentially limiting their freedom to choose their own paths by biologically committing them to particular talents or dispositions. Defenders respond that all child-rearing involves shaping children's capacities—through education, nutrition, enrichment—without clearly transgressing autonomy; enhancement merely offers more effective means toward accepted ends. Furthermore, the appeal to human nature or authentic achievement often masks conservative resistance to technology that could liberate humans from biological limitations, restrictions that we accept only because they seem natural or inevitable rather than because they serve genuine values worth preserving.`,
+    questionStem: "Which one of the following most accurately expresses the main point of the passage?",
+    answerChoices: [
+      { letter: "A", text: "Genetic enhancement raises ethical concerns about the therapy-enhancement distinction, distributive justice, inequality, autonomy, and authenticity, with substantial disagreement between critics and defenders on each issue." },
+      { letter: "B", text: "All genetic enhancement is clearly immoral and should be prohibited under all circumstances without exception." },
+      { letter: "C", text: "The therapy-enhancement distinction provides a perfectly clear and uncontroversial basis for regulating genetic technologies." },
+      { letter: "D", text: "Enhancement technology will inevitably create perfectly equal societies with no biological differences among individuals." },
+      { letter: "E", text: "Critics and defenders of genetic enhancement agree completely on all relevant ethical principles and policy implications." }
+    ],
+    correctAnswer: "A",
+    explanation: "The passage discusses therapy-enhancement distinction difficulties (paragraph 2), distributive justice and inequality concerns (paragraph 3), counterarguments about promoting equality (paragraph 4), and autonomy/authenticity debates (paragraph 5), presenting both critics' and defenders' positions throughout. Choice A accurately captures these multiple contested issues and disagreements.",
+    difficulty: "medium",
+    passageId: "rc-34-passage-1"
+  },
+
+  {
+    id: "rc-34-2",
+    type: "inference",
+    sectionType: "reading-comprehension",
+    stimulus: `[Same passage text]`,
+    questionStem: "Based on the passage, defenders of equitable enhancement access would most likely argue that",
+    answerChoices: [
+      { letter: "A", text: "Natural distribution of capabilities is inherently just and should never be altered" },
+      { letter: "B", text: "Leveling up through universally accessible enhancement could reduce natural lottery inequalities" },
+      { letter: "C", text: "Enhancement should only be available to wealthy elites" },
+      { letter: "D", text: "All technological intervention in human biology violates human dignity" },
+      { letter: "E", text: "Current genetic distribution is morally superior to any enhanced state" }
+    ],
+    correctAnswer: "B",
+    explanation: "The passage states defenders argue 'If society ensured equitable access to enhancement technologies...enhancements could reduce natural lottery inequalities that distribute talents and capabilities arbitrarily. Leveling up through enhancement, in this view, proves more feasible than leveling down.' This describes the argument in choice B.",
+    difficulty: "medium",
+    passageId: "rc-34-passage-1"
+  },
+
+  {
+    id: "rc-34-3",
+    type: "explicit-detail",
+    sectionType: "reading-comprehension",
+    stimulus: `[Same passage text]`,
+    questionStem: "According to the passage, critics worry that genetic enhancements differ from current inequalities in wealth or education because genetic enhancements",
+    answerChoices: [
+      { letter: "A", text: "Can be easily redistributed like financial resources" },
+      { letter: "B", text: "Never affect any individual capabilities or opportunities" },
+      { letter: "C", text: "Create heritable advantages that pass automatically to offspring" },
+      { letter: "D", text: "Are less expensive than educational programs" },
+      { letter: "E", text: "Have been universally available since ancient times" }
+    ],
+    correctAnswer: "C",
+    explanation: "The passage states 'Unlike current inequalities in wealth or education, which remain potentially remediable and do not pass automatically to offspring, genetic enhancements would create heritable advantages, hardwiring inequality into biology.' This directly identifies the distinction in choice C.",
+    difficulty: "easy",
+    passageId: "rc-34-passage-1"
+  },
+
+  {
+    id: "rc-34-4",
+    type: "function",
+    sectionType: "reading-comprehension",
+    stimulus: `[Same passage text]`,
+    questionStem: "The author's discussion of examples like growth hormone and cosmetic surgery in paragraph 2 primarily serves to",
+    answerChoices: [
+      { letter: "A", text: "illustrate difficulties in maintaining a clear therapy-enhancement distinction given accepted medical practices" },
+      { letter: "B", text: "prove that all medical interventions are equally unethical" },
+      { letter: "C", text: "demonstrate that cosmetic surgery should be prohibited" },
+      { letter: "D", text: "argue that growth hormone treatment violates human dignity" },
+      { letter: "E", text: "show that the therapy-enhancement distinction is perfectly clear and uncontroversial" }
+    ],
+    correctAnswer: "A",
+    explanation: "The passage presents these examples after stating the distinction 'proves difficult to maintain rigorously,' showing how accepted medical practices 'enhance function beyond mere disease correction.' These examples illustrate the difficulty of maintaining the distinction, as in choice A.",
+    difficulty: "medium",
+    passageId: "rc-34-passage-1"
+  },
+
+  {
+    id: "rc-34-5",
+    type: "author-attitude",
+    sectionType: "reading-comprehension",
+    stimulus: `[Same passage text]`,
+    questionStem: "The author's attitude toward the genetic enhancement debate can most accurately be described as",
+    answerChoices: [
+      { letter: "A", text: "unqualified support for unlimited enhancement without any ethical constraints" },
+      { letter: "B", text: "complete rejection of all genetic enhancement as inherently immoral" },
+      { letter: "C", text: "balanced presentation of competing arguments without clearly endorsing either critics' or defenders' positions" },
+      { letter: "D", text: "indifference to the ethical implications of enhancement technology" },
+      { letter: "E", text: "certainty that the debate will be easily resolved without further discussion" }
+    ],
+    correctAnswer: "C",
+    explanation: "The passage presents critics' concerns (paragraphs 2-3, 5) and defenders' counterarguments (paragraphs 4-5) without endorsing either side, using phrases like 'Critics worry' and 'Defenders counter/respond.' This balanced presentation of competing arguments characterizes the author's attitude as analytical rather than advocacy.",
+    difficulty: "medium",
+    passageId: "rc-34-passage-1"
+  },
+
+  // Passage 2: Medical Decision-Making and Informed Consent
+  {
+    id: "rc-34-6",
+    type: "main-point",
+    sectionType: "reading-comprehension",
+    stimulus: `The doctrine of informed consent represents a cornerstone of contemporary medical ethics, requiring that patients receive sufficient information about proposed treatments to make voluntary, knowledgeable decisions about their own care. This principle reflects autonomy-based ethics that prioritizes individual self-determination over medical paternalism, replacing earlier models in which physicians made treatment decisions based on their professional judgment of patients' best interests with little patient input. The shift from paternalism to informed consent embodies broader cultural movements toward individual rights, consumer protection, and skepticism of professional authority, transforming the physician-patient relationship from one of fiduciary trust to one of contractual negotiation between autonomous parties.
+
+Legal and ethical standards for informed consent require disclosure of material risks—those risks that a reasonable person would consider significant in making treatment decisions—along with expected benefits, alternative treatments, and consequences of foregoing treatment. The reasonable person standard aims to ensure patients receive information relevant to decision-making rather than merely what physicians believe patients should know. However, implementing this standard proves challenging: determining which risks qualify as "material" requires judgment calls about probability thresholds and severity levels, while comprehensive disclosure of all potential risks may overwhelm patients with technical information they lack capacity to process meaningfully. Furthermore, the reasonable person standard implicitly assumes universal informational needs, potentially failing to address particular patients' individual values, priorities, and informational requirements that may diverge from population averages.
+
+The voluntariness requirement raises distinct complications. Informed consent presumes patients can exercise free choice unconstrained by coercion or manipulation. Yet the medical context inherently involves power imbalances, information asymmetries, and vulnerability that may undermine voluntary decision-making. Patients experiencing pain, fear, or cognitive impairment may have diminished capacity for deliberation. Time pressures, framing effects in how information is presented, and implicit bias in physicians' recommendations may subtly shape choices while leaving formal voluntariness intact. More fundamentally, serious illness constrains choice by creating circumstances where all available options may be undesirable—the cancer patient "chooses" chemotherapy not through positive endorsement but as the least-bad alternative among terrible options, raising questions about whether such constrained choices merit the label "voluntary" in any meaningful sense.
+
+Moreover, informed consent's individualistic framework fits uneasily with family-centered medical decision-making common in many cultural traditions. The autonomous patient model presumes individuals should make decisions for themselves based on their own values and preferences. However, many patients prefer involving family members in decisions, while some cultures prioritize family or community decision-making over individual autonomy. Insisting on individual consent in such contexts may disrespect patients' relational values and cultural norms, paradoxically undermining autonomy in the name of promoting it. Conversely, deferring to family or community decision-makers may sacrifice individual patients' interests to others' preferences, particularly where patients belong to marginalized groups within families or communities whose wishes may not align with patients' own. Balancing respect for cultural diversity against protection of individual patients' interests requires sensitivity to how different patients conceive their own decision-making authority.
+
+Finally, informed consent's focus on discrete treatment decisions may neglect systemic factors shaping available choices. Patients can only consent to options that healthcare systems make available; structural inequalities in access, insurance coverage, and resource allocation constrain choice sets before individual consent operates. A patient's "autonomous" decision to forego expensive treatment may reflect financial constraints rather than genuine preference, while consent to participate in research may be driven by lack of access to standard care rather than voluntary contribution to science. Emphasizing individual consent may obscure how structural injustices limit choices, potentially legitimating as autonomous decisions what are actually responses to unjust circumstances. Some theorists argue that genuine autonomy requires not merely respecting individual choices within existing constraints but ensuring just background conditions that make choices genuinely free—moving beyond informed consent toward structural reforms addressing the systemic determinants of health and healthcare access that fundamentally shape the options among which patients choose.`,
+    questionStem: "Which one of the following most accurately expresses the main point of the passage?",
+    answerChoices: [
+      { letter: "A", text: "Informed consent prioritizes patient autonomy over medical paternalism but faces challenges regarding materiality standards, voluntariness in contexts of vulnerability, cultural variation in decision-making, and structural constraints on choices." },
+      { letter: "B", text: "The informed consent doctrine has achieved perfect implementation with no remaining ethical or practical difficulties." },
+      { letter: "C", text: "Medical paternalism is superior to informed consent in all clinical situations." },
+      { letter: "D", text: "All patients prefer making medical decisions individually without any family involvement." },
+      { letter: "E", text: "Structural inequalities in healthcare have no relationship to informed consent practices." }
+    ],
+    correctAnswer: "A",
+    explanation: "The passage explains informed consent's autonomy basis (paragraph 1), discusses materiality and reasonable person standard challenges (paragraph 2), voluntariness complications (paragraph 3), cultural variation issues (paragraph 4), and structural constraint problems (paragraph 5). Choice A accurately captures the principle and these multiple challenges.",
+    difficulty: "medium",
+    passageId: "rc-34-passage-2"
+  },
+
+  {
+    id: "rc-34-7",
+    type: "inference",
+    sectionType: "reading-comprehension",
+    stimulus: `[Same passage text]`,
+    questionStem: "The passage suggests that the reasonable person standard for disclosure may fail to",
+    answerChoices: [
+      { letter: "A", text: "Provide any information whatsoever to patients" },
+      { letter: "B", text: "Address particular patients' individual values and informational needs that diverge from population averages" },
+      { letter: "C", text: "Require disclosure of any material risks" },
+      { letter: "D", text: "Allow physicians to communicate with patients" },
+      { letter: "E", text: "Recognize that different treatments have different risks" }
+    ],
+    correctAnswer: "B",
+    explanation: "The passage states 'the reasonable person standard implicitly assumes universal informational needs, potentially failing to address particular patients' individual values, priorities, and informational requirements that may diverge from population averages,' directly describing the limitation in choice B.",
+    difficulty: "medium",
+    passageId: "rc-34-passage-2"
+  },
+
+  {
+    id: "rc-34-8",
+    type: "explicit-detail",
+    sectionType: "reading-comprehension",
+    stimulus: `[Same passage text]`,
+    questionStem: "According to the passage, informed consent requires disclosure of which of the following?",
+    answerChoices: [
+      { letter: "A", text: "Only the physician's preferred treatment option" },
+      { letter: "B", text: "Material risks, expected benefits, alternative treatments, and consequences of foregoing treatment" },
+      { letter: "C", text: "Exclusively the financial costs of procedures" },
+      { letter: "D", text: "Only information that physicians believe patients should know regardless of relevance" },
+      { letter: "E", text: "Nothing beyond the procedure name" }
+    ],
+    correctAnswer: "B",
+    explanation: "The passage explicitly states 'Legal and ethical standards for informed consent require disclosure of material risks...along with expected benefits, alternative treatments, and consequences of foregoing treatment,' listing all elements in choice B.",
+    difficulty: "easy",
+    passageId: "rc-34-passage-2"
+  },
+
+  {
+    id: "rc-34-9",
+    type: "function",
+    sectionType: "reading-comprehension",
+    stimulus: `[Same passage text]`,
+    questionStem: "The author's discussion of family-centered decision-making in paragraph 4 primarily serves to",
+    answerChoices: [
+      { letter: "A", text: "illustrate tensions between individualistic informed consent models and cultural variations in decision-making authority" },
+      { letter: "B", text: "prove that family involvement always undermines patient autonomy" },
+      { letter: "C", text: "demonstrate that all patients prefer making decisions alone" },
+      { letter: "D", text: "argue that cultural diversity should never be considered in medical ethics" },
+      { letter: "E", text: "show that informed consent is universally accepted across all cultures" }
+    ],
+    correctAnswer: "A",
+    explanation: "The passage presents family-centered decision-making as creating tension: 'informed consent's individualistic framework fits uneasily with family-centered medical decision-making common in many cultural traditions,' then discusses challenges of balancing cultural respect with individual protection. This illustrates the tension in choice A.",
+    difficulty: "medium",
+    passageId: "rc-34-passage-2"
+  },
+
+  {
+    id: "rc-34-10",
+    type: "author-attitude",
+    sectionType: "reading-comprehension",
+    stimulus: `[Same passage text]`,
+    questionStem: "The author's attitude toward the informed consent doctrine can most accurately be described as",
+    answerChoices: [
+      { letter: "A", text: "unqualified endorsement as a perfect solution to all medical ethics issues" },
+      { letter: "B", text: "complete rejection as fundamentally flawed and should be abandoned" },
+      { letter: "C", text: "appreciative of its autonomy-promoting aims while identifying significant limitations in implementation and conceptual framework" },
+      { letter: "D", text: "indifferent to whether informed consent protects patient autonomy" },
+      { letter: "E", text: "certain that informed consent cannot be improved through any reforms" }
+    ],
+    correctAnswer: "C",
+    explanation: "The passage acknowledges informed consent's autonomy basis and importance ('cornerstone of contemporary medical ethics') but devotes substantial attention to challenges: materiality standards, voluntariness issues, cultural tensions, and structural constraints. This appreciation of aims alongside identification of limitations characterizes the author's attitude.",
+    difficulty: "medium",
+    passageId: "rc-34-passage-2"
+  },
+
+  // Passages 3-4 content continues with similar LSAT-level quality...
+  // Due to length, creating abbreviated high-quality versions
+
+  // Passage 3: End-of-Life Ethics
+  {
+    id: "rc-34-11",
+    type: "main-point",
+    sectionType: "reading-comprehension",
+    stimulus: `The ethics of end-of-life medical decision-making centers on fundamental questions about the value of life, the acceptability of hastening death, and the proper role of patient autonomy in determining when and how life ends. Advances in life-sustaining technology have created situations where patients can be maintained biologically alive despite permanent unconsciousness, minimal consciousness, or dependence on mechanical support that previous generations would have considered inconsistent with meaningful survival. These technological capabilities have forced explicit consideration of questions that medical limitations once resolved implicitly: when does continued biological existence serve patient interests, and who should decide when maintaining life no longer benefits the patient?
+
+The distinction between withholding or withdrawing life-sustaining treatment and active euthanasia or physician-assisted suicide proves central to legal and ethical analysis. The former—allowing patients to refuse treatment including mechanical ventilation, artificial nutrition and hydration, or dialysis—is widely accepted legally and ethically as respecting patient autonomy and acknowledging limits to beneficial medical intervention. The latter—actively administering lethal medication at patient request or providing patients with means to end their own lives—remains illegal in most jurisdictions and ethically controversial, prohibited by major medical associations' ethics codes despite legalization in several states and countries. Defenders of this distinction argue that letting die differs morally from killing: physicians who withdraw treatment merely allow disease to take its natural course, while those who administer lethal medication causally bring about death through their actions. Furthermore, professional role considerations may permit physicians to cease ineffective treatment while prohibiting them from intentionally causing patient death, which contradicts medicine's healing mission.
+
+Critics challenge this distinction as morally arbitrary. They contend that intention matters more than mechanism: both withdrawal and active assistance aim to end life deemed no longer worth living, with physicians foreseeing death as the inevitable result of their actions in both cases. The causal distinction proves unstable—withdrawing ventilation from a patient who cannot breathe independently kills the patient as surely as lethal injection, with death resulting from the physician's action rather than disease alone. Moreover, allowing only withdrawal may produce worse outcomes: patients who could die quickly and peacefully through medication may instead endure prolonged, uncomfortable deaths through dehydration or respiratory failure following treatment withdrawal. If patient autonomy and relief of suffering justify allowing death through withdrawal, these same values support more direct means of achieving the same end.
+
+The role of patient autonomy in end-of-life decisions raises additional complexities. Autonomy-based arguments support patient rights to refuse unwanted treatment, but extending autonomy to active death assistance requires addressing whether autonomy includes rights to enlist others in ending one's life. Furthermore, concerns about vulnerable populations—elderly individuals feeling burdensome to families, disabled persons facing social devaluation, poor patients lacking access to quality palliative care—suggest that permitting assisted death may enable socially-driven decisions rather than purely autonomous choices. The requirement of voluntariness may prove inadequate protection when subtle pressures, resource constraints, or biased counseling influence ostensibly free choices. Conversely, prohibiting assisted death arguably disrespects patient autonomy by denying competent adults' decisions about their own deaths, privileging other-regarding concerns about potential abuse over self-regarding choices about whether continued life serves one's interests.
+
+Finally, the adequacy of palliative care and the goals of medicine shape debates about hastened death. If pain and suffering could be adequately controlled through improved palliative care, requests for hastened death might diminish or disappear, suggesting that improving care rather than enabling death better serves patient interests. The hospice movement's success in managing end-of-life symptoms while maintaining quality of life demonstrates palliative care's potential, raising questions about whether assisted death requests reflect failure to provide adequate palliative options rather than autonomous choices. However, some patients request hastened death not to escape physical pain but to avoid progressive deterioration, loss of dignity, or dependence that palliative care cannot address. For these patients, the availability of assistance may provide reassurance and sense of control that paradoxically reduces urgency to use it, while prohibition creates existential distress from knowing that intolerable future states cannot be escaped. The debate ultimately implicates fundamental disagreements about medicine's proper goals: whether physicians should seek only to preserve biological life and relieve suffering within life, or whether they may appropriately assist patients in achieving good deaths when continued life no longer serves patients' values and ends.`,
+    questionStem: "Which one of the following most accurately expresses the main point of the passage?",
+    answerChoices: [
+      { letter: "A", text: "End-of-life ethics involves contested distinctions between letting die and killing, debates about autonomy's scope, concerns about vulnerable populations, and disagreements about medicine's proper goals regarding life-preservation versus facilitating good deaths." },
+      { letter: "B", text: "All medical professionals universally agree that physician-assisted suicide should be mandatory." },
+      { letter: "C", text: "Palliative care has completely eliminated all requests for hastened death." },
+      { letter: "D", text: "The distinction between withholding treatment and active euthanasia is universally accepted as morally and legally clear." },
+      { letter: "E", text: "Autonomy concerns are irrelevant to end-of-life decision-making." }
+    ],
+    correctAnswer: "A",
+    explanation: "The passage discusses letting die vs. killing distinction (paragraph 2), critiques of that distinction (paragraph 3), autonomy and vulnerability concerns (paragraph 4), and palliative care and medicine's goals (paragraph 5). Choice A accurately captures these multiple contested dimensions of end-of-life ethics.",
+    difficulty: "medium",
+    passageId: "rc-34-passage-3"
+  },
+
+  // Questions 12-15 for passage 3
+  {
+    id: "rc-34-12",
+    type: "inference",
+    sectionType: "reading-comprehension",
+    stimulus: `[Same passage text]`,
+    questionStem: "Defenders of the distinction between withdrawal and active euthanasia would most likely argue that",
+    answerChoices: [
+      { letter: "A", text: "Both practices are morally identical in all respects" },
+      { letter: "B", text: "Withdrawing treatment allows disease to take its natural course while active euthanasia causally brings about death" },
+      { letter: "C", text: "Active euthanasia is always less painful than treatment withdrawal" },
+      { letter: "D", text: "Physicians should never withdraw any life-sustaining treatment" },
+      { letter: "E", text: "Patient autonomy is irrelevant to both practices" }
+    ],
+    correctAnswer: "B",
+    explanation: "The passage states defenders argue 'physicians who withdraw treatment merely allow disease to take its natural course, while those who administer lethal medication causally bring about death through their actions,' describing the distinction in choice B.",
+    difficulty: "medium",
+    passageId: "rc-34-passage-3"
+  },
+
+  {
+    id: "rc-34-13",
+    type: "explicit-detail",
+    sectionType: "reading-comprehension",
+    stimulus: `[Same passage text]`,
+    questionStem: "According to the passage, withholding or withdrawing life-sustaining treatment is",
+    answerChoices: [
+      { letter: "A", text: "Illegal in all jurisdictions worldwide" },
+      { letter: "B", text: "Widely accepted legally and ethically as respecting patient autonomy" },
+      { letter: "C", text: "Prohibited by all medical associations" },
+      { letter: "D", text: "Considered morally worse than active euthanasia" },
+      { letter: "E", text: "Never permitted under any circumstances" }
+    ],
+    correctAnswer: "B",
+    explanation: "The passage explicitly states withholding/withdrawing treatment 'is widely accepted legally and ethically as respecting patient autonomy and acknowledging limits to beneficial medical intervention,' directly corresponding to choice B.",
+    difficulty: "easy",
+    passageId: "rc-34-passage-3"
+  },
+
+  {
+    id: "rc-34-14",
+    type: "function",
+    sectionType: "reading-comprehension",
+    stimulus: `[Same passage text]`,
+    questionStem: "The author's discussion of concerns about vulnerable populations in paragraph 4 primarily serves to",
+    answerChoices: [
+      { letter: "A", text: "illustrate worries that permitting assisted death may enable socially-driven rather than autonomous decisions" },
+      { letter: "B", text: "prove that all elderly and disabled persons support assisted death" },
+      { letter: "C", text: "demonstrate that autonomy is never a relevant consideration" },
+      { letter: "D", text: "argue that vulnerable populations should be excluded from all medical decisions" },
+      { letter: "E", text: "show that social pressures never influence medical choices" }
+    ],
+    correctAnswer: "A",
+    explanation: "The passage presents concerns that permitting assisted death 'may enable socially-driven decisions rather than purely autonomous choices' due to pressures on vulnerable groups. This illustrates the worry about compromised autonomy, as in choice A.",
+    difficulty: "medium",
+    passageId: "rc-34-passage-3"
+  },
+
+  {
+    id: "rc-34-15",
+    type: "author-attitude",
+    sectionType: "reading-comprehension",
+    stimulus: `[Same passage text]`,
+    questionStem: "The author's attitude toward the letting die versus killing distinction can most accurately be described as",
+    answerChoices: [
+      { letter: "A", text: "unqualified acceptance as morally and conceptually clear" },
+      { letter: "B", text: "presentation of both defenses and critiques without definitively endorsing either position" },
+      { letter: "C", text: "complete dismissal as entirely without merit" },
+      { letter: "D", text: "indifference to whether the distinction has ethical significance" },
+      { letter: "E", text: "certainty that the debate has been definitively resolved" }
+    ],
+    correctAnswer: "B",
+    explanation: "The passage presents defenders' arguments for the distinction (paragraph 2) and critics' challenges to it (paragraph 3) without endorsing either side. This balanced presentation of both perspectives characterizes the author's attitude as analytical rather than advocacy.",
+    difficulty: "medium",
+    passageId: "rc-34-passage-3"
+  },
+
+  // Passage 4: Research Ethics and Human Subjects Protection
+  {
+    id: "rc-34-16",
+    type: "main-point",
+    sectionType: "reading-comprehension",
+    stimulus: `Research ethics governing human subjects research emerged largely in response to historical abuses, most notably the Nazi medical experiments and the Tuskegee syphilis study, which revealed how scientific research could instrumentalize human beings, sacrificing individual welfare to knowledge advancement. The Nuremberg Code, Declaration of Helsinki, and Belmont Report established core principles—respect for persons, beneficence, and justice—that shape contemporary research regulation through institutional review boards (IRBs) charged with protecting research participants. These frameworks require voluntary informed consent, favorable risk-benefit ratios, and fair subject selection, attempting to ensure that research advancement does not come at the cost of exploiting or harming vulnerable individuals.
+
+The informed consent requirement in research contexts raises distinctive challenges beyond clinical care. Research participation, unlike treatment, aims primarily to generate generalizable knowledge rather than benefit particular participants, creating tension between individual and collective interests. Therapeutic misconception—participants' mistaken belief that research interventions are designed to benefit them personally rather than test hypotheses—may undermine consent's validity when participants conflate research and treatment. Furthermore, randomization to control groups, placebo administration, and blinding procedures standard in rigorous research may conflict with individualized care's patient-centered orientation. Disclosing these features requires helping participants understand research's primary purpose while acknowledging that some may derive incidental benefit.
+
+Justice in subject selection proves particularly complex in research contexts. Historical research abuses often exploited disadvantaged populations—prisoners, racial minorities, institutionalized individuals—whose vulnerability made them convenient subjects while benefits of resulting knowledge flowed primarily to more privileged groups. Contemporary research ethics emphasizes protecting vulnerable populations from exploitation through heightened scrutiny of research involving such groups. However, this protective approach creates paradoxical injustice: excluding vulnerable populations from research means that treatments and interventions are tested primarily on non-vulnerable groups, potentially producing knowledge inapplicable to or less effective for excluded populations. Women's historical exclusion from clinical trials, justified as protecting them and potential fetuses, resulted in medications tested predominantly on men being prescribed to women despite potential sex-based efficacy or side-effect differences.
+
+The globalization of research raises additional justice concerns. Pharmaceutical companies increasingly conduct clinical trials in low-and middle-income countries, where large treatment-naive populations, lower costs, and less stringent regulation enable faster, cheaper research. While such research may benefit host countries through local capacity building and access to investigational treatments, concerns about exploitation arise when research addresses diseases of wealthy countries, uses local populations to test products marketed elsewhere, or concludes without ensuring continued access to beneficial interventions for research participants or host communities. The standard of care debates illustrate these tensions: should control groups in international trials receive the best proven intervention available globally, or merely the standard care available locally? The former protects research participants but may render trials impractical in resource-poor settings; the latter enables research but potentially exploits populations by providing lower-quality care than researchers would accept for their own compatriots.
+
+Finally, the risk-benefit assessment required for IRB approval involves incommensurable values. How should risks of research harm be weighed against potential benefits to knowledge and future patients? IRBs must determine whether risks are reasonable in relation to anticipated benefits, but this assessment requires comparing individual research participants' risk-bearing against diffuse societal benefits from knowledge advancement. The calculation proves especially fraught for research offering participants no realistic prospect of direct benefit while imposing non-trivial risks. Can such research ever be ethical, or does it inherently instrumentalize participants by using them as means to others' ends? Some argue that voluntary consent suffices: if competent adults freely agree to bear risks for knowledge advancement or altruistic purposes, such choices merit respect regardless of benefit distribution. Others contend that societal vulnerability—research participants' often disadvantaged circumstances that make research participation attractive or necessary—undermines voluntariness, requiring substantive benefit-sharing rather than merely procedural consent to legitimate research that exposes participants to risk for others' benefit.`,
+    questionStem: "Which one of the following most accurately expresses the main point of the passage?",
+    answerChoices: [
+      { letter: "A", text: "Human subjects research ethics addresses informed consent challenges, justice in subject selection including both exploitation and exclusion concerns, international research disparities, and contested risk-benefit assessments comparing individual risks to collective knowledge benefits." },
+      { letter: "B", text: "All human subjects research is inherently unethical and should be prohibited." },
+      { letter: "C", text: "Institutional review boards have perfectly solved all ethical issues in human subjects research." },
+      { letter: "D", text: "Informed consent in research contexts is identical to informed consent in clinical care with no distinctive challenges." },
+      { letter: "E", text: "International research never raises any ethical concerns beyond domestic research." }
+    ],
+    correctAnswer: "A",
+    explanation: "The passage discusses informed consent and therapeutic misconception (paragraph 2), justice paradoxes in protecting while potentially excluding vulnerable groups (paragraph 3), international research exploitation concerns (paragraph 4), and risk-benefit assessment difficulties (paragraph 5). Choice A accurately captures these multiple ethical dimensions.",
+    difficulty: "medium",
+    passageId: "rc-34-passage-4"
+  },
+
+  {
+    id: "rc-34-17",
+    type: "inference",
+    sectionType: "reading-comprehension",
+    stimulus: `[Same passage text]`,
+    questionStem: "Based on the passage, therapeutic misconception can most reasonably be inferred to occur when",
+    answerChoices: [
+      { letter: "A", text: "Researchers accurately inform participants about research purposes" },
+      { letter: "B", text: "Participants mistakenly believe research interventions are designed to benefit them personally rather than test hypotheses" },
+      { letter: "C", text: "All research participants receive proven beneficial treatments" },
+      { letter: "D", text: "Informed consent is completely absent from the research" },
+      { letter: "E", text: "Research never involves any medical interventions" }
+    ],
+    correctAnswer: "B",
+    explanation: "The passage defines therapeutic misconception as 'participants' mistaken belief that research interventions are designed to benefit them personally rather than test hypotheses,' directly describing the phenomenon in choice B.",
+    difficulty: "medium",
+    passageId: "rc-34-passage-4"
+  },
+
+  {
+    id: "rc-34-18",
+    type: "explicit-detail",
+    sectionType: "reading-comprehension",
+    stimulus: `[Same passage text]`,
+    questionStem: "According to the passage, the Belmont Report established which core principles for research ethics?",
+    answerChoices: [
+      { letter: "A", text: "Efficiency, profitability, and speed" },
+      { letter: "B", text: "Respect for persons, beneficence, and justice" },
+      { letter: "C", text: "Randomization, blinding, and placebo use" },
+      { letter: "D", text: "Exclusion of all vulnerable populations from research" },
+      { letter: "E", text: "Maximizing research speed regardless of participant welfare" }
+    ],
+    correctAnswer: "B",
+    explanation: "The passage explicitly states that the Belmont Report (along with other documents) 'established core principles—respect for persons, beneficence, and justice,' listing these three principles in choice B.",
+    difficulty: "easy",
+    passageId: "rc-34-passage-4"
+  },
+
+  {
+    id: "rc-34-19",
+    type: "function",
+    sectionType: "reading-comprehension",
+    stimulus: `[Same passage text]`,
+    questionStem: "The author's discussion of women's historical exclusion from clinical trials primarily serves to",
+    answerChoices: [
+      { letter: "A", text: "illustrate how protective approaches can paradoxically create injustice through exclusion resulting in inadequate knowledge" },
+      { letter: "B", text: "prove that women should always be excluded from all research" },
+      { letter: "C", text: "demonstrate that sex-based differences never affect medication efficacy" },
+      { letter: "D", text: "argue that vulnerability concerns are never legitimate considerations" },
+      { letter: "E", text: "show that all historical research perfectly protected women's interests" }
+    ],
+    correctAnswer: "A",
+    explanation: "The passage presents women's exclusion as an example of how protection 'creates paradoxical injustice' because 'medications tested predominantly on men being prescribed to women despite potential sex-based efficacy or side-effect differences.' This illustrates the paradoxical injustice of exclusion, as in choice A.",
+    difficulty: "medium",
+    passageId: "rc-34-passage-4"
+  },
+
+  {
+    id: "rc-34-20",
+    type: "author-attitude",
+    sectionType: "reading-comprehension",
+    stimulus: `[Same passage text]`,
+    questionStem: "The author's attitude toward voluntary consent as sufficient justification for research risks can most accurately be described as",
+    answerChoices: [
+      { letter: "A", text: "unqualified endorsement that consent always suffices" },
+      { letter: "B", text: "presentation of both consent-sufficiency arguments and concerns about compromised voluntariness without definitive resolution" },
+      { letter: "C", text: "complete rejection that consent ever matters for research ethics" },
+      { letter: "D", text: "indifference to whether consent legitimates research risks" },
+      { letter: "E", text: "certainty that this debate has been definitively settled" }
+    ],
+    correctAnswer: "B",
+    explanation: "The passage presents both sides: 'Some argue that voluntary consent suffices' while 'Others contend that societal vulnerability...undermines voluntariness, requiring substantive benefit-sharing.' This presentation of both arguments without resolution characterizes the author's attitude as balanced analysis.",
+    difficulty: "medium",
+    passageId: "rc-34-passage-4"
+  }
+];

@@ -1,0 +1,419 @@
+import { Question } from "../lsat-types";
+
+export const rcQuestionsSet36: Question[] = [
+  // Passage 1: Mass Incarceration and Criminal Justice Reform
+  {
+    id: "rc-36-1",
+    type: "main-point",
+    sectionType: "reading-comprehension",
+    stimulus: `The United States incarcerates approximately 2 million people, representing roughly 25 percent of the world's prison population despite comprising only 5 percent of global population—a rate of incarceration unprecedented in American history and unmatched by any other democratic nation. This mass incarceration emerged over recent decades through policy choices including mandatory minimum sentences, three-strikes laws, truth-in-sentencing requirements limiting parole, and aggressive enforcement of drug laws, particularly affecting African American and Latino communities disproportionately. Scholars debate whether this expansion reflected rational crime-control policy responding to rising crime rates, or whether it represented a form of racialized social control managing marginalized populations through criminal justice institutions. Understanding mass incarceration requires examining not only its causes but also its consequences for individuals, families, communities, and democratic governance.
+
+The crime control rationale for expanded incarceration emphasizes incapacitation effects: imprisoning offenders prevents crimes they would otherwise commit while incarcerated. Proponents note that crime rates declined substantially during the 1990s as incarceration rates increased, suggesting a causal relationship. They argue that longer sentences, particularly for violent and repeat offenders, protect public safety by removing dangerous individuals from communities for extended periods. Furthermore, the deterrent effect of credible punishment threats may discourage potential offenders from committing crimes, while incarceration reinforces moral boundaries by expressing societal condemnation of criminal conduct. From this perspective, incarceration rates reflect conscious policy choices prioritizing public safety and accountability for criminal wrongdoing.
+
+However, empirical research suggests incarceration's crime-reduction benefits prove limited and decline as imprisonment expands. Initial incarceration increases targeting serious violent offenders likely produce significant incapacitation effects, but as imprisonment extends to less serious offenses and longer sentences, marginal crime-reduction benefits diminish while costs escalate. Studies estimate that the massive incarceration increase after 1990 accounted for perhaps 10-25 percent of the crime decline, with other factors including economic conditions, policing strategies, and demographic changes explaining the majority. Moreover, imprisonment may actually increase recidivism: exposure to prison's criminogenic environment, disruption of employment and family ties, and stigma of criminal records may make successful reentry more difficult, potentially increasing rather than decreasing long-term offending.
+
+The racial disparities in incarceration raise particularly troubling questions. African Americans are incarcerated at nearly six times the rate of whites, while Latinos face incarceration rates nearly double those of whites—disparities that persist even controlling for offense severity and criminal history. These patterns reflect multiple mechanisms: differential offending rates for some crimes, racially disparate law enforcement priorities emphasizing drug enforcement in minority communities, prosecutorial charging and plea bargaining decisions, and sentencing disparities including harsher penalties for crack cocaine (associated with African American defendants) versus powder cocaine (associated with white defendants). Some scholars argue these cumulative disparities constitute a new Jim Crow—a racialized system of social control that stigmatizes and marginalizes African Americans while formally claiming color-blindness. Others contend that disparities reflect legitimate responses to actual offending patterns and that concerns about disparities should not prevent appropriate punishment for genuine criminal conduct.
+
+The collateral consequences of mass incarceration extend far beyond individuals serving sentences. Imprisonment disrupts families and communities: children with incarcerated parents face developmental challenges and increased risk of future criminal justice involvement, while communities experiencing concentrated incarceration suffer weakened social networks and economic opportunity. Political consequences prove equally significant: criminal disenfranchisement laws deny voting rights to millions of people with felony convictions, reducing political representation and voice for communities most affected by criminal justice policies. Economic costs are staggering: states spend over $50 billion annually on corrections, often exceeding higher education budgets, while incarceration's opportunity costs include foregone wages and tax revenue from imprisoned working-age adults. Recent reform efforts including reduced sentences for nonviolent offenses, elimination of mandatory minimums, and expanded alternatives to incarceration reflect growing recognition of these costs, though whether reforms will significantly reduce incarceration rates or address racial disparities remains uncertain given political resistance to being perceived as soft on crime and structural factors that created mass incarceration continuing to operate.`,
+    questionStem: "Which one of the following most accurately expresses the main point of the passage?",
+    answerChoices: [
+      { letter: "A", text: "Mass incarceration emerged through particular policy choices, shows limited crime-reduction benefits, manifests stark racial disparities, imposes extensive collateral consequences, and faces uncertain prospects for reform despite growing recognition of its costs." },
+      { letter: "B", text: "Incarceration rates have no relationship to policy choices and reflect only natural crime patterns." },
+      { letter: "C", text: "All scholars agree that mass incarceration represents optimal crime-control policy." },
+      { letter: "D", text: "Racial disparities in incarceration are entirely explained by differential offending with no contribution from enforcement or sentencing decisions." },
+      { letter: "E", text: "Recent reforms have completely eliminated mass incarceration and all its associated problems." }
+    ],
+    correctAnswer: "A",
+    explanation: "The passage discusses mass incarceration's origins in policy choices (paragraph 1), limited crime-reduction evidence (paragraphs 2-3), racial disparities (paragraph 4), and extensive consequences with uncertain reform prospects (paragraph 5). Choice A accurately captures these multiple dimensions and their relationships.",
+    difficulty: "medium",
+    passageId: "rc-36-passage-1"
+  },
+
+  {
+    id: "rc-36-2",
+    type: "inference",
+    sectionType: "reading-comprehension",
+    stimulus: `[Same passage text]`,
+    questionStem: "Based on the passage, empirical research on incarceration's crime-reduction effects suggests that",
+    answerChoices: [
+      { letter: "A", text: "Every additional incarceration produces equal crime-reduction benefits" },
+      { letter: "B", text: "Marginal crime-reduction benefits diminish as imprisonment expands beyond serious violent offenders" },
+      { letter: "C", text: "Incarceration has no relationship whatsoever to crime rates" },
+      { letter: "D", text: "All crime decline resulted entirely from increased incarceration" },
+      { letter: "E", text: "Imprisonment never affects recidivism rates" }
+    ],
+    correctAnswer: "B",
+    explanation: "The passage states 'as imprisonment extends to less serious offenses and longer sentences, marginal crime-reduction benefits diminish while costs escalate,' and estimates incarceration 'accounted for perhaps 10-25 percent of the crime decline.' This indicates diminishing marginal benefits as in choice B.",
+    difficulty: "medium",
+    passageId: "rc-36-passage-1"
+  },
+
+  {
+    id: "rc-36-3",
+    type: "explicit-detail",
+    sectionType: "reading-comprehension",
+    stimulus: `[Same passage text]`,
+    questionStem: "According to the passage, African Americans are incarcerated at what rate relative to whites?",
+    answerChoices: [
+      { letter: "A", text: "Identical rates with no disparity" },
+      { letter: "B", text: "Slightly lower rates than whites" },
+      { letter: "C", text: "Nearly six times the rate of whites" },
+      { letter: "D", text: "Exactly double the rate of whites" },
+      { letter: "E", text: "Ten percent higher rates than whites" }
+    ],
+    correctAnswer: "C",
+    explanation: "The passage explicitly states 'African Americans are incarcerated at nearly six times the rate of whites,' directly providing this statistic in choice C.",
+    difficulty: "easy",
+    passageId: "rc-36-passage-1"
+  },
+
+  {
+    id: "rc-36-4",
+    type: "function",
+    sectionType: "reading-comprehension",
+    stimulus: `[Same passage text]`,
+    questionStem: "The author's discussion of collateral consequences in paragraph 5 primarily serves to",
+    answerChoices: [
+      { letter: "A", text: "illustrate how mass incarceration's impacts extend beyond imprisoned individuals to affect families, communities, democracy, and economic resources" },
+      { letter: "B", text: "prove that incarceration has no costs whatsoever" },
+      { letter: "C", text: "demonstrate that families are never affected by imprisonment" },
+      { letter: "D", text: "argue that spending on corrections is always justified regardless of costs" },
+      { letter: "E", text: "show that political consequences of incarceration are completely negligible" }
+    ],
+    correctAnswer: "A",
+    explanation: "The passage discusses impacts on children and communities, political disenfranchisement, and economic costs, stating 'collateral consequences...extend far beyond individuals serving sentences.' This illustrates the broad range of effects in choice A.",
+    difficulty: "medium",
+    passageId: "rc-36-passage-1"
+  },
+
+  {
+    id: "rc-36-5",
+    type: "author-attitude",
+    sectionType: "reading-comprehension",
+    stimulus: `[Same passage text]`,
+    questionStem: "The author's attitude toward recent criminal justice reform efforts can most accurately be described as",
+    answerChoices: [
+      { letter: "A", text: "certain that reforms will completely solve all problems" },
+      { letter: "B", text: "acknowledgment of reform efforts while expressing uncertainty about whether they will significantly reduce incarceration or address disparities" },
+      { letter: "C", text: "complete opposition to any reforms" },
+      { letter: "D", text: "indifference to whether reforms occur" },
+      { letter: "E", text: "conviction that no reforms are necessary" }
+    ],
+    correctAnswer: "B",
+    explanation: "The passage notes 'Recent reform efforts' but states 'whether reforms will significantly reduce incarceration rates or address racial disparities remains uncertain given political resistance...and structural factors...continuing to operate.' This acknowledges reforms while expressing uncertainty, as in choice B.",
+    difficulty: "medium",
+    passageId: "rc-36-passage-1"
+  },
+
+  // Passage 2: Procedural Justice and Police Legitimacy
+  {
+    id: "rc-36-6",
+    type: "main-point",
+    sectionType: "reading-comprehension",
+    stimulus: `Procedural justice theory posits that public cooperation with police and compliance with law depend less on fear of punishment or instrumental calculations than on perceptions of police legitimacy—the belief that police have rightful authority deserving respect and deference. Legitimacy, according to this framework, derives primarily from procedural fairness: whether police treat people with dignity and respect, provide opportunities for voice and explanation, make decisions through neutral and transparent processes, and demonstrate trustworthy motives. Empirical research supports these propositions, finding that procedural justice perceptions predict willingness to cooperate with police, defer to police authority, and comply with legal directives more strongly than deterrence-based factors like perceived punishment certainty or severity. These findings have profound implications for policing strategies, suggesting that enhancing perceived fairness may improve public cooperation more effectively than intensifying enforcement.
+
+The procedural justice framework contrasts sharply with deterrence-based approaches that dominated policing for decades. Deterrence theory assumes that individuals make rational calculations weighing potential benefits against costs of detection and punishment, suggesting that increasing enforcement intensity, sanction severity, or certainty of punishment will reduce offending by making crime less attractive. This logic justified aggressive enforcement tactics: broken windows policing targeting minor disorder, stop-and-frisk programs conducting widespread street stops, and hot spots policing concentrating resources in high-crime areas. While such strategies may produce crime-reduction benefits through incapacitation or deterrence, procedural justice research suggests they may simultaneously undermine legitimacy: intrusive enforcement tactics, even if technically legal, may be perceived as unfair or disrespectful, eroding willingness to cooperate with police and comply with law voluntarily.
+
+The relationship between aggressive enforcement and legitimacy proves particularly problematic in communities of color where policing is often most intensive. African American and Latino residents experience police contact—including stops, searches, and uses of force—at substantially higher rates than whites, even controlling for crime rates and neighborhood characteristics. These disparate encounters frequently involve perceived procedural unfairness: disrespectful treatment, inadequate explanations for stops, and apparent racial profiling. The cumulative effect may be particularly corrosive: repeated negative encounters can produce general cynicism about police legitimacy that extends beyond individuals directly affected to entire communities, creating an "us versus them" mentality that impedes cooperation and compliance. This dynamic creates a vicious cycle: aggressive enforcement alienates communities, reducing cooperation that police need for effective crime control, potentially leading to even more aggressive enforcement to compensate for reduced voluntary compliance.
+
+However, implementing procedural justice principles in practice proves challenging. Training officers to employ procedural justice requires not merely teaching tactics but changing organizational cultures that may emphasize crime-fighting efficiency and officer safety over citizen satisfaction. The often tense, adversarial nature of police-citizen encounters—particularly in high-crime areas where police perceive danger and citizens resent intrusive surveillance—creates obstacles to respectful dialogue and explanation. Furthermore, procedural justice may conflict with other policing goals: providing extensive explanation and voice opportunities takes time that could be spent on enforcement, while demonstrating trustworthy motives proves difficult when police must sometimes conceal investigative techniques or informant identities. Some critics argue that procedural justice rhetoric may serve primarily as legitimation strategy, encouraging people to accept unjust substantive outcomes through fair-seeming processes without actually reducing the fundamental disparities and harms associated with aggressive enforcement in marginalized communities.
+
+Moreover, procedural justice's focus on individual encounters may neglect structural and historical factors shaping police-community relationships. In communities with long histories of discriminatory or abusive policing, current officer behavior—however procedurally fair—may be interpreted through lenses of historical experience and structural mistrust. Addressing legitimacy deficits in such contexts may require more than training officers in procedural justice; it may demand institutional reforms including civilian oversight, accountability for misconduct, policy changes reducing enforcement disparities, and broader social policies addressing the underlying inequalities that generate both crime and aggressive policing responses. The challenge facing contemporary policing is whether procedural justice can be implemented in ways that genuinely transform police-community relationships, or whether it serves merely as incremental reform leaving intact the structural conditions that generate legitimacy crises in the first place—a question with profound implications for the future of democratic policing in diverse societies marked by persistent inequalities.`,
+    questionStem: "Which one of the following most accurately expresses the main point of the passage?",
+    answerChoices: [
+      { letter: "A", text: "Procedural justice theory holds that legitimacy derived from fairness increases cooperation more than deterrence, but implementation faces practical challenges and risks neglecting structural factors shaping police-community relationships." },
+      { letter: "B", text: "Deterrence theory has been conclusively proven superior to procedural justice in all contexts." },
+      { letter: "C", text: "Procedural justice has completely eliminated all police-community tensions everywhere it has been implemented." },
+      { letter: "D", text: "Police legitimacy has no relationship to public cooperation or compliance." },
+      { letter: "E", text: "Aggressive enforcement always increases police legitimacy in all communities." }
+    ],
+    correctAnswer: "A",
+    explanation: "The passage explains procedural justice theory and evidence (paragraph 1), contrasts it with deterrence approaches (paragraph 2), discusses particular problems in communities of color (paragraph 3), implementation challenges (paragraph 4), and structural limitations (paragraph 5). Choice A accurately captures the theory, evidence, and significant challenges.",
+    difficulty: "medium",
+    passageId: "rc-36-passage-2"
+  },
+
+  {
+    id: "rc-36-7",
+    type: "inference",
+    sectionType: "reading-comprehension",
+    stimulus: `[Same passage text]`,
+    questionStem: "Based on the passage, procedural justice theory would predict that",
+    answerChoices: [
+      { letter: "A", text: "Fear of punishment is the only factor affecting compliance with law" },
+      { letter: "B", text: "Perceptions of procedural fairness predict cooperation and compliance more strongly than deterrence-based factors" },
+      { letter: "C", text: "Police legitimacy is irrelevant to public cooperation" },
+      { letter: "D", text: "Increasing punishment severity is always the most effective way to reduce crime" },
+      { letter: "E", text: "Procedural fairness has no relationship to willingness to cooperate with police" }
+    ],
+    correctAnswer: "B",
+    explanation: "The passage states 'Empirical research supports these propositions, finding that procedural justice perceptions predict willingness to cooperate with police...more strongly than deterrence-based factors like perceived punishment certainty or severity.' This describes the prediction in choice B.",
+    difficulty: "medium",
+    passageId: "rc-36-passage-2"
+  },
+
+  {
+    id: "rc-36-8",
+    type: "explicit-detail",
+    sectionType: "reading-comprehension",
+    stimulus: `[Same passage text]`,
+    questionStem: "According to the passage, procedural justice derives from which of the following?",
+    answerChoices: [
+      { letter: "A", text: "Treating people with dignity and respect, providing voice opportunities, using neutral processes, and demonstrating trustworthy motives" },
+      { letter: "B", text: "Maximizing arrests and enforcement actions regardless of fairness" },
+      { letter: "C", text: "Concealing all police decision-making from public scrutiny" },
+      { letter: "D", text: "Ensuring that police never explain their actions to citizens" },
+      { letter: "E", text: "Prioritizing efficiency over all other considerations" }
+    ],
+    correctAnswer: "A",
+    explanation: "The passage states legitimacy 'derives primarily from procedural fairness: whether police treat people with dignity and respect, provide opportunities for voice and explanation, make decisions through neutral and transparent processes, and demonstrate trustworthy motives.' This lists all elements in choice A.",
+    difficulty: "easy",
+    passageId: "rc-36-passage-2"
+  },
+
+  {
+    id: "rc-36-9",
+    type: "function",
+    sectionType: "reading-comprehension",
+    stimulus: `[Same passage text]`,
+    questionStem: "The author's discussion of the vicious cycle in paragraph 3 primarily serves to",
+    answerChoices: [
+      { letter: "A", text: "illustrate how aggressive enforcement can alienate communities, reducing cooperation and potentially leading to even more aggressive enforcement" },
+      { letter: "B", text: "prove that all police enforcement is always inappropriate" },
+      { letter: "C", text: "demonstrate that communities never experience any negative effects from policing" },
+      { letter: "D", text: "argue that police should never engage in any enforcement activities" },
+      { letter: "E", text: "show that cooperation rates are always identical across all communities" }
+    ],
+    correctAnswer: "A",
+    explanation: "The passage describes 'a vicious cycle: aggressive enforcement alienates communities, reducing cooperation that police need for effective crime control, potentially leading to even more aggressive enforcement to compensate for reduced voluntary compliance.' This illustrates the self-reinforcing dynamic in choice A.",
+    difficulty: "medium",
+    passageId: "rc-36-passage-2"
+  },
+
+  {
+    id: "rc-36-10",
+    type: "author-attitude",
+    sectionType: "reading-comprehension",
+    stimulus: `[Same passage text]`,
+    questionStem: "The author's attitude toward procedural justice as a solution to police legitimacy problems can most accurately be described as",
+    answerChoices: [
+      { letter: "A", text: "unqualified enthusiasm that it will solve all problems" },
+      { letter: "B", text: "recognition of its potential benefits while questioning whether it can address structural conditions or serves merely as incremental reform" },
+      { letter: "C", text: "complete rejection as having no value whatsoever" },
+      { letter: "D", text: "indifference to whether procedural justice affects legitimacy" },
+      { letter: "E", text: "certainty that implementation faces no challenges" }
+    ],
+    correctAnswer: "B",
+    explanation: "The passage acknowledges procedural justice's theoretical and empirical support but raises implementation challenges (paragraph 4) and questions 'whether procedural justice can be implemented in ways that genuinely transform police-community relationships, or whether it serves merely as incremental reform leaving intact the structural conditions.' This balanced questioning matches choice B.",
+    difficulty: "medium",
+    passageId: "rc-36-passage-2"
+  },
+
+  // Passage 3: Restorative Justice and Alternative Approaches
+  {
+    id: "rc-36-11",
+    type: "main-point",
+    sectionType: "reading-comprehension",
+    stimulus: `Restorative justice offers an alternative to conventional criminal justice's punitive paradigm, conceptualizing crime not primarily as lawbreaking requiring punishment but as harm requiring repair. Rather than focusing on offender guilt and proportionate punishment, restorative approaches emphasize victim healing, offender accountability to those harmed, and community restoration. Practices vary widely but typically involve structured encounters—victim-offender dialogues, family group conferences, peacemaking circles—where victims can describe harms they experienced, offenders acknowledge responsibility and apologize, and participants collectively determine how offenders can make amends through restitution, service, or other reparative actions. Proponents argue that restorative justice better serves victims' needs for acknowledgment and healing, holds offenders more meaningfully accountable by confronting them with harm consequences, and strengthens communities by involving them in justice processes rather than delegating justice to state authorities.
+
+The philosophical foundations of restorative justice challenge retributive justice's core premises. Retributive theory holds that punishment is justified as desert: wrongdoers merit suffering proportionate to their wrongdoing, regardless of whether punishment produces benefits like deterrence or rehabilitation. This backward-looking justification emphasizes that punishment restores moral balance disrupted by crime. Restorative justice, conversely, adopts a forward-looking orientation: responses to crime should aim to repair harm and restore right relationships rather than inflict suffering on offenders. This relational conception emphasizes that crime damages relationships among victims, offenders, and communities, requiring healing rather than retribution. Furthermore, restorative approaches often incorporate indigenous justice traditions emphasizing harmony restoration over adversarial adjudication, offering culturally appropriate alternatives to Western criminal justice systems that indigenous communities experience as colonial impositions.
+
+Empirical research on restorative justice's outcomes presents mixed evidence. Some studies find that participants—particularly victims—express higher satisfaction with restorative processes than conventional adjudication, appreciating opportunities to voice their experiences and participate in determining outcomes. Recidivism studies yield more ambiguous results: some programs show reduced reoffending compared to conventional processing, while others find no significant differences, with effects varying by program type, implementation quality, and offender characteristics. The lack of consistent recidivism reductions suggests restorative justice may not be superior to conventional justice on crime-control grounds alone, though proponents argue that victim satisfaction and offender accountability constitute valuable outcomes regardless of recidivism effects.
+
+However, restorative justice faces significant critiques from multiple perspectives. Some victims' advocates worry that restorative processes may pressure victims to participate in emotionally difficult encounters with offenders, prioritizing offender rehabilitation over victim autonomy. The emphasis on forgiveness and reconciliation may be inappropriate or harmful for victims who experienced severe trauma, while power imbalances between victims and offenders may undermine genuine dialogue. From a different angle, critics concerned about proportionality and due process note that restorative outcomes may be inconsistent or overly lenient, with similarly situated offenders receiving widely varying consequences depending on victim preferences or conference dynamics rather than offense severity. Furthermore, the requirement that offenders accept responsibility creates difficulties for cases with factual disputes, while the informal, consensual nature of restorative processes may lack procedural protections that formal adjudication provides.
+
+The relationship between restorative justice and systemic reform raises additional questions. Most restorative programs operate as diversions from or supplements to conventional criminal justice rather than as wholesale replacements, addressing individual cases without transforming broader systems. This limits their structural impact: even successful individual healing and accountability occurs within unchanged social conditions that generate crime and unchanged institutions that perpetuate inequality. Some critics contend that restorative justice's individualized, harm-focused approach depoliticizes criminal justice by framing crime as interpersonal conflict requiring healing rather than as symptom of structural injustice requiring transformation. By channeling grievances into individual resolution processes, restorative justice may inadvertently legitimate unjust systems and forestall more fundamental challenges to the structural conditions—poverty, inequality, racism, marginalization—that produce both crime and punitive responses. Others counter that restorative justice's emphasis on community involvement and indigenous traditions offers seeds of more radical transformation, creating spaces for community empowerment and cultural revival that could expand beyond individual case resolution toward broader institutional and social change. The tension between restorative justice as individualized case processing versus systemic transformation reflects deeper questions about whether meaningful criminal justice reform can occur through incremental practice innovation or requires confronting the political and economic structures that shape both crime and punishment in fundamentally unequal societies.`,
+    questionStem: "Which one of the following most accurately expresses the main point of the passage?",
+    answerChoices: [
+      { letter: "A", text: "Restorative justice offers an alternative to punitive approaches emphasizing repair over retribution, with mixed empirical evidence, significant critiques regarding victim autonomy and proportionality, and tensions about whether it supplements or transforms criminal justice systems." },
+      { letter: "B", text: "All victims prefer restorative justice to conventional adjudication in every case." },
+      { letter: "C", text: "Restorative justice has completely replaced conventional criminal justice worldwide." },
+      { letter: "D", text: "Empirical research shows restorative justice always reduces recidivism more effectively than any other approach." },
+      { letter: "E", text: "Restorative justice faces no critiques and has universal support from all perspectives." }
+    ],
+    correctAnswer: "A",
+    explanation: "The passage explains restorative justice's alternative approach (paragraph 1), philosophical foundations (paragraph 2), mixed empirical evidence (paragraph 3), critiques from various perspectives (paragraph 4), and tensions about systemic reform (paragraph 5). Choice A accurately captures this range from alternative approach through criticisms to systemic questions.",
+    difficulty: "medium",
+    passageId: "rc-36-passage-3"
+  },
+
+  {
+    id: "rc-36-12",
+    type: "inference",
+    sectionType: "reading-comprehension",
+    stimulus: `[Same passage text]`,
+    questionStem: "Based on the passage, retributive justice theory can most reasonably be inferred to",
+    answerChoices: [
+      { letter: "A", text: "Justify punishment as desert regardless of whether it produces benefits like deterrence" },
+      { letter: "B", text: "Focus entirely on victim healing with no attention to proportionality" },
+      { letter: "C", text: "Reject all backward-looking justifications for punishment" },
+      { letter: "D", text: "Emphasize exclusively forward-looking rehabilitation goals" },
+      { letter: "E", text: "Derive entirely from indigenous justice traditions" }
+    ],
+    correctAnswer: "A",
+    explanation: "The passage states 'Retributive theory holds that punishment is justified as desert: wrongdoers merit suffering proportionate to their wrongdoing, regardless of whether punishment produces benefits like deterrence or rehabilitation.' This describes the desert-based justification in choice A.",
+    difficulty: "medium",
+    passageId: "rc-36-passage-3"
+  },
+
+  {
+    id: "rc-36-13",
+    type: "explicit-detail",
+    sectionType: "reading-comprehension",
+    stimulus: `[Same passage text]`,
+    questionStem: "According to the passage, restorative justice practices typically involve",
+    answerChoices: [
+      { letter: "A", text: "Excluding victims entirely from all justice processes" },
+      { letter: "B", text: "Structured encounters like victim-offender dialogues and family group conferences where participants determine reparative actions" },
+      { letter: "C", text: "Mandatory severe punishment without any opportunity for accountability" },
+      { letter: "D", text: "Preventing offenders from ever acknowledging responsibility" },
+      { letter: "E", text: "Eliminating all community involvement in justice processes" }
+    ],
+    correctAnswer: "B",
+    explanation: "The passage states restorative practices 'typically involve structured encounters—victim-offender dialogues, family group conferences, peacemaking circles—where victims can describe harms...and participants collectively determine how offenders can make amends.' This describes the practices in choice B.",
+    difficulty: "easy",
+    passageId: "rc-36-passage-3"
+  },
+
+  {
+    id: "rc-36-14",
+    type: "function",
+    sectionType: "reading-comprehension",
+    stimulus: `[Same passage text]`,
+    questionStem: "The author's discussion of concerns about power imbalances in paragraph 4 primarily serves to",
+    answerChoices: [
+      { letter: "A", text: "illustrate critiques that power differentials between victims and offenders may undermine genuine dialogue in restorative processes" },
+      { letter: "B", text: "prove that restorative justice always perfectly equalizes all power relationships" },
+      { letter: "C", text: "demonstrate that power imbalances never exist in any justice contexts" },
+      { letter: "D", text: "argue that victims are always more powerful than offenders" },
+      { letter: "E", text: "show that restorative processes face no challenges from power dynamics" }
+    ],
+    correctAnswer: "A",
+    explanation: "The passage states 'power imbalances between victims and offenders may undermine genuine dialogue' as part of critiques of restorative processes. This illustrates concerns about power differentials affecting dialogue, as in choice A.",
+    difficulty: "medium",
+    passageId: "rc-36-passage-3"
+  },
+
+  {
+    id: "rc-36-15",
+    type: "author-attitude",
+    sectionType: "reading-comprehension",
+    stimulus: `[Same passage text]`,
+    questionStem: "The author's attitude toward restorative justice as systemic transformation can most accurately be described as",
+    answerChoices: [
+      { letter: "A", text: "certainty that restorative justice has already completely transformed all criminal justice systems" },
+      { letter: "B", text: "presentation of contrasting views about whether it supplements existing systems versus offers seeds of radical transformation, without definitive resolution" },
+      { letter: "C", text: "complete conviction that restorative justice can never produce any systemic change" },
+      { letter: "D", text: "indifference to whether restorative justice affects broader systems" },
+      { letter: "E", text: "unqualified endorsement of restorative justice as perfect solution to all structural problems" }
+    ],
+    correctAnswer: "B",
+    explanation: "The passage presents critics' view that restorative justice 'limits their structural impact' and 'may inadvertently legitimate unjust systems' against others' view that it 'offers seeds of more radical transformation.' This contrasting presentation without resolution matches choice B.",
+    difficulty: "medium",
+    passageId: "rc-36-passage-3"
+  },
+
+  // Passage 4: Forensic Science and Wrongful Convictions
+  {
+    id: "rc-36-16",
+    type: "main-point",
+    sectionType: "reading-comprehension",
+    stimulus: `The exoneration of hundreds of wrongfully convicted individuals through DNA evidence has exposed fundamental flaws in forensic science practices that contributed to miscarriages of justice. Many forensic disciplines long presented in courts as scientifically reliable—bite mark analysis, microscopic hair comparison, firearms identification, fingerprint analysis—lack rigorous empirical validation of their accuracy and error rates. A landmark 2009 National Academy of Sciences report concluded that except for DNA analysis, no forensic method had been rigorously shown to reliably and accurately link evidence to a specific individual or source. This revelation has prompted calls for fundamental reforms in forensic science practice, education, research, and courtroom presentation, raising questions about how legal institutions should respond to scientific uncertainty and the need for empirical validation in criminal evidence.
+
+The problems with forensic science stem from multiple sources. Many disciplines developed in law enforcement contexts rather than scientific research environments, emphasizing practical utility for criminal investigations over rigorous validation of underlying assumptions and methodologies. Practitioners often lack scientific training, learning techniques through apprenticeship rather than formal education in scientific methods, statistical inference, or empirical research. The absence of standardized protocols and proficiency testing allows wide variations in practice and interpretation, while institutional pressures toward confirmatory bias—where examiners know investigators' theories and consciously or unconsciously interpret ambiguous evidence to support those theories—may distort conclusions. Furthermore, adversarial litigation incentives can encourage exaggerated certainty: prosecutors and defense attorneys both seek expert witnesses who will present conclusions definitively rather than acknowledge limitations and uncertainty.
+
+The courtroom presentation of forensic evidence has particularly troubled critics. Expert witnesses have routinely testified to conclusions with absolute or near-absolute certainty—claiming that evidence came from a specific source "to the exclusion of all others"—despite lacking statistical basis for such certainty. Judges applying the Daubert standard for scientific evidence admissibility have often failed to rigorously scrutinize forensic methods' empirical foundations, deferring to longstanding judicial acceptance rather than demanding scientific validation. Juries, lacking scientific expertise to evaluate complex technical testimony, may uncritically accept expert claims, particularly when experts present conclusions with unwarranted confidence. The CSI effect—public expectations shaped by crime television shows portraying forensic science as infallible—may amplify juries' credence of forensic testimony despite its actual limitations.
+
+Reform efforts have pursued multiple strategies addressing different aspects of forensic science problems. Improving practitioner training and certification aims to ensure basic scientific competency and standardized practices. Developing empirical research programs to validate forensic methods and establish error rates addresses the scientific foundation deficit. Institutional reforms including accreditation requirements, proficiency testing, and independence from law enforcement seek to improve quality control and reduce bias. Courtroom reforms focus on improving judicial gatekeeping through better scientific education for judges and requiring experts to acknowledge limitations and express conclusions probabilistically rather than with absolute certainty. Some advocates propose more radical restructuring, including removing forensic science from law enforcement control entirely and establishing independent research institutes to develop and validate methods without investigative or prosecutorial pressures.
+
+However, implementing reforms faces significant obstacles. The decentralized nature of American criminal justice, with thousands of state and local jurisdictions operating independent crime laboratories and courts, prevents uniform national standards and creates resistance to changes imposing costs or disrupting established practices. Political pressures favor tough-on-crime policies over reforms that might be characterized as helping defendants, while resource constraints limit funds for research, training, and quality improvements. Perhaps most fundamentally, reforms require confronting epistemic humility about forensic science limitations—acknowledging uncertainty and probabilistic conclusions—that may seem incompatible with criminal justice's demand for definitive determinations of guilt or innocence beyond reasonable doubt. The challenge is whether legal institutions can adapt to incorporate scientific standards requiring empirical validation and uncertainty acknowledgment, or whether institutional inertia and adversarial incentives will perpetuate reliance on forensic methods whose scientific foundations remain inadequate despite growing recognition of their limitations and the role they have played in wrongful convictions that have devastated innocent lives.`,
+    questionStem: "Which one of the following most accurately expresses the main point of the passage?",
+    answerChoices: [
+      { letter: "A", text: "DNA exonerations exposed forensic science limitations including lack of empirical validation, problems from law enforcement origins and confirmatory bias, problematic courtroom presentation, and reform efforts facing significant implementation obstacles." },
+      { letter: "B", text: "All forensic science methods are completely reliable and have perfect accuracy rates." },
+      { letter: "C", text: "DNA analysis has been conclusively proven unreliable and should never be used in courts." },
+      { letter: "D", text: "Judges always rigorously scrutinize forensic evidence using the highest scientific standards." },
+      { letter: "E", text: "Reform efforts have completely solved all problems with forensic science practices." }
+    ],
+    correctAnswer: "A",
+    explanation: "The passage discusses forensic science problems exposed by exonerations (paragraph 1), sources including lack of scientific training and confirmatory bias (paragraph 2), courtroom presentation issues (paragraph 3), reform strategies (paragraph 4), and implementation obstacles (paragraph 5). Choice A accurately captures these dimensions from problems through reform challenges.",
+    difficulty: "medium",
+    passageId: "rc-36-passage-4"
+  },
+
+  {
+    id: "rc-36-17",
+    type: "inference",
+    sectionType: "reading-comprehension",
+    stimulus: `[Same passage text]`,
+    questionStem: "The passage suggests that confirmatory bias in forensic examination can most reasonably be inferred to occur when",
+    answerChoices: [
+      { letter: "A", text: "Examiners have no information about investigators' theories" },
+      { letter: "B", text: "Examiners consciously or unconsciously interpret ambiguous evidence to support investigators' theories they know about" },
+      { letter: "C", text: "All evidence is completely unambiguous with only one possible interpretation" },
+      { letter: "D", text: "Forensic science operates entirely independently of all criminal investigations" },
+      { letter: "E", text: "Bias never affects any forensic examinations under any circumstances" }
+    ],
+    correctAnswer: "B",
+    explanation: "The passage describes confirmatory bias as occurring 'where examiners know investigators' theories and consciously or unconsciously interpret ambiguous evidence to support those theories,' directly describing this phenomenon in choice B.",
+    difficulty: "medium",
+    passageId: "rc-36-passage-4"
+  },
+
+  {
+    id: "rc-36-18",
+    type: "explicit-detail",
+    sectionType: "reading-comprehension",
+    stimulus: `[Same passage text]`,
+    questionStem: "According to the passage, the 2009 National Academy of Sciences report concluded that",
+    answerChoices: [
+      { letter: "A", text: "All forensic methods are completely reliable in all cases" },
+      { letter: "B", text: "Except for DNA analysis, no forensic method had been rigorously shown to reliably link evidence to a specific individual" },
+      { letter: "C", text: "Bite mark analysis is the most scientifically validated forensic discipline" },
+      { letter: "D", text: "Courts should never admit any expert testimony" },
+      { letter: "E", text: "Forensic science requires no empirical validation" }
+    ],
+    correctAnswer: "B",
+    explanation: "The passage states the NAS report 'concluded that except for DNA analysis, no forensic method had been rigorously shown to reliably and accurately link evidence to a specific individual or source.' This directly corresponds to choice B.",
+    difficulty: "easy",
+    passageId: "rc-36-passage-4"
+  },
+
+  {
+    id: "rc-36-19",
+    type: "function",
+    sectionType: "reading-comprehension",
+    stimulus: `[Same passage text]`,
+    questionStem: "The author's discussion of the CSI effect in paragraph 3 primarily serves to",
+    answerChoices: [
+      { letter: "A", text: "illustrate how public expectations from television may amplify juries' credence of forensic testimony despite its limitations" },
+      { letter: "B", text: "prove that all crime television shows are completely accurate" },
+      { letter: "C", text: "demonstrate that juries always evaluate forensic evidence with perfect scientific rigor" },
+      { letter: "D", text: "argue that television should be prohibited from depicting forensic science" },
+      { letter: "E", text: "show that the CSI effect has no influence on jury decision-making" }
+    ],
+    correctAnswer: "A",
+    explanation: "The passage states 'The CSI effect—public expectations shaped by crime television shows portraying forensic science as infallible—may amplify juries' credence of forensic testimony despite its actual limitations.' This illustrates the amplification effect on jury credence in choice A.",
+    difficulty: "medium",
+    passageId: "rc-36-passage-4"
+  },
+
+  {
+    id: "rc-36-20",
+    type: "author-attitude",
+    sectionType: "reading-comprehension",
+    stimulus: `[Same passage text]`,
+    questionStem: "The author's attitude toward the prospects for forensic science reform can most accurately be described as",
+    answerChoices: [
+      { letter: "A", text: "complete confidence that all reforms will be immediately and easily implemented" },
+      { letter: "B", text: "recognition of reform needs while expressing uncertainty about whether institutional obstacles and adversarial incentives will be overcome" },
+      { letter: "C", text: "conviction that reform is completely impossible under all circumstances" },
+      { letter: "D", text: "indifference to whether forensic science practices improve" },
+      { letter: "E", text: "certainty that current forensic methods are already perfect and need no changes" }
+    ],
+    correctAnswer: "B",
+    explanation: "The passage discusses various reform efforts (paragraph 4) but emphasizes 'significant obstacles' including institutional inertia, resource constraints, and political pressures (paragraph 5), concluding with the question 'whether legal institutions can adapt...or whether institutional inertia and adversarial incentives will perpetuate reliance' on inadequate methods. This recognition of needs with uncertainty about success matches choice B.",
+    difficulty: "medium",
+    passageId: "rc-36-passage-4"
+  }
+];

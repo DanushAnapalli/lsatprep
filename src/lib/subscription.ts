@@ -32,8 +32,8 @@ export interface TierLimits {
 // Tier limit configurations
 export const TIER_LIMITS: Record<SubscriptionTier, TierLimits> = {
   free: {
-    lrSetsAllowed: 1,
-    rcSetsAllowed: 1,
+    lrSetsAllowed: 3,
+    rcSetsAllowed: 3,
     fullAnalytics: false,
     advancedReview: false,
     argumentMapping: false,

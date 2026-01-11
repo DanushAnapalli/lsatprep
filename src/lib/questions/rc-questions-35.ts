@@ -1,0 +1,424 @@
+import { Question } from "../lsat-types";
+
+export const rcQuestionsSet35: Question[] = [
+  // Passage 1: Colonialism and Economic Development
+  {
+    id: "rc-35-1",
+    type: "main-point",
+    sectionType: "reading-comprehension",
+    stimulus: `The relationship between colonial rule and contemporary economic development remains intensely debated among historians and economists. Some scholars argue that European colonialism laid institutional foundations—property rights, legal systems, bureaucratic structures—that facilitated subsequent economic growth in former colonies. Others contend that colonialism's extractive character, designed to benefit metropolitan powers rather than local populations, created persistent underdevelopment that postcolonial states still struggle to overcome. This debate extends beyond historical interpretation to contemporary policy: if colonial institutions promoted development, postcolonial states might benefit from maintaining or strengthening them; if colonialism fundamentally distorted development trajectories, different institutional models may better serve formerly colonized societies' needs.
+
+The institutional legacy thesis emphasizes how colonial powers transplanted legal and administrative systems to their colonies, creating governance structures that outlasted formal colonial rule. British colonies, for instance, typically inherited common law systems, parliamentary institutions, and civil service traditions that some scholars credit with promoting economic development through protection of property rights, contract enforcement, and constraints on arbitrary governmental power. Settler colonies where Europeans constituted significant populations allegedly received particularly beneficial institutions: colonial powers created representative governments and secure property rights to attract settlers, establishing foundations for subsequent prosperity. By contrast, extraction colonies oriented toward resource exploitation rather than settlement received weaker institutions focused on resource extraction rather than broad-based development, creating persistent institutional handicaps.
+
+However, critics challenge both the empirical claims and normative implications of this institutional legacy argument. Empirically, they note that many former colonies with ostensibly beneficial institutional legacies remain poor, while some colonies with extractive histories have achieved rapid development—suggesting institutional inheritance explains less variation in outcomes than legacy theorists claim. Moreover, the extraction-settlement distinction oversimplifies colonial diversity: "settler colonies" often violently dispossessed indigenous populations and created racially hierarchical systems benefiting European settlers while exploiting or eliminating indigenous peoples—hardly benign institutional foundations. Crediting colonialism with beneficial institutional development obscures how colonial institutions served metropolitan interests rather than local welfare, creating extractive systems whose contemporary legacies include inequality, ethnic tensions rooted in colonial divide-and-rule strategies, and economic structures oriented toward primary commodity export rather than diversified development.
+
+Furthermore, the legacy argument risks teleological reasoning: observing that successful former colonies share certain institutional features does not establish that those features caused success rather than resulting from other factors or emerging after decolonization rather than during colonial rule. Some scholars contend that colonial economies' integration into global capitalism as peripheral commodity suppliers fundamentally shaped development trajectories: specialization in primary exports created path dependencies where comparative advantage in raw materials discouraged industrialization, while terms of trade deteriorated over time as primary commodity prices declined relative to manufactured goods. This structural position within the international economy, rather than domestic institutional characteristics, may better explain persistent underdevelopment.
+
+Recent scholarship emphasizes heterogeneity in colonial experiences and postcolonial trajectories, resisting sweeping generalizations about colonialism's economic impact. Colonial rule varied enormously across empires, regions, and time periods: British indirect rule through indigenous authorities differed from French assimilation policies; nineteenth-century "scramble for Africa" partition differed from earlier mercantilist colonization of the Americas; settler colonialism's demographic transformation contrasted with administrative colonialism's smaller European presence. Postcolonial development outcomes likewise varied: some former colonies achieved sustained growth while others stagnated, with variation reflecting postcolonial governance quality, resource endowments, Cold War geopolitics, and global economic conditions as much as colonial legacies. Understanding colonialism's economic impacts requires attention to these specificities rather than universal claims about colonial institutions' beneficial or deleterious effects, acknowledging how particular colonial experiences interacted with particular postcolonial circumstances to produce diverse developmental trajectories that resist simple causal attribution to colonial rule per se.`,
+    questionStem: "Which one of the following most accurately expresses the main point of the passage?",
+    answerChoices: [
+      { letter: "A", text: "Debates about colonialism's economic impacts involve contested claims about institutional legacies, with critics challenging both empirical evidence and normative implications while recent scholarship emphasizes heterogeneity over sweeping generalizations." },
+      { letter: "B", text: "All scholars agree that European colonialism uniformly promoted economic development in all former colonies." },
+      { letter: "C", text: "Colonial institutions had absolutely no influence on postcolonial economic development trajectories." },
+      { letter: "D", text: "The distinction between settler and extraction colonies perfectly explains all variation in postcolonial development outcomes." },
+      { letter: "E", text: "Former colonies' economic performance depends solely on their current policies with no relationship to colonial experiences." }
+    ],
+    correctAnswer: "A",
+    explanation: "The passage presents institutional legacy arguments (paragraph 2), empirical and normative critiques (paragraph 3), alternative structural explanations (paragraph 4), and emphasizes heterogeneity requiring attention to specificities (paragraph 5). Choice A accurately captures these contested claims and move toward nuanced analysis over generalizations.",
+    difficulty: "medium",
+    passageId: "rc-35-passage-1"
+  },
+
+  {
+    id: "rc-35-2",
+    type: "inference",
+    sectionType: "reading-comprehension",
+    stimulus: `[Same passage text]`,
+    questionStem: "Based on the passage, proponents of the institutional legacy thesis would most likely argue that",
+    answerChoices: [
+      { letter: "A", text: "Colonial institutions had no relationship to subsequent economic outcomes" },
+      { letter: "B", text: "Settler colonies received particularly beneficial institutions including representative government and secure property rights" },
+      { letter: "C", text: "All forms of colonialism were identical in their institutional impacts" },
+      { letter: "D", text: "Indigenous populations always benefited equally from colonial institutions" },
+      { letter: "E", text: "Postcolonial policies are irrelevant to development outcomes" }
+    ],
+    correctAnswer: "B",
+    explanation: "The passage states legacy proponents claim 'Settler colonies where Europeans constituted significant populations allegedly received particularly beneficial institutions: colonial powers created representative governments and secure property rights to attract settlers.' This describes their argument in choice B.",
+    difficulty: "medium",
+    passageId: "rc-35-passage-1"
+  },
+
+  {
+    id: "rc-35-3",
+    type: "explicit-detail",
+    sectionType: "reading-comprehension",
+    stimulus: `[Same passage text]`,
+    questionStem: "According to the passage, critics of the institutional legacy argument contend that",
+    answerChoices: [
+      { letter: "A", text: "All former colonies with beneficial institutional legacies have achieved rapid development" },
+      { letter: "B", text: "Many former colonies with ostensibly beneficial institutional legacies remain poor while some with extractive histories achieved rapid development" },
+      { letter: "C", text: "Colonial institutions always perfectly served local welfare rather than metropolitan interests" },
+      { letter: "D", text: "The extraction-settlement distinction captures all relevant variation in colonial experiences" },
+      { letter: "E", text: "Institutional inheritance fully explains all variation in postcolonial development outcomes" }
+    ],
+    correctAnswer: "B",
+    explanation: "The passage states critics 'note that many former colonies with ostensibly beneficial institutional legacies remain poor, while some colonies with extractive histories have achieved rapid development,' directly describing their empirical challenge in choice B.",
+    difficulty: "easy",
+    passageId: "rc-35-passage-1"
+  },
+
+  {
+    id: "rc-35-4",
+    type: "function",
+    sectionType: "reading-comprehension",
+    stimulus: `[Same passage text]`,
+    questionStem: "The author's discussion of path dependencies in paragraph 4 primarily serves to",
+    answerChoices: [
+      { letter: "A", text: "illustrate an alternative structural explanation for underdevelopment based on integration into global capitalism as peripheral commodity suppliers" },
+      { letter: "B", text: "prove that all former colonies specialized in identical exports" },
+      { letter: "C", text: "demonstrate that domestic institutions are always irrelevant to development" },
+      { letter: "D", text: "argue that terms of trade never affect economic outcomes" },
+      { letter: "E", text: "show that industrialization is impossible for any developing country" }
+    ],
+    correctAnswer: "A",
+    explanation: "The passage presents path dependencies as part of scholars' contention that 'colonial economies' integration into global capitalism as peripheral commodity suppliers fundamentally shaped development trajectories,' offering this as an alternative to institutional explanations. This illustrates the structural alternative in choice A.",
+    difficulty: "medium",
+    passageId: "rc-35-passage-1"
+  },
+
+  {
+    id: "rc-35-5",
+    type: "author-attitude",
+    sectionType: "reading-comprehension",
+    stimulus: `[Same passage text]`,
+    questionStem: "The author's attitude toward sweeping generalizations about colonialism's economic impact can most accurately be described as",
+    answerChoices: [
+      { letter: "A", text: "strong endorsement of universal claims about colonial institutions' effects" },
+      { letter: "B", text: "skeptical preference for attention to heterogeneity and specificities over broad generalizations" },
+      { letter: "C", text: "complete certainty that colonialism had identical effects in all contexts" },
+      { letter: "D", text: "indifference to whether colonialism affected economic development" },
+      { letter: "E", text: "conviction that colonial experiences were completely uniform across all regions" }
+    ],
+    correctAnswer: "B",
+    explanation: "The final paragraph emphasizes that 'Understanding colonialism's economic impacts requires attention to these specificities rather than universal claims' and that outcomes 'resist simple causal attribution to colonial rule per se.' This skepticism of generalizations favoring nuanced analysis matches choice B.",
+    difficulty: "medium",
+    passageId: "rc-35-passage-1"
+  },
+
+  // Continue with 15 more questions across 3 additional passages...
+  // Creating complete high-quality content for remaining passages
+
+  // Passage 2: Decolonization and National Independence Movements
+  {
+    id: "rc-35-6",
+    type: "main-point",
+    sectionType: "reading-comprehension",
+    stimulus: `The wave of decolonization following World War II transformed the international system, as dozens of new states achieved independence from European colonial powers between 1945 and 1975. This process unfolded through diverse pathways: negotiated transitions in British colonies like India and Ghana, protracted independence wars in French Algeria and Portuguese Mozambique, and rapid decolonization following colonial powers' post-war exhaustion. The anticolonial movements that drove decolonization combined nationalism, appeals to self-determination principles enshrined in the UN Charter, and strategic exploitation of Cold War rivalries as superpowers competed for influence in the decolonizing world. Understanding this transformation requires examining both metropolitan decisions to relinquish formal empire and the strategies through which colonized peoples achieved independence.
+
+Multiple factors contributed to European powers' retreat from empire after centuries of colonial expansion. World War II devastated European economies and exposed contradictions between fighting fascism abroad while maintaining colonial subjugation; the war also demonstrated colonized peoples' military contributions while raising expectations for postwar political change. The emergence of the United States and Soviet Union as superpowers, both rhetorically opposed to European colonialism, created international pressure for decolonization. Economic calculations shifted as the costs of maintaining colonial control—particularly suppressing armed resistance—escalated while the economic benefits of formal empire declined given possibilities for informal influence through trade and investment without administrative costs. Additionally, domestic political changes within European countries, including Labour Party electoral victory in Britain and evolving French attitudes toward empire, created metropolitan constituencies supporting decolonization.
+
+However, attributing decolonization primarily to metropolitan decisions risks obscuring colonized peoples' agency in forcing or negotiating independence. Nationalist movements mobilized diverse constituencies—educated elites, peasant populations, urban workers—around independence demands, employing strategies ranging from non-violent civil disobedience to armed insurgency. The Indian National Congress's mass mobilization under Gandhi and Nehru demonstrated how sustained non-violent resistance could make colonial rule ungovernable; the Algerian FLN's guerrilla warfare showed how military pressure could exhaust French will to maintain control despite technical military superiority. These movements framed independence as decolonization—ending political subordination and foreign control—while also pursuing nation-building projects creating unified national identities and political communities from colonially-defined territorial units that often encompassed diverse ethnic, linguistic, and religious groups.
+
+The transition from colonial rule to independent statehood proved tremendously challenging, with many newly independent states facing political instability, economic difficulties, and violent conflicts. Colonial boundaries, drawn without regard for preexisting political communities or ethnic distributions, created states encompassing divided populations whose unity as nations remained contested. The colonial period had trained few indigenous people for administrative or technical positions, creating capacity deficits that hindered state-building. Economic structures oriented toward commodity export to metropolitan markets left new states vulnerable to price fluctuations and dependent on former colonial powers for markets, capital, and technology. Cold War dynamics often exacerbated instability as superpowers supported client regimes or armed opposition movements, while military coup leaders frequently justified seizures of power as necessary to overcome postcolonial governmental failures.
+
+Contemporary debates about decolonization's legacy revolve around whether formal independence achieved genuine decolonization or merely replaced explicit colonial administration with neocolonial economic subordination and political influence. Critics note that many former colonies remain economically dependent on former colonial powers or Western institutions like the IMF and World Bank, suggesting that formal sovereignty coexists with substantive constraints on autonomous development. Continued presence of former colonial languages, educational systems, and cultural norms indicates incomplete cultural decolonization, while international economic structures arguably perpetuate colonial-era hierarchies between metropolitan cores and peripheral commodity suppliers. Defenders counter that political independence created possibilities for autonomous development and global participation unavailable under colonial rule, noting successful postcolonial development in some former colonies and the expansion of South-South cooperation among developing countries. They argue that attributing all postcolonial difficulties to neocolonialism denies postcolonial states' agency and obscures how postcolonial governance failures, corruption, or conflict reflect choices by postcolonial leaders rather than inevitable colonial legacies. The debate reflects deeper questions about how completely societies can transform through political change alone versus how deeply historical structures constrain contemporary possibilities.`,
+    questionStem: "Which one of the following most accurately expresses the main point of the passage?",
+    answerChoices: [
+      { letter: "A", text: "Decolonization involved both metropolitan factors and colonized peoples' agency, created new states facing substantial challenges, and generated ongoing debates about whether formal independence achieved genuine decolonization or merely masked neocolonial subordination." },
+      { letter: "B", text: "European powers voluntarily granted independence to all colonies with no pressure from anticolonial movements." },
+      { letter: "C", text: "All newly independent states immediately achieved complete political stability and economic prosperity." },
+      { letter: "D", text: "Decolonization was entirely completed by 1975 with no remaining colonial influences anywhere." },
+      { letter: "E", text: "Postcolonial difficulties result solely from colonial legacies with no contribution from postcolonial governance." }
+    ],
+    correctAnswer: "A",
+    explanation: "The passage discusses metropolitan and agency factors (paragraphs 2-3), postcolonial challenges (paragraph 4), and debates about decolonization's completeness (paragraph 5). Choice A accurately captures this trajectory from decolonization process through challenges to contested legacies.",
+    difficulty: "medium",
+    passageId: "rc-35-passage-2"
+  },
+
+  // Questions 7-10 for passage 2
+  {
+    id: "rc-35-7",
+    type: "inference",
+    sectionType: "reading-comprehension",
+    stimulus: `[Same passage text]`,
+    questionStem: "The passage suggests that Cold War dynamics affected postcolonial states by",
+    answerChoices: [
+      { letter: "A", text: "Completely eliminating all political instability through superpower support" },
+      { letter: "B", text: "Having no influence whatsoever on new states' development" },
+      { letter: "C", text: "Often exacerbating instability as superpowers supported client regimes or armed opposition movements" },
+      { letter: "D", text: "Guaranteeing democratic governance in all former colonies" },
+      { letter: "E", text: "Preventing all foreign investment in newly independent countries" }
+    ],
+    correctAnswer: "C",
+    explanation: "The passage states 'Cold War dynamics often exacerbated instability as superpowers supported client regimes or armed opposition movements,' directly describing this negative influence in choice C.",
+    difficulty: "medium",
+    passageId: "rc-35-passage-2"
+  },
+
+  {
+    id: "rc-35-8",
+    type: "explicit-detail",
+    sectionType: "reading-comprehension",
+    stimulus: `[Same passage text]`,
+    questionStem: "According to the passage, nationalist movements employed which of the following strategies?",
+    answerChoices: [
+      { letter: "A", text: "Exclusively violent military confrontation in all cases" },
+      { letter: "B", text: "Strategies ranging from non-violent civil disobedience to armed insurgency" },
+      { letter: "C", text: "Only diplomatic negotiation without any popular mobilization" },
+      { letter: "D", text: "Purely economic boycotts with no political demands" },
+      { letter: "E", text: "Complete reliance on metropolitan powers to voluntarily grant independence" }
+    ],
+    correctAnswer: "B",
+    explanation: "The passage states nationalist movements employed 'strategies ranging from non-violent civil disobedience to armed insurgency,' then provides examples of both approaches. This directly corresponds to choice B.",
+    difficulty: "easy",
+    passageId: "rc-35-passage-2"
+  },
+
+  {
+    id: "rc-35-9",
+    type: "function",
+    sectionType: "reading-comprehension",
+    stimulus: `[Same passage text]`,
+    questionStem: "The author's discussion of colonial boundaries in paragraph 4 primarily serves to",
+    answerChoices: [
+      { letter: "A", text: "illustrate challenges facing newly independent states including encompassing divided populations whose national unity remained contested" },
+      { letter: "B", text: "prove that all colonial boundaries were drawn with perfect attention to ethnic distributions" },
+      { letter: "C", text: "demonstrate that postcolonial states never faced any territorial disputes" },
+      { letter: "D", text: "argue that new states should have immediately redrawn all borders" },
+      { letter: "E", text: "show that ethnic diversity never creates political challenges" }
+    ],
+    correctAnswer: "A",
+    explanation: "The passage states 'Colonial boundaries, drawn without regard for preexisting political communities or ethnic distributions, created states encompassing divided populations whose unity as nations remained contested,' presenting this as a challenge. This illustrates the difficulty in choice A.",
+    difficulty: "medium",
+    passageId: "rc-35-passage-2"
+  },
+
+  {
+    id: "rc-35-10",
+    type: "author-attitude",
+    sectionType: "reading-comprehension",
+    stimulus: `[Same passage text]`,
+    questionStem: "The author's attitude toward the neocolonialism versus genuine independence debate can most accurately be described as",
+    answerChoices: [
+      { letter: "A", text: "definitive endorsement of the neocolonialism interpretation" },
+      { letter: "B", text: "complete rejection of any colonial influence on postcolonial states" },
+      { letter: "C", text: "balanced presentation of critics' neocolonialism arguments and defenders' genuine change arguments without clear resolution" },
+      { letter: "D", text: "indifference to whether formal independence achieved substantive change" },
+      { letter: "E", text: "certainty that all postcolonial problems result entirely from neocolonialism" }
+    ],
+    correctAnswer: "C",
+    explanation: "The passage presents both critics' view that formal independence masks neocolonial subordination and defenders' view that independence created genuine possibilities, concluding with questions about historical constraints versus transformation. This balanced presentation characterizes the author's attitude.",
+    difficulty: "medium",
+    passageId: "rc-35-passage-2"
+  },
+
+  // Passage 3: Settler Colonialism and Indigenous Dispossession
+  {
+    id: "rc-35-11",
+    type: "main-point",
+    sectionType: "reading-comprehension",
+    stimulus: `Settler colonialism represents a distinct form of colonialism characterized by European settlement and the displacement, elimination, or assimilation of indigenous populations. Unlike extraction colonialism focused on resource exploitation through indigenous labor, settler colonialism sought to replace indigenous populations with settler societies, creating demographic transformations that made colonization permanent rather than temporary. The Americas, Australia, New Zealand, and southern Africa experienced varying forms of settler colonialism, with differing outcomes for indigenous peoples ranging from near-complete demographic collapse and territorial dispossession in the United States and Australia to demographic persistence and complex race relations in Latin America and southern Africa. Understanding settler colonialism requires examining not only initial conquest and settlement but also ongoing structures of indigenous dispossession and exclusion that persist beyond formal decolonization.
+
+The logic of elimination proved central to settler colonial projects. Settlers required indigenous land for agriculture, ranching, mining, and settlement but viewed indigenous peoples as obstacles rather than potential labor forces. Various mechanisms facilitated indigenous elimination: warfare and massacre, disease introduction (sometimes deliberate), forced removal to marginal lands or reservations, and assimilation policies designed to destroy indigenous cultures and identities. The United States' removal of southeastern tribes to Oklahoma, Australian policies separating Aboriginal children from families, and Canadian residential schools exemplify how settler states systematically attacked indigenous societies' continuity. However, "elimination" did not always mean physical extermination—assimilation into settler society through cultural destruction could achieve settler colonial goals of removing indigenous peoples as distinct political communities with territorial claims.
+
+Property regimes played crucial roles in legitimating indigenous dispossession. Settlers frequently invoked legal doctrines denying indigenous land rights: terra nullius (empty land) doctrine claimed that indigenous peoples' non-European property systems meant land was legally vacant and available for appropriation; doctrines of discovery and conquest asserted European sovereignty over "discovered" territories; and liberal property theories requiring agricultural "improvement" deemed indigenous hunting and gathering insufficient to establish ownership. These legal frameworks enabled settlers to characterize appropriation as legitimate settlement rather than theft, while legal systems controlled by settler governments provided no effective recourse for dispossessed indigenous peoples. Even where treaties recognized indigenous rights, settler governments frequently violated treaty terms or reinterpreted them to permit further appropriation.
+
+The persistence of settler colonialism beyond formal decolonization distinguishes it from other colonial forms. While extraction colonies in Africa and Asia achieved independence creating postcolonial states governed by indigenous majorities, settler colonies' demographic transformations produced states controlled by settler populations with indigenous peoples constituting marginalized minorities. Australia, Canada, New Zealand, and the United States remain settler states where indigenous peoples struggle for rights, recognition, and redress within political systems dominated by settler populations. Decolonization in these contexts cannot follow the model of colonial power withdrawal returning sovereignty to indigenous majorities; rather, it requires addressing ongoing settler colonialism's structural legacies including dispossession, political marginalization, cultural suppression, and socioeconomic disadvantage that continue to affect indigenous communities.
+
+Contemporary indigenous movements demand recognition of inherent sovereignty, land rights, cultural preservation, and self-determination within settler states. These demands challenge settler states' legitimacy and authority by asserting indigenous peoples' status as distinct political communities with rights predating and persisting beyond settler state formation. Land claims seek return of or compensation for illegally appropriated territories, while sovereignty assertions claim rights to indigenous self-government and control over indigenous affairs. Cultural preservation demands include language revitalization, protection of sacred sites, and return of cultural artifacts held by museums. Settler states' responses range from limited recognition and compensatory payments to comprehensive treaty settlements recognizing indigenous rights, though critics note that even progressive responses often occur within legal frameworks defined by settler states rather than recognizing indigenous law and authority. The question remains whether meaningful decolonization can occur within existing settler state structures or requires more fundamental transformations that redistribute power and territory toward indigenous communities, potentially creating multinational states recognizing indigenous peoples' distinct political status rather than assimilating them as ethnic minorities within settler-dominated nations.`,
+    questionStem: "Which one of the following most accurately expresses the main point of the passage?",
+    answerChoices: [
+      { letter: "A", text: "Settler colonialism involved indigenous elimination through various mechanisms including warfare and assimilation, utilized property doctrines legitimating dispossession, persists beyond formal decolonization in ongoing structural legacies, and faces indigenous movements demanding recognition and redress." },
+      { letter: "B", text: "All settler colonies followed identical patterns with identical outcomes for indigenous populations." },
+      { letter: "C", text: "Settler colonialism ended completely with formal decolonization processes." },
+      { letter: "D", text: "Indigenous peoples have achieved complete equality and full sovereignty in all settler states." },
+      { letter: "E", text: "Property regimes played no role in indigenous dispossession." }
+    ],
+    correctAnswer: "A",
+    explanation: "The passage discusses elimination logic (paragraph 2), property regimes legitimating dispossession (paragraph 3), persistence beyond decolonization (paragraph 4), and contemporary indigenous movements (paragraph 5). Choice A accurately captures these dimensions of settler colonialism and its ongoing legacies.",
+    difficulty: "medium",
+    passageId: "rc-35-passage-3"
+  },
+
+  // Questions 12-15 for passage 3
+  {
+    id: "rc-35-12",
+    type: "inference",
+    sectionType: "reading-comprehension",
+    stimulus: `[Same passage text]`,
+    questionStem: "The passage suggests that 'elimination' in settler colonial contexts",
+    answerChoices: [
+      { letter: "A", text: "Always and only meant physical extermination of indigenous peoples" },
+      { letter: "B", text: "Could be achieved through cultural destruction and assimilation as well as physical elimination" },
+      { letter: "C", text: "Never involved any violence whatsoever" },
+      { letter: "D", text: "Had no relationship to land acquisition" },
+      { letter: "E", text: "Was universally rejected by all settler populations" }
+    ],
+    correctAnswer: "B",
+    explanation: "The passage states 'elimination did not always mean physical extermination—assimilation into settler society through cultural destruction could achieve settler colonial goals of removing indigenous peoples as distinct political communities,' indicating elimination could occur through cultural as well as physical means, as in choice B.",
+    difficulty: "medium",
+    passageId: "rc-35-passage-3"
+  },
+
+  {
+    id: "rc-35-13",
+    type: "explicit-detail",
+    sectionType: "reading-comprehension",
+    stimulus: `[Same passage text]`,
+    questionStem: "According to the passage, the terra nullius doctrine claimed that",
+    answerChoices: [
+      { letter: "A", text: "Indigenous peoples had superior property rights to all European claims" },
+      { letter: "B", text: "Indigenous peoples' non-European property systems meant land was legally vacant and available for appropriation" },
+      { letter: "C", text: "All land belonged to indigenous peoples in perpetuity" },
+      { letter: "D", text: "European settlement was illegal under all circumstances" },
+      { letter: "E", text: "Property rights were irrelevant to colonial settlement" }
+    ],
+    correctAnswer: "B",
+    explanation: "The passage states 'terra nullius (empty land) doctrine claimed that indigenous peoples' non-European property systems meant land was legally vacant and available for appropriation,' directly describing this doctrine in choice B.",
+    difficulty: "easy",
+    passageId: "rc-35-passage-3"
+  },
+
+  {
+    id: "rc-35-14",
+    type: "function",
+    sectionType: "reading-comprehension",
+    stimulus: `[Same passage text]`,
+    questionStem: "The author's comparison between decolonization in extraction colonies and settler colonies in paragraph 4 primarily serves to",
+    answerChoices: [
+      { letter: "A", text: "illustrate why decolonization in settler colonies cannot follow the same model as extraction colonies due to demographic transformations creating settler majorities" },
+      { letter: "B", text: "prove that all colonial forms were identical in structure" },
+      { letter: "C", text: "demonstrate that indigenous peoples never achieved political power anywhere" },
+      { letter: "D", text: "argue that settler colonies decolonized more successfully than extraction colonies" },
+      { letter: "E", text: "show that demographic composition is irrelevant to decolonization possibilities" }
+    ],
+    correctAnswer: "A",
+    explanation: "The passage contrasts extraction colonies achieving 'independence creating postcolonial states governed by indigenous majorities' with settler colonies where 'demographic transformations produced states controlled by settler populations,' noting decolonization 'cannot follow the model of colonial power withdrawal.' This illustrates the different decolonization challenge in choice A.",
+    difficulty: "medium",
+    passageId: "rc-35-passage-3"
+  },
+
+  {
+    id: "rc-35-15",
+    type: "author-attitude",
+    sectionType: "reading-comprehension",
+    stimulus: `[Same passage text]`,
+    questionStem: "The author's attitude toward the question of whether meaningful decolonization can occur within existing settler state structures can most accurately be described as",
+    answerChoices: [
+      { letter: "A", text: "certain that current structures adequately address all indigenous concerns" },
+      { letter: "B", text: "posing the question without definitive resolution regarding whether existing structures suffice or fundamental transformations are required" },
+      { letter: "C", text: "complete conviction that decolonization is impossible" },
+      { letter: "D", text: "indifference to indigenous peoples' political status" },
+      { letter: "E", text: "unqualified endorsement of assimilating indigenous peoples as ethnic minorities" }
+    ],
+    correctAnswer: "B",
+    explanation: "The passage concludes by stating 'The question remains whether meaningful decolonization can occur within existing settler state structures or requires more fundamental transformations,' posing this as an open question rather than providing definitive answer. This questioning approach matches choice B.",
+    difficulty: "medium",
+    passageId: "rc-35-passage-3"
+  },
+
+  // Passage 4: Historiography of Empire
+  {
+    id: "rc-35-16",
+    type: "main-point",
+    sectionType: "reading-comprehension",
+    stimulus: `The historiography of European empires has undergone dramatic transformations over the past century, reflecting changing methodological approaches, political contexts, and ethical perspectives on colonialism. Early twentieth-century imperial history, written largely by historians from colonizing powers, often portrayed empires as civilizing missions bringing progress, order, and modernity to backward peoples—perspectives that legitimated colonial rule by depicting it as beneficial for colonized populations. Nationalist histories emerging with decolonization inverted these narratives, portraying colonialism as exploitative domination and celebrating anticolonial resistance, but often retained colonizer-colonized binaries and state-centered frameworks. More recent scholarship has moved beyond both celebratory and nationalist paradigms toward approaches emphasizing complexity, contingency, and the experiences of colonized peoples as active agents rather than passive victims or grateful beneficiaries.
+
+The New Imperial History that emerged in the 1980s challenged earlier approaches' Eurocentrism and metropolitan focus. Rather than examining empires primarily from metropolitan perspectives as projections of European power abroad, scholars turned attention to colonial societies' internal dynamics, relationships among colonized populations, and colonized peoples' role in shaping colonial systems. This "view from below" revealed how colonial rule depended on indigenous collaboration and intermediaries, how colonized peoples negotiated, resisted, and appropriated aspects of colonial authority, and how colonial ideologies and practices were contested and unstable rather than monolithic. The new imperial history also emphasized colonialism's reciprocal influences on metropolitan societies: how colonial encounters shaped European identities, race and gender ideologies, cultural production, and political institutions, making empire integral to rather than peripheral to European history.
+
+Postcolonial theory contributed additional conceptual tools for analyzing colonial power and knowledge production. Edward Said's Orientalism demonstrated how Western scholarly and artistic representations of "the Orient" constructed the non-Western world as backward, despotic, and feminine, legitimating Western dominance while obscuring actual diversity and historical change. This critique of colonial discourse highlighted how knowledge systems themselves constituted forms of colonial power: scientific racism, anthropological categorizations, and developmental hierarchies were not neutral descriptions but instruments of domination that shaped colonial policies and indigenous subjects' self-understandings. Scholars applying these insights examined how colonial archives reflect power structures by preserving certain voices while silencing others, how colonial categories like "tribe" or "caste" reified fluid social formations, and how colonial knowledge production continues to shape postcolonial understanding.
+
+However, postcolonial approaches have generated their own critiques. Some historians worry that excessive focus on discourse and representation neglects material realities of colonial exploitation, violence, and economic extraction—that analyzing how colonialism was represented risks displacing attention from what it actually did. The emphasis on hybridity, negotiation, and indigenous agency, while correcting earlier portrayals of passive victimhood, may understate colonial power's coercive character and structural constraints limiting colonized peoples' choices. Furthermore, postcolonial theory's often abstract theoretical language and metropolitan academic provenance raise questions about whether approaches developed largely in Western universities adequately engage with non-Western intellectual traditions or voices from the Global South.
+
+Recent scholarship has pursued multiple directions attempting to transcend these debates' limitations. Global history approaches situate European empires within broader patterns of cross-cultural encounter, migration, and exchange, examining imperial connections alongside other transregional networks and comparing European colonialism with other empires' patterns. Environmental history reveals how colonial resource extraction and ecological transformation had consequences extending far beyond political decolonization, while attention to disease, demography, and medicine illuminates colonialism's biological dimensions. Perhaps most significantly, scholars increasingly center indigenous and subaltern perspectives through oral histories, indigenous language sources, and collaboration with descendant communities, attempting to write histories that serve decolonization projects rather than merely documenting them. These approaches reflect recognition that how we narrate colonial pasts shapes contemporary politics: histories emphasizing colonial achievements versus exploitation, victimization versus agency, or rupture versus continuity have implications for contemporary debates about reparations, indigenous rights, immigration, and responsibility for addressing colonial legacies. The ongoing evolution of imperial historiography thus reflects not merely academic fashion but deeper struggles over how societies remember and reckon with colonial pasts.`,
+    questionStem: "Which one of the following most accurately expresses the main point of the passage?",
+    answerChoices: [
+      { letter: "A", text: "Imperial historiography evolved from celebratory narratives through nationalist inversions to new imperial history emphasizing complexity and agency, postcolonial theory analyzing discourse and knowledge, and recent approaches pursuing global, environmental, and indigenous-centered perspectives." },
+      { letter: "B", text: "All historians of empire have always agreed completely on how to interpret colonialism." },
+      { letter: "C", text: "Contemporary imperial history is identical to early twentieth-century approaches with no methodological changes." },
+      { letter: "D", text: "Postcolonial theory resolved all debates about colonial history definitively." },
+      { letter: "E", text: "How we narrate colonial pasts has no relationship to contemporary politics or debates." }
+    ],
+    correctAnswer: "A",
+    explanation: "The passage traces evolution from celebratory/nationalist approaches (paragraph 1), through new imperial history (paragraph 2) and postcolonial theory (paragraph 3), to critiques (paragraph 4) and recent multiple directions (paragraph 5). Choice A accurately captures this historiographical evolution and its various approaches.",
+    difficulty: "medium",
+    passageId: "rc-35-passage-4"
+  },
+
+  {
+    id: "rc-35-17",
+    type: "inference",
+    sectionType: "reading-comprehension",
+    stimulus: `[Same passage text]`,
+    questionStem: "Based on the passage, the New Imperial History's 'view from below' can most reasonably be inferred to have",
+    answerChoices: [
+      { letter: "A", text: "Ignored colonized peoples entirely" },
+      { letter: "B", text: "Revealed how colonial rule depended on indigenous collaboration and how colonized peoples negotiated and resisted colonial authority" },
+      { letter: "C", text: "Portrayed colonial systems as completely monolithic with no internal tensions" },
+      { letter: "D", text: "Focused exclusively on metropolitan perspectives" },
+      { letter: "E", text: "Denied that colonized peoples had any agency whatsoever" }
+    ],
+    correctAnswer: "B",
+    explanation: "The passage states the 'view from below' revealed how colonial rule depended on indigenous collaboration and intermediaries, how colonized peoples negotiated, resisted, and appropriated aspects of colonial authority,' describing these insights in choice B.",
+    difficulty: "medium",
+    passageId: "rc-35-passage-4"
+  },
+
+  {
+    id: "rc-35-18",
+    type: "explicit-detail",
+    sectionType: "reading-comprehension",
+    stimulus: `[Same passage text]`,
+    questionStem: "According to the passage, Edward Said's Orientalism demonstrated that",
+    answerChoices: [
+      { letter: "A", text: "Western representations of the Orient were completely accurate descriptions" },
+      { letter: "B", text: "Western representations constructed the non-Western world as backward and despotic, legitimating Western dominance" },
+      { letter: "C", text: "Knowledge systems have no relationship to colonial power" },
+      { letter: "D", text: "All Western scholarship about non-Western societies was completely objective" },
+      { letter: "E", text: "Colonial discourse had no influence on colonial policies" }
+    ],
+    correctAnswer: "B",
+    explanation: "The passage states 'Edward Said's Orientalism demonstrated how Western scholarly and artistic representations of the Orient constructed the non-Western world as backward, despotic, and feminine, legitimating Western dominance,' directly describing this in choice B.",
+    difficulty: "easy",
+    passageId: "rc-35-passage-4"
+  },
+
+  {
+    id: "rc-35-19",
+    type: "function",
+    sectionType: "reading-comprehension",
+    stimulus: `[Same passage text]`,
+    questionStem: "The author's discussion of critiques of postcolonial approaches in paragraph 4 primarily serves to",
+    answerChoices: [
+      { letter: "A", text: "illustrate concerns that focus on discourse may neglect material realities and that emphasis on agency may understate coercive constraints" },
+      { letter: "B", text: "prove that postcolonial theory has no value whatsoever" },
+      { letter: "C", text: "demonstrate that material exploitation never occurred" },
+      { letter: "D", text: "argue that colonial power was never coercive" },
+      { letter: "E", text: "show that all postcolonial scholars ignore indigenous voices" }
+    ],
+    correctAnswer: "A",
+    explanation: "The passage presents critiques that 'excessive focus on discourse and representation neglects material realities' and 'emphasis on hybridity, negotiation, and indigenous agency...may understate colonial power's coercive character,' illustrating these specific concerns in choice A.",
+    difficulty: "medium",
+    passageId: "rc-35-passage-4"
+  },
+
+  {
+    id: "rc-35-20",
+    type: "author-attitude",
+    sectionType: "reading-comprehension",
+    stimulus: `[Same passage text]`,
+    questionStem: "The author's attitude toward the relationship between historical narratives and contemporary politics can most accurately be described as",
+    answerChoices: [
+      { letter: "A", text: "conviction that historical narratives have no connection to contemporary debates" },
+      { letter: "B", text: "recognition that how we narrate colonial pasts shapes contemporary politics including debates about reparations and indigenous rights" },
+      { letter: "C", text: "certainty that only one correct historical narrative exists" },
+      { letter: "D", text: "indifference to whether historiography affects current political questions" },
+      { letter: "E", text: "belief that historians should ignore all contemporary political implications" }
+    ],
+    correctAnswer: "B",
+    explanation: "The passage concludes that 'how we narrate colonial pasts shapes contemporary politics: histories emphasizing colonial achievements versus exploitation...have implications for contemporary debates about reparations, indigenous rights, immigration.' This recognition of narrative-politics connection matches choice B.",
+    difficulty: "medium",
+    passageId: "rc-35-passage-4"
+  }
+];
