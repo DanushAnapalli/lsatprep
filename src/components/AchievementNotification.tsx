@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -71,55 +71,42 @@ export default function AchievementNotification({
   const router = useRouter();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isVisible, setIsVisible] = useState(true);
-  const [hasRendered, setHasRendered] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
 
-  console.log("[AchievementNotification] Rendering with achievementIds:", achievementIds);
-  console.log("[AchievementNotification] Current state - isVisible:", isVisible, "currentIndex:", currentIndex, "hasRendered:", hasRendered);
+  // Use ref to store onDismiss to avoid re-running useEffect on every render
+  const onDismissRef = useRef(onDismiss);
+  onDismissRef.current = onDismiss;
 
   const achievements = achievementIds
     .map((id) => ACHIEVEMENTS.find((a) => a.id === id))
     .filter((a): a is Achievement => a !== undefined);
 
-  console.log("[AchievementNotification] Found achievements:", achievements.map(a => a.id));
-
   const currentAchievement = achievements[currentIndex];
-  console.log("[AchievementNotification] currentAchievement:", currentAchievement?.id || "undefined");
 
-  // Mark component as rendered on mount
+  // Set mounted state after initial render to ensure animation triggers
   useEffect(() => {
-    console.log("[AchievementNotification] Mount effect - setting hasRendered to true");
-    setHasRendered(true);
+    setIsMounted(true);
   }, []);
 
+  // Handle auto-dismiss timer
   useEffect(() => {
-    console.log("[AchievementNotification] Timer useEffect triggered - currentAchievement:", currentAchievement?.id);
-    if (!currentAchievement) {
-      console.log("[AchievementNotification] No currentAchievement, calling onDismiss");
-      onDismiss();
+    if (!currentAchievement || !isMounted) {
       return;
     }
 
-    console.log("[AchievementNotification] Setting auto-dismiss timer for", autoDismissDelay, "ms");
     const timer = setTimeout(() => {
-      console.log("[AchievementNotification] Timer fired!");
       if (currentIndex < achievements.length - 1) {
-        console.log("[AchievementNotification] Moving to next achievement");
         setCurrentIndex((prev) => prev + 1);
       } else {
-        console.log("[AchievementNotification] Last achievement, setting isVisible to false");
         setIsVisible(false);
         setTimeout(() => {
-          console.log("[AchievementNotification] Calling onDismiss after exit animation");
-          onDismiss();
+          onDismissRef.current();
         }, 300);
       }
     }, autoDismissDelay);
 
-    return () => {
-      console.log("[AchievementNotification] Cleanup - clearing timer");
-      clearTimeout(timer);
-    };
-  }, [currentIndex, achievements.length, autoDismissDelay, onDismiss, currentAchievement]);
+    return () => clearTimeout(timer);
+  }, [currentIndex, achievements.length, autoDismissDelay, currentAchievement, isMounted]);
 
   const handleClick = () => {
     setIsVisible(false);
@@ -134,16 +121,13 @@ export default function AchievementNotification({
       setCurrentIndex((prev) => prev + 1);
     } else {
       setIsVisible(false);
-      setTimeout(onDismiss, 300);
+      setTimeout(() => onDismissRef.current(), 300);
     }
   };
 
   if (!currentAchievement) {
-    console.log("[AchievementNotification] Returning null - no currentAchievement");
     return null;
   }
-
-  console.log("[AchievementNotification] About to render notification for:", currentAchievement.id, "isVisible:", isVisible);
 
   const IconComponent = iconMap[currentAchievement.icon] || Trophy;
 
@@ -183,14 +167,15 @@ export default function AchievementNotification({
   const colors = categoryColors[currentAchievement.category] || categoryColors.practice;
 
   return (
-    <AnimatePresence>
-      {isVisible && (
+    <AnimatePresence mode="wait">
+      {isVisible && isMounted && (
         <motion.div
+          key={`achievement-${currentAchievement.id}`}
           initial={{ x: -400, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           exit={{ x: -400, opacity: 0 }}
           transition={{ type: "spring", damping: 25, stiffness: 300 }}
-          className="fixed left-4 top-1/2 -translate-y-1/2 z-50 cursor-pointer"
+          className="fixed left-4 top-1/2 -translate-y-1/2 z-[9999] cursor-pointer"
           onClick={handleClick}
         >
           <div
