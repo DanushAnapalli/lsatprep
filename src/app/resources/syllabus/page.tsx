@@ -10,6 +10,9 @@ import {
   Brain,
   FileText,
   CheckCircle,
+  AlertTriangle,
+  Calendar,
+  GraduationCap,
 } from "lucide-react";
 
 export default function SyllabusPage() {
@@ -17,8 +20,8 @@ export default function SyllabusPage() {
     <div className="min-h-screen bg-stone-100 dark:bg-stone-950">
       {/* Header */}
       <header className="border-b-2 border-stone-200 bg-white dark:border-stone-800 dark:bg-stone-900">
-        <div className="mx-auto flex max-w-4xl items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-4">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
+          <div className="flex items-center gap-3">
             <Link
               href="/menu"
               className="flex items-center gap-2 rounded-sm border-2 border-stone-200 bg-stone-50 px-3 py-2 text-sm font-medium text-stone-700 transition hover:border-[#1a365d] hover:bg-stone-100 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-300 dark:hover:border-amber-500 dark:hover:bg-stone-700"
@@ -27,212 +30,377 @@ export default function SyllabusPage() {
               <span>Menu</span>
             </Link>
           </div>
-          <Link href="/" className="flex items-center gap-2">
-            <Scale className="h-6 w-6 text-[#1a365d] dark:text-amber-400" />
-            <span className="font-serif text-xl font-bold text-[#1a365d] dark:text-amber-400">
-              LSATPrep
+          <div className="flex items-center gap-2">
+            <BookOpen className="h-5 w-5 text-[#1a365d] dark:text-amber-400" />
+            <span className="font-serif text-lg font-bold text-[#1a365d] dark:text-amber-400">
+              LSAT Syllabus
             </span>
+          </div>
+          <Link href="/" className="flex items-center gap-2">
+            <Scale className="h-5 w-5 text-[#1a365d] dark:text-amber-400" />
           </Link>
         </div>
       </header>
 
-      <main className="mx-auto max-w-4xl px-6 py-8">
-        <div className="mb-8">
-          <h1 className="mb-2 font-serif text-3xl font-bold text-stone-900 dark:text-stone-100">
-            LSAT Syllabus & Curriculum
-          </h1>
-          <p className="text-stone-600 dark:text-stone-400">
-            A comprehensive overview of the LSAT exam structure and content areas.
+      <main className="mx-auto max-w-7xl px-4 py-4">
+        {/* Quick Stats Row */}
+        <div className="mb-4 grid grid-cols-4 gap-2">
+          <div className="rounded-sm border-2 border-stone-200 bg-white p-3 text-center dark:border-stone-700 dark:bg-stone-900">
+            <div className="text-xl font-bold text-[#1a365d] dark:text-amber-400">2 hrs</div>
+            <div className="text-xs text-stone-500">Test Time</div>
+          </div>
+          <div className="rounded-sm border-2 border-stone-200 bg-white p-3 text-center dark:border-stone-700 dark:bg-stone-900">
+            <div className="text-xl font-bold text-[#1a365d] dark:text-amber-400">3</div>
+            <div className="text-xs text-stone-500">Sections</div>
+          </div>
+          <div className="rounded-sm border-2 border-stone-200 bg-white p-3 text-center dark:border-stone-700 dark:bg-stone-900">
+            <div className="text-xl font-bold text-[#1a365d] dark:text-amber-400">120-180</div>
+            <div className="text-xs text-stone-500">Score Range</div>
+          </div>
+          <div className="rounded-sm border-2 border-stone-200 bg-white p-3 text-center dark:border-stone-700 dark:bg-stone-900">
+            <div className="text-xl font-bold text-[#1a365d] dark:text-amber-400">~75</div>
+            <div className="text-xs text-stone-500">Questions</div>
+          </div>
+        </div>
+
+        {/* Main Dashboard Grid */}
+        <div className="grid gap-4 lg:grid-cols-3">
+          {/* Column 1: Logical Reasoning */}
+          <div className="space-y-3">
+            {/* LR Overview */}
+            <div className="rounded-sm border-2 border-purple-200 bg-white dark:border-purple-800 dark:bg-stone-900">
+              <div className="flex items-center gap-2 bg-purple-50 px-3 py-2 dark:bg-purple-900/20">
+                <Brain size={16} className="text-purple-600 dark:text-purple-400" />
+                <h2 className="font-semibold text-sm text-purple-700 dark:text-purple-300">Logical Reasoning (LR)</h2>
+              </div>
+              <div className="p-3 space-y-3">
+                {/* Quick Stats */}
+                <div className="grid grid-cols-3 gap-1 text-xs">
+                  <div className="rounded bg-purple-50 p-2 text-center dark:bg-purple-900/20">
+                    <div className="font-bold text-purple-700 dark:text-purple-400">~25</div>
+                    <div className="text-purple-600 dark:text-purple-500 text-[10px]">Questions</div>
+                  </div>
+                  <div className="rounded bg-purple-50 p-2 text-center dark:bg-purple-900/20">
+                    <div className="font-bold text-purple-700 dark:text-purple-400">35</div>
+                    <div className="text-purple-600 dark:text-purple-500 text-[10px]">Minutes</div>
+                  </div>
+                  <div className="rounded bg-purple-50 p-2 text-center dark:bg-purple-900/20">
+                    <div className="font-bold text-purple-700 dark:text-purple-400">~50%</div>
+                    <div className="text-purple-600 dark:text-purple-500 text-[10px]">of Score</div>
+                  </div>
+                </div>
+                <p className="text-[10px] text-stone-600 dark:text-stone-400">
+                  Tests ability to analyze, evaluate, and complete arguments. Each question presents a short passage followed by a question about the reasoning.
+                </p>
+              </div>
+            </div>
+
+            {/* LR Question Types */}
+            <div className="rounded-sm border-2 border-purple-200 bg-white dark:border-purple-800 dark:bg-stone-900">
+              <div className="flex items-center gap-2 bg-purple-50 px-3 py-2 dark:bg-purple-900/20">
+                <Target size={14} className="text-purple-600 dark:text-purple-400" />
+                <h3 className="font-semibold text-xs text-purple-700 dark:text-purple-300">LR Question Types</h3>
+              </div>
+              <div className="p-3">
+                <div className="grid grid-cols-2 gap-1 text-[10px] text-stone-600 dark:text-stone-400">
+                  <div className="flex items-center gap-1">
+                    <CheckCircle size={10} className="text-green-500 flex-shrink-0" />
+                    <span>Strengthen/Weaken</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <CheckCircle size={10} className="text-green-500 flex-shrink-0" />
+                    <span>Assumptions</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <CheckCircle size={10} className="text-green-500 flex-shrink-0" />
+                    <span>Flaw in Reasoning</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <CheckCircle size={10} className="text-green-500 flex-shrink-0" />
+                    <span>Method of Reasoning</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <CheckCircle size={10} className="text-green-500 flex-shrink-0" />
+                    <span>Main Point</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <CheckCircle size={10} className="text-green-500 flex-shrink-0" />
+                    <span>Inference/Must Be True</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <CheckCircle size={10} className="text-green-500 flex-shrink-0" />
+                    <span>Parallel Reasoning</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <CheckCircle size={10} className="text-green-500 flex-shrink-0" />
+                    <span>Point at Issue</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <CheckCircle size={10} className="text-green-500 flex-shrink-0" />
+                    <span>Principle</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <CheckCircle size={10} className="text-green-500 flex-shrink-0" />
+                    <span>Paradox/Resolve</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* LR High Priority */}
+            <div className="rounded-sm border border-green-200 bg-green-50 p-2 dark:border-green-800 dark:bg-green-900/20">
+              <div className="text-xs font-semibold text-green-700 dark:text-green-300 mb-1">High-Frequency LR</div>
+              <div className="text-[10px] text-green-600 dark:text-green-400 space-y-0.5">
+                <div>• Strengthen/Weaken (~25%)</div>
+                <div>• Flaw (~15%)</div>
+                <div>• Assumption (~15%)</div>
+                <div>• Inference (~15%)</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Column 2: Reading Comprehension */}
+          <div className="space-y-3">
+            {/* RC Overview */}
+            <div className="rounded-sm border-2 border-blue-200 bg-white dark:border-blue-800 dark:bg-stone-900">
+              <div className="flex items-center gap-2 bg-blue-50 px-3 py-2 dark:bg-blue-900/20">
+                <FileText size={16} className="text-blue-600 dark:text-blue-400" />
+                <h2 className="font-semibold text-sm text-blue-700 dark:text-blue-300">Reading Comprehension (RC)</h2>
+              </div>
+              <div className="p-3 space-y-3">
+                {/* Quick Stats */}
+                <div className="grid grid-cols-3 gap-1 text-xs">
+                  <div className="rounded bg-blue-50 p-2 text-center dark:bg-blue-900/20">
+                    <div className="font-bold text-blue-700 dark:text-blue-400">~27</div>
+                    <div className="text-blue-600 dark:text-blue-500 text-[10px]">Questions</div>
+                  </div>
+                  <div className="rounded bg-blue-50 p-2 text-center dark:bg-blue-900/20">
+                    <div className="font-bold text-blue-700 dark:text-blue-400">35</div>
+                    <div className="text-blue-600 dark:text-blue-500 text-[10px]">Minutes</div>
+                  </div>
+                  <div className="rounded bg-blue-50 p-2 text-center dark:bg-blue-900/20">
+                    <div className="font-bold text-blue-700 dark:text-blue-400">~25%</div>
+                    <div className="text-blue-600 dark:text-blue-500 text-[10px]">of Score</div>
+                  </div>
+                </div>
+                <p className="text-[10px] text-stone-600 dark:text-stone-400">
+                  Tests ability to read complex passages and answer questions about content, structure, and implications. Includes 4 passages with 5-8 questions each.
+                </p>
+              </div>
+            </div>
+
+            {/* RC Passage Topics */}
+            <div className="rounded-sm border-2 border-blue-200 bg-white dark:border-blue-800 dark:bg-stone-900">
+              <div className="flex items-center gap-2 bg-blue-50 px-3 py-2 dark:bg-blue-900/20">
+                <BookOpen size={14} className="text-blue-600 dark:text-blue-400" />
+                <h3 className="font-semibold text-xs text-blue-700 dark:text-blue-300">Passage Topics</h3>
+              </div>
+              <div className="p-3">
+                <div className="space-y-1 text-[10px] text-stone-600 dark:text-stone-400">
+                  <div className="flex items-center gap-1">
+                    <CheckCircle size={10} className="text-green-500 flex-shrink-0" />
+                    <span>Law and Legal Theory</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <CheckCircle size={10} className="text-green-500 flex-shrink-0" />
+                    <span>Natural Sciences</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <CheckCircle size={10} className="text-green-500 flex-shrink-0" />
+                    <span>Social Sciences</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <CheckCircle size={10} className="text-green-500 flex-shrink-0" />
+                    <span>Humanities/Arts</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <CheckCircle size={10} className="text-green-500 flex-shrink-0" />
+                    <span>Comparative Reading (dual passages)</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* RC Question Types */}
+            <div className="rounded-sm border-2 border-blue-200 bg-white dark:border-blue-800 dark:bg-stone-900">
+              <div className="flex items-center gap-2 bg-blue-50 px-3 py-2 dark:bg-blue-900/20">
+                <Target size={14} className="text-blue-600 dark:text-blue-400" />
+                <h3 className="font-semibold text-xs text-blue-700 dark:text-blue-300">RC Question Types</h3>
+              </div>
+              <div className="p-3">
+                <div className="grid grid-cols-2 gap-1 text-[10px] text-stone-600 dark:text-stone-400">
+                  <div className="flex items-center gap-1">
+                    <CheckCircle size={10} className="text-green-500 flex-shrink-0" />
+                    <span>Main Point/Purpose</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <CheckCircle size={10} className="text-green-500 flex-shrink-0" />
+                    <span>Author's Attitude</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <CheckCircle size={10} className="text-green-500 flex-shrink-0" />
+                    <span>Inference</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <CheckCircle size={10} className="text-green-500 flex-shrink-0" />
+                    <span>Specific Detail</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <CheckCircle size={10} className="text-green-500 flex-shrink-0" />
+                    <span>Function/Purpose</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <CheckCircle size={10} className="text-green-500 flex-shrink-0" />
+                    <span>Strengthen/Weaken</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <CheckCircle size={10} className="text-green-500 flex-shrink-0" />
+                    <span>Analogy</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <CheckCircle size={10} className="text-green-500 flex-shrink-0" />
+                    <span>Application</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Column 3: Study Plan & Important Info */}
+          <div className="space-y-3">
+            {/* Deprecated Logic Games Notice */}
+            <div className="rounded-sm border-2 border-amber-200 bg-white dark:border-amber-800 dark:bg-stone-900">
+              <div className="flex items-center gap-2 bg-amber-50 px-3 py-2 dark:bg-amber-900/20">
+                <AlertTriangle size={14} className="text-amber-600 dark:text-amber-400" />
+                <h3 className="font-semibold text-xs text-amber-700 dark:text-amber-300">Important Change</h3>
+              </div>
+              <div className="p-3 text-[10px] text-amber-700 dark:text-amber-400">
+                <p className="font-semibold mb-1">Logic Games Removed (Aug 2024)</p>
+                <p className="text-stone-600 dark:text-stone-400">
+                  The Analytical Reasoning section is no longer on the LSAT. It has been replaced with an additional Logical Reasoning section.
+                </p>
+              </div>
+            </div>
+
+            {/* Study Timeline */}
+            <div className="rounded-sm border-2 border-stone-200 bg-white dark:border-stone-700 dark:bg-stone-900">
+              <div className="flex items-center gap-2 bg-stone-100 px-3 py-2 dark:bg-stone-800">
+                <Calendar size={14} className="text-stone-600 dark:text-stone-400" />
+                <h3 className="font-semibold text-xs text-stone-700 dark:text-stone-300">Study Timeline</h3>
+              </div>
+              <div className="p-3 space-y-2">
+                <div className="flex gap-2">
+                  <div className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-[#1a365d] text-[10px] font-bold text-white dark:bg-amber-500 dark:text-stone-900">
+                    1
+                  </div>
+                  <div>
+                    <div className="text-xs font-semibold text-stone-700 dark:text-stone-300">Weeks 1-4: Foundation</div>
+                    <div className="text-[10px] text-stone-500">Learn fundamentals, study question types</div>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <div className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-[#1a365d] text-[10px] font-bold text-white dark:bg-amber-500 dark:text-stone-900">
+                    2
+                  </div>
+                  <div>
+                    <div className="text-xs font-semibold text-stone-700 dark:text-stone-300">Weeks 5-8: Practice</div>
+                    <div className="text-[10px] text-stone-500">Timed practice, focus on weaknesses</div>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <div className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-[#1a365d] text-[10px] font-bold text-white dark:bg-amber-500 dark:text-stone-900">
+                    3
+                  </div>
+                  <div>
+                    <div className="text-xs font-semibold text-stone-700 dark:text-stone-300">Weeks 9-12: Refinement</div>
+                    <div className="text-[10px] text-stone-500">Full practice tests, refine timing</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Score Breakdown */}
+            <div className="rounded-sm border-2 border-stone-200 bg-white dark:border-stone-700 dark:bg-stone-900">
+              <div className="flex items-center gap-2 bg-stone-100 px-3 py-2 dark:bg-stone-800">
+                <GraduationCap size={14} className="text-stone-600 dark:text-stone-400" />
+                <h3 className="font-semibold text-xs text-stone-700 dark:text-stone-300">Score Percentiles</h3>
+              </div>
+              <div className="p-3 grid grid-cols-2 gap-2 text-[10px]">
+                <div className="space-y-0.5">
+                  <div className="flex justify-between">
+                    <span className="text-stone-500">180</span>
+                    <span className="font-semibold text-green-600">99.9%</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-stone-500">170</span>
+                    <span className="font-semibold text-green-600">97.4%</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-stone-500">165</span>
+                    <span className="font-semibold text-amber-600">92%</span>
+                  </div>
+                </div>
+                <div className="space-y-0.5">
+                  <div className="flex justify-between">
+                    <span className="text-stone-500">160</span>
+                    <span className="font-semibold text-amber-600">80.4%</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-stone-500">155</span>
+                    <span className="font-semibold text-stone-600">63%</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-stone-500">150</span>
+                    <span className="font-semibold text-stone-600">44%</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Section Timing */}
+            <div className="rounded-sm border-2 border-stone-200 bg-white dark:border-stone-700 dark:bg-stone-900">
+              <div className="flex items-center gap-2 bg-stone-100 px-3 py-2 dark:bg-stone-800">
+                <Clock size={14} className="text-stone-600 dark:text-stone-400" />
+                <h3 className="font-semibold text-xs text-stone-700 dark:text-stone-300">Section Timing</h3>
+              </div>
+              <div className="p-3 space-y-1 text-[10px] text-stone-600 dark:text-stone-400">
+                <div className="flex justify-between">
+                  <span>LR Section</span>
+                  <span className="font-semibold">35 min (~1:24/Q)</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>RC Section</span>
+                  <span className="font-semibold">35 min (~8:45/passage)</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>LR Section 2</span>
+                  <span className="font-semibold">35 min (~1:24/Q)</span>
+                </div>
+                <div className="flex justify-between border-t border-stone-200 pt-1 dark:border-stone-700">
+                  <span className="font-semibold">Total</span>
+                  <span className="font-bold text-[#1a365d] dark:text-amber-400">~2 hours</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Key Focus Areas */}
+            <div className="rounded-sm border border-green-200 bg-green-50 p-2 dark:border-green-800 dark:bg-green-900/20">
+              <div className="text-xs font-semibold text-green-700 dark:text-green-300 mb-1">Key Focus Areas</div>
+              <div className="text-[10px] text-green-600 dark:text-green-400 space-y-0.5">
+                <div>• LR: Master Strengthen/Weaken/Flaw</div>
+                <div>• RC: Active reading + passage mapping</div>
+                <div>• Timing: Consistent practice under time</div>
+                <div>• Review: Learn from every mistake</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="mt-4 rounded-sm border-2 border-[#1a365d] bg-[#1a365d]/10 p-3 text-center dark:border-amber-500 dark:bg-amber-900/20">
+          <p className="text-xs font-medium text-[#1a365d] dark:text-amber-400">
+            Focus on high-frequency question types first. Quality practice beats quantity.
           </p>
-        </div>
-
-        {/* Overview Card */}
-        <div className="mb-8 rounded-sm border-2 border-stone-200 bg-white p-6 dark:border-stone-700 dark:bg-stone-900">
-          <h2 className="mb-4 flex items-center gap-2 font-serif text-xl font-bold text-stone-900 dark:text-stone-100">
-            <BookOpen className="text-[#1a365d] dark:text-amber-400" size={24} />
-            Exam Overview
-          </h2>
-          <div className="grid gap-4 md:grid-cols-3">
-            <div className="rounded-sm border border-stone-200 p-4 dark:border-stone-700">
-              <Clock className="mb-2 text-amber-500" size={20} />
-              <div className="text-2xl font-bold text-stone-900 dark:text-stone-100">2 hours</div>
-              <div className="text-sm text-stone-500">Total test time</div>
-            </div>
-            <div className="rounded-sm border border-stone-200 p-4 dark:border-stone-700">
-              <FileText className="mb-2 text-amber-500" size={20} />
-              <div className="text-2xl font-bold text-stone-900 dark:text-stone-100">3 sections</div>
-              <div className="text-sm text-stone-500">Scored sections</div>
-            </div>
-            <div className="rounded-sm border border-stone-200 p-4 dark:border-stone-700">
-              <Target className="mb-2 text-amber-500" size={20} />
-              <div className="text-2xl font-bold text-stone-900 dark:text-stone-100">120-180</div>
-              <div className="text-sm text-stone-500">Score range</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Sections */}
-        <div className="space-y-6">
-          {/* Logical Reasoning */}
-          <div className="rounded-sm border-2 border-stone-200 bg-white p-6 dark:border-stone-700 dark:bg-stone-900">
-            <h2 className="mb-4 flex items-center gap-2 font-serif text-xl font-bold text-stone-900 dark:text-stone-100">
-              <Brain className="text-[#1a365d] dark:text-amber-400" size={24} />
-              Logical Reasoning (LR)
-            </h2>
-            <div className="mb-4 flex flex-wrap gap-2">
-              <span className="rounded-sm bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
-                ~25 questions
-              </span>
-              <span className="rounded-sm bg-blue-100 px-2 py-1 text-xs font-semibold text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
-                35 minutes
-              </span>
-              <span className="rounded-sm bg-green-100 px-2 py-1 text-xs font-semibold text-green-700 dark:bg-green-900/30 dark:text-green-400">
-                ~50% of score
-              </span>
-            </div>
-            <p className="mb-4 text-stone-600 dark:text-stone-400">
-              Tests your ability to analyze, evaluate, and complete arguments. Each question presents a short passage followed by a question about the reasoning in that passage.
-            </p>
-            <div className="space-y-2">
-              <h3 className="font-semibold text-stone-900 dark:text-stone-100">Question Types:</h3>
-              <ul className="grid gap-2 md:grid-cols-2">
-                {[
-                  "Strengthen/Weaken",
-                  "Assumption (Necessary/Sufficient)",
-                  "Flaw in Reasoning",
-                  "Method of Reasoning",
-                  "Main Point/Conclusion",
-                  "Inference/Must Be True",
-                  "Parallel Reasoning",
-                  "Point at Issue/Disagreement",
-                  "Principle (Identify/Apply)",
-                  "Paradox/Resolve",
-                ].map((type) => (
-                  <li key={type} className="flex items-center gap-2 text-sm text-stone-600 dark:text-stone-400">
-                    <CheckCircle size={14} className="text-green-500" />
-                    {type}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-
-          {/* Reading Comprehension */}
-          <div className="rounded-sm border-2 border-stone-200 bg-white p-6 dark:border-stone-700 dark:bg-stone-900">
-            <h2 className="mb-4 flex items-center gap-2 font-serif text-xl font-bold text-stone-900 dark:text-stone-100">
-              <FileText className="text-[#1a365d] dark:text-amber-400" size={24} />
-              Reading Comprehension (RC)
-            </h2>
-            <div className="mb-4 flex flex-wrap gap-2">
-              <span className="rounded-sm bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
-                ~27 questions
-              </span>
-              <span className="rounded-sm bg-blue-100 px-2 py-1 text-xs font-semibold text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
-                35 minutes
-              </span>
-              <span className="rounded-sm bg-green-100 px-2 py-1 text-xs font-semibold text-green-700 dark:bg-green-900/30 dark:text-green-400">
-                ~25% of score
-              </span>
-            </div>
-            <p className="mb-4 text-stone-600 dark:text-stone-400">
-              Tests your ability to read complex passages and answer questions about their content, structure, and implications. Includes 4 passages with 5-8 questions each.
-            </p>
-            <div className="space-y-2">
-              <h3 className="font-semibold text-stone-900 dark:text-stone-100">Passage Topics:</h3>
-              <ul className="grid gap-2 md:grid-cols-2">
-                {[
-                  "Law and Legal Theory",
-                  "Natural Sciences",
-                  "Social Sciences",
-                  "Humanities/Arts",
-                  "Comparative Reading (dual passages)",
-                ].map((topic) => (
-                  <li key={topic} className="flex items-center gap-2 text-sm text-stone-600 dark:text-stone-400">
-                    <CheckCircle size={14} className="text-green-500" />
-                    {topic}
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div className="mt-4 space-y-2">
-              <h3 className="font-semibold text-stone-900 dark:text-stone-100">Question Types:</h3>
-              <ul className="grid gap-2 md:grid-cols-2">
-                {[
-                  "Main Point/Primary Purpose",
-                  "Author's Attitude/Tone",
-                  "Inference",
-                  "Specific Detail",
-                  "Function/Purpose of Detail",
-                  "Strengthen/Weaken",
-                  "Analogy",
-                  "Application",
-                ].map((type) => (
-                  <li key={type} className="flex items-center gap-2 text-sm text-stone-600 dark:text-stone-400">
-                    <CheckCircle size={14} className="text-green-500" />
-                    {type}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-
-          {/* Logic Games (Historical) */}
-          <div className="rounded-sm border-2 border-stone-200 bg-white p-6 dark:border-stone-700 dark:bg-stone-900">
-            <h2 className="mb-4 flex items-center gap-2 font-serif text-xl font-bold text-stone-900 dark:text-stone-100">
-              <Target className="text-[#1a365d] dark:text-amber-400" size={24} />
-              Analytical Reasoning (Logic Games)
-            </h2>
-            <div className="mb-4 rounded-sm bg-amber-50 p-3 dark:bg-amber-900/20">
-              <p className="text-sm text-amber-700 dark:text-amber-400">
-                <strong>Note:</strong> As of August 2024, the LSAT no longer includes the Analytical Reasoning section. This section has been replaced with an additional Logical Reasoning section.
-              </p>
-            </div>
-            <p className="text-stone-600 dark:text-stone-400">
-              Previously tested your ability to understand a structure of relationships and draw conclusions. The section included 4 games with 5-7 questions each, requiring you to make deductions based on given rules and constraints.
-            </p>
-          </div>
-        </div>
-
-        {/* Study Timeline */}
-        <div className="mt-8 rounded-sm border-2 border-stone-200 bg-white p-6 dark:border-stone-700 dark:bg-stone-900">
-          <h2 className="mb-4 font-serif text-xl font-bold text-stone-900 dark:text-stone-100">
-            Recommended Study Timeline
-          </h2>
-          <div className="space-y-4">
-            <div className="flex gap-4">
-              <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-[#1a365d] text-sm font-bold text-white dark:bg-amber-500 dark:text-stone-900">
-                1
-              </div>
-              <div>
-                <h3 className="font-semibold text-stone-900 dark:text-stone-100">Weeks 1-4: Foundation</h3>
-                <p className="text-sm text-stone-600 dark:text-stone-400">
-                  Learn the fundamentals of each section type. Study question types and basic strategies.
-                </p>
-              </div>
-            </div>
-            <div className="flex gap-4">
-              <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-[#1a365d] text-sm font-bold text-white dark:bg-amber-500 dark:text-stone-900">
-                2
-              </div>
-              <div>
-                <h3 className="font-semibold text-stone-900 dark:text-stone-100">Weeks 5-8: Practice</h3>
-                <p className="text-sm text-stone-600 dark:text-stone-400">
-                  Apply strategies with timed practice sections. Focus on weakness areas.
-                </p>
-              </div>
-            </div>
-            <div className="flex gap-4">
-              <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-[#1a365d] text-sm font-bold text-white dark:bg-amber-500 dark:text-stone-900">
-                3
-              </div>
-              <div>
-                <h3 className="font-semibold text-stone-900 dark:text-stone-100">Weeks 9-12: Refinement</h3>
-                <p className="text-sm text-stone-600 dark:text-stone-400">
-                  Take full practice tests. Review mistakes and refine timing strategies.
-                </p>
-              </div>
-            </div>
-          </div>
         </div>
       </main>
     </div>
