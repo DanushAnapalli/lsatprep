@@ -363,11 +363,13 @@ export function checkAndUnlockAchievements(
     questionsAnswered: number;
     correctAnswers: number;
     currentStreak: number;
-    highestScore: number;
+    highestScore: number; // Percentage score for perfect section check
     lrTestsCompleted: number;
     rcTestsCompleted: number;
-    lrHighScores: number[]; // Array of LR test scores
-    rcHighScores: number[]; // Array of RC test scores
+    lrHighScores: number[]; // Array of LR test scores (percentages)
+    rcHighScores: number[]; // Array of RC test scores (percentages)
+    scaledScore?: number; // LSAT scaled score (120-180) for score threshold achievements
+    allScaledScores?: number[]; // All historical scaled scores for improvement tracking
   }
 ): string[] {
   const newlyUnlocked: string[] = [];
@@ -396,9 +398,39 @@ export function checkAndUnlockAchievements(
     if (unlockAchievement("questions_1000", userId)) newlyUnlocked.push("questions_1000");
   }
 
-  // Perfect score
+  // Perfect score (100% on a section)
   if (stats.highestScore >= 100 && !userAchievements.unlockedAchievements.includes("perfect_section")) {
     if (unlockAchievement("perfect_section", userId)) newlyUnlocked.push("perfect_section");
+  }
+
+  // Score threshold achievements (LSAT scaled scores)
+  if (stats.scaledScore !== undefined) {
+    if (stats.scaledScore >= 160 && !userAchievements.unlockedAchievements.includes("score_160")) {
+      if (unlockAchievement("score_160", userId)) newlyUnlocked.push("score_160");
+    }
+    if (stats.scaledScore >= 165 && !userAchievements.unlockedAchievements.includes("score_165")) {
+      if (unlockAchievement("score_165", userId)) newlyUnlocked.push("score_165");
+    }
+    if (stats.scaledScore >= 170 && !userAchievements.unlockedAchievements.includes("score_170")) {
+      if (unlockAchievement("score_170", userId)) newlyUnlocked.push("score_170");
+    }
+    if (stats.scaledScore >= 175 && !userAchievements.unlockedAchievements.includes("score_175")) {
+      if (unlockAchievement("score_175", userId)) newlyUnlocked.push("score_175");
+    }
+  }
+
+  // Improvement achievement - check if user improved by 10% from their first few tests
+  if (stats.allScaledScores && stats.allScaledScores.length >= 3 &&
+      !userAchievements.unlockedAchievements.includes("improvement_10")) {
+    // Compare average of first 3 tests to average of last 3 tests
+    const firstThreeAvg = stats.allScaledScores.slice(0, 3).reduce((a, b) => a + b, 0) / 3;
+    const lastThreeAvg = stats.allScaledScores.slice(-3).reduce((a, b) => a + b, 0) / 3;
+
+    // Check if there's at least 10% improvement
+    const improvement = ((lastThreeAvg - firstThreeAvg) / firstThreeAvg) * 100;
+    if (improvement >= 10) {
+      if (unlockAchievement("improvement_10", userId)) newlyUnlocked.push("improvement_10");
+    }
   }
 
   // Streak achievements
@@ -434,7 +466,10 @@ export function checkAndUnlockAchievements(
   }
 
   // Time-based achievements
-  const hour = new Date().getHours();
+  const now = new Date();
+  const hour = now.getHours();
+  const dayOfWeek = now.getDay(); // 0 = Sunday, 6 = Saturday
+
   if (hour >= 0 && hour < 5 && !userAchievements.unlockedAchievements.includes("night_owl")) {
     if (unlockAchievement("night_owl", userId)) newlyUnlocked.push("night_owl");
   }
@@ -442,7 +477,67 @@ export function checkAndUnlockAchievements(
     if (unlockAchievement("early_bird", userId)) newlyUnlocked.push("early_bird");
   }
 
+  // Weekend Warrior - check if user studied on both Saturday and Sunday
+  if (!userAchievements.unlockedAchievements.includes("weekend_warrior")) {
+    // Get weekend study data
+    const weekendStudyData = getWeekendStudyData(userId);
+    const isSaturday = dayOfWeek === 6;
+    const isSunday = dayOfWeek === 0;
+
+    // Update weekend study data
+    if (isSaturday) {
+      weekendStudyData.lastSaturdayStudy = now.toISOString().split("T")[0];
+    } else if (isSunday) {
+      weekendStudyData.lastSundayStudy = now.toISOString().split("T")[0];
+    }
+    saveWeekendStudyData(weekendStudyData, userId);
+
+    // Check if both days were studied in the same weekend
+    if (weekendStudyData.lastSaturdayStudy && weekendStudyData.lastSundayStudy) {
+      const satDate = new Date(weekendStudyData.lastSaturdayStudy);
+      const sunDate = new Date(weekendStudyData.lastSundayStudy);
+      const diffDays = Math.abs(sunDate.getTime() - satDate.getTime()) / (1000 * 60 * 60 * 24);
+
+      // If the difference is exactly 1 day, they studied on consecutive Sat/Sun
+      if (diffDays === 1) {
+        if (unlockAchievement("weekend_warrior", userId)) newlyUnlocked.push("weekend_warrior");
+      }
+    }
+  }
+
   return newlyUnlocked;
+}
+
+// Helper functions for weekend warrior tracking
+interface WeekendStudyData {
+  lastSaturdayStudy?: string;
+  lastSundayStudy?: string;
+}
+
+function getWeekendStudyData(userId?: string): WeekendStudyData {
+  if (typeof window === "undefined") return {};
+
+  try {
+    const key = userId ? `lsatprep_weekend_${userId}` : "lsatprep_weekend";
+    const stored = localStorage.getItem(key);
+    if (stored) {
+      return JSON.parse(stored);
+    }
+  } catch {
+    // Silent fail
+  }
+  return {};
+}
+
+function saveWeekendStudyData(data: WeekendStudyData, userId?: string): void {
+  if (typeof window === "undefined") return;
+
+  try {
+    const key = userId ? `lsatprep_weekend_${userId}` : "lsatprep_weekend";
+    localStorage.setItem(key, JSON.stringify(data));
+  } catch {
+    // Silent fail
+  }
 }
 
 export function getAchievementById(id: string): Achievement | undefined {

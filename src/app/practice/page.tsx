@@ -62,6 +62,8 @@ import { authenticatedFetch } from "@/lib/auth-client";
 import BlindReviewPhase from "@/components/BlindReviewPhase";
 import { BlindReviewResult } from "@/lib/blind-review";
 import HamburgerMenu from "@/components/HamburgerMenu";
+import AchievementNotification from "@/components/AchievementNotification";
+import { checkAndUnlockAchievements, updateStreak, getUserAchievements } from "@/lib/achievements";
 
 const cx = (...classes: (string | false | null | undefined)[]) =>
   classes.filter(Boolean).join(" ");
@@ -497,6 +499,9 @@ function PracticeContent() {
   const [userTier, setUserTier] = useState<SubscriptionTier>("free");
   const [tierBlocked, setTierBlocked] = useState<string | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
+
+  // Achievement notification state
+  const [newlyUnlockedAchievements, setNewlyUnlockedAchievements] = useState<string[]>([]);
   const [serverLimitsChecked, setServerLimitsChecked] = useState(false);
 
   // Use refs to avoid stale closure issues in timer
@@ -1109,7 +1114,12 @@ function PracticeContent() {
 
   // Save results when test completes
   useEffect(() => {
-    if (!testCompleted || !progress || sectionResults.length === 0) return;
+    console.log("[Achievement Debug] useEffect triggered:", { testCompleted, hasProgress: !!progress, sectionResultsLength: sectionResults.length });
+    if (!testCompleted || !progress || sectionResults.length === 0) {
+      console.log("[Achievement Debug] Early return - conditions not met");
+      return;
+    }
+    console.log("[Achievement Debug] Processing test completion...");
 
     const totalTimeUsed = Math.floor((Date.now() - testStartTime) / 1000);
     let totalRaw = 0;
@@ -1223,6 +1233,80 @@ function PracticeContent() {
       };
 
       recordTest();
+    }
+
+    // Check and unlock achievements after test completion
+    // Update streak first
+    const { newStreak } = updateStreak(user?.uid);
+
+    // Calculate stats for achievement checking
+    const testsCompleted = updatedProgress.completedTests.length;
+    const questionsAnswered = updatedProgress.completedTests.reduce(
+      (total, test) => total + test.totalQuestions,
+      0
+    );
+    const correctAnswers = updatedProgress.completedTests.reduce(
+      (total, test) => total + test.correctAnswers,
+      0
+    );
+
+    // Get highest score as percentage (for perfect section check)
+    const highestScorePercent = completedSections.reduce((max, section) => {
+      const sectionScore = (section.correctCount / section.totalCount) * 100;
+      return Math.max(max, sectionScore);
+    }, 0);
+
+    // Get scaled scores for score threshold achievements
+    const allScaledScores = updatedProgress.completedTests.map(t => t.scaledScore);
+    const highestScaledScore = Math.max(...allScaledScores, scaledScore);
+
+    // Count LR and RC tests completed
+    const lrTestsCompleted = updatedProgress.completedTests.filter(
+      t => t.testName.includes("Logical Reasoning")
+    ).length + (testType === "lr-only" ? 1 : 0);
+    const rcTestsCompleted = updatedProgress.completedTests.filter(
+      t => t.testName.includes("Reading Comprehension")
+    ).length + (testType === "rc-only" ? 1 : 0);
+
+    // Get high scores for LR and RC (as percentages)
+    const lrHighScores = updatedProgress.completedTests
+      .filter(t => t.testName.includes("Logical Reasoning"))
+      .map(t => (t.correctAnswers / t.totalQuestions) * 100);
+    const rcHighScores = updatedProgress.completedTests
+      .filter(t => t.testName.includes("Reading Comprehension"))
+      .map(t => (t.correctAnswers / t.totalQuestions) * 100);
+
+    // Add current test scores if applicable
+    if (testType === "lr-only") {
+      const currentScore = (totalRaw / totalQuestions) * 100;
+      lrHighScores.push(currentScore);
+    } else if (testType === "rc-only") {
+      const currentScore = (totalRaw / totalQuestions) * 100;
+      rcHighScores.push(currentScore);
+    }
+
+    // Check for newly unlocked achievements
+    console.log("[Achievement Debug] Calling checkAndUnlockAchievements with stats:", { testsCompleted, questionsAnswered, correctAnswers, currentStreak: newStreak });
+    const newlyUnlocked = checkAndUnlockAchievements(user?.uid, {
+      testsCompleted,
+      questionsAnswered,
+      correctAnswers,
+      currentStreak: newStreak,
+      highestScore: highestScorePercent,
+      lrTestsCompleted,
+      rcTestsCompleted,
+      lrHighScores,
+      rcHighScores,
+      scaledScore: highestScaledScore,
+      allScaledScores: [...allScaledScores, scaledScore],
+    });
+
+    console.log("[Achievement Debug] newlyUnlocked:", newlyUnlocked);
+    if (newlyUnlocked.length > 0) {
+      console.log("[Achievement Debug] Setting newlyUnlockedAchievements state");
+      setNewlyUnlockedAchievements(newlyUnlocked);
+    } else {
+      console.log("[Achievement Debug] No new achievements to set");
     }
   }, [testCompleted, user, testType]); // Only run when test completes
 
@@ -1408,6 +1492,13 @@ function PracticeContent() {
   if (testCompleted && !isReviewMode) {
     return (
       <div className="min-h-screen bg-stone-100 dark:bg-stone-950">
+        {/* Achievement Notification */}
+        {newlyUnlockedAchievements.length > 0 && (
+          <AchievementNotification
+            achievementIds={newlyUnlockedAchievements}
+            onDismiss={() => setNewlyUnlockedAchievements([])}
+          />
+        )}
         <div className="mx-auto max-w-4xl px-6 py-12">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -1542,6 +1633,14 @@ function PracticeContent() {
 
   return (
     <div className="min-h-screen bg-stone-100 dark:bg-stone-950">
+      {/* Achievement Notification */}
+      {newlyUnlockedAchievements.length > 0 && (
+        <AchievementNotification
+          achievementIds={newlyUnlockedAchievements}
+          onDismiss={() => setNewlyUnlockedAchievements([])}
+        />
+      )}
+
       {/* Header */}
       <header className="sticky top-0 z-50 border-b-2 border-stone-200 bg-white dark:border-stone-700 dark:bg-stone-900">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-3 py-2 sm:px-6 sm:py-3">
