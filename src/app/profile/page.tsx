@@ -8,7 +8,6 @@ import {
   ArrowLeft,
   User,
   Mail,
-  CreditCard,
   Crown,
   Shield,
   ExternalLink,
@@ -23,7 +22,7 @@ import {
 import { onAuthChange, logOut, User as FirebaseUser } from "@/lib/firebase";
 import { useTheme } from "@/components/ThemeProvider";
 import {
-  getUserTier,
+  verifySubscriptionTier,
   getTierDisplayInfo,
   getSubscriptionInfo,
   getTrialInfo,
@@ -35,6 +34,7 @@ import {
   setSubscriptionTier,
 } from "@/lib/subscription";
 import { authenticatedFetch } from "@/lib/auth-client";
+import HamburgerMenu from "@/components/HamburgerMenu";
 
 function cx(...classes: (string | boolean | undefined)[]) {
   return classes.filter(Boolean).join(" ");
@@ -50,8 +50,6 @@ export default function ProfilePage() {
   const [trialInfo, setTrialInfo] = useState<TrialInfo | null>(null);
   const [isCancelling, setIsCancelling] = useState(false);
   const [cancelError, setCancelError] = useState<string | null>(null);
-  const [isLoadingPortal, setIsLoadingPortal] = useState(false);
-  const [portalError, setPortalError] = useState<string | null>(null);
 
   // Listen to auth state
   useEffect(() => {
@@ -66,11 +64,12 @@ export default function ProfilePage() {
     return () => unsubscribe();
   }, [router]);
 
-  // Get subscription info
+  // Get subscription info (uses secure server verification)
   useEffect(() => {
     if (user) {
-      const tier = getUserTier(user);
-      setUserTier(tier);
+      verifySubscriptionTier(user).then((tier) => {
+        setUserTier(tier);
+      });
       setSubscriptionInfoState(getSubscriptionInfo());
       setTrialInfo(getTrialInfo());
     }
@@ -115,40 +114,6 @@ export default function ProfilePage() {
     }
   };
 
-  const handleManagePayment = async () => {
-    const info = getSubscriptionInfo();
-    setPortalError(null);
-
-    if (!info.customerId) {
-      // No customer ID, redirect to subscription page
-      router.push("/subscription");
-      return;
-    }
-
-    setIsLoadingPortal(true);
-
-    try {
-      const response = await authenticatedFetch("/api/customer-portal", {
-        method: "POST",
-        body: JSON.stringify({ customerId: info.customerId }),
-      });
-
-      const data = await response.json();
-
-      if (data.url) {
-        window.location.href = data.url;
-      } else if (data.error) {
-        setPortalError(data.error);
-      } else {
-        setPortalError("Failed to open billing portal. Please try again.");
-      }
-    } catch {
-      setPortalError("An error occurred. Please try again.");
-    } finally {
-      setIsLoadingPortal(false);
-    }
-  };
-
   if (authLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-stone-100 dark:bg-stone-950">
@@ -172,12 +137,13 @@ export default function ProfilePage() {
       <header className="border-b-2 border-stone-200 bg-white dark:border-stone-800 dark:bg-stone-900">
         <div className="mx-auto flex max-w-4xl items-center justify-between px-6 py-4">
           <div className="flex items-center gap-4">
+            <HamburgerMenu />
             <Link
               href="/dashboard"
               className="flex items-center gap-2 text-stone-600 transition hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100"
             >
               <ArrowLeft size={20} />
-              <span className="text-sm font-medium">Back to Dashboard</span>
+              <span className="text-sm font-medium">Dashboard</span>
             </Link>
           </div>
 
@@ -401,57 +367,6 @@ export default function ProfilePage() {
                     Resubscribe
                     <ExternalLink size={14} />
                   </Link>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Payment Methods */}
-          <div className="rounded-sm border-2 border-stone-200 bg-white p-6 dark:border-stone-700 dark:bg-stone-900">
-            <div className="mb-4 flex items-center gap-2">
-              <CreditCard size={20} className="text-[#1a365d] dark:text-amber-400" />
-              <h2 className="font-serif text-lg font-bold text-stone-900 dark:text-stone-100">
-                Payment Methods
-              </h2>
-            </div>
-
-            <div className="space-y-4">
-              {subscriptionInfo?.customerId ? (
-                <div>
-                  <p className="mb-3 text-sm text-stone-600 dark:text-stone-400">
-                    Manage your payment methods, view invoices, and update billing information through the Stripe Customer Portal.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={handleManagePayment}
-                    disabled={isLoadingPortal}
-                    className="inline-flex items-center gap-2 rounded-sm bg-[#1a365d] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#2d4a7c] disabled:opacity-50 dark:bg-amber-500 dark:text-stone-900 dark:hover:bg-amber-400"
-                  >
-                    {isLoadingPortal ? (
-                      "Loading..."
-                    ) : (
-                      <>
-                        Manage Payment Methods
-                        <ExternalLink size={14} />
-                      </>
-                    )}
-                  </button>
-                  {portalError && (
-                    <div className="mt-3 flex items-center gap-2 text-sm text-red-600 dark:text-red-400">
-                      <AlertCircle size={14} />
-                      {portalError}
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="rounded-sm border border-stone-200 p-4 text-center dark:border-stone-700">
-                  <CreditCard size={32} className="mx-auto mb-2 text-stone-400" />
-                  <p className="text-sm text-stone-600 dark:text-stone-400">
-                    No payment method on file
-                  </p>
-                  <p className="mt-1 text-xs text-stone-500">
-                    Subscribe to Pro to add a payment method
-                  </p>
                 </div>
               )}
             </div>

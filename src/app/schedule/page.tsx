@@ -28,7 +28,7 @@ import {
 import { loadUserProgress, UserProgress, setCurrentUserId } from "@/lib/user-progress";
 import { onAuthChange, logOut, User as FirebaseUser } from "@/lib/firebase";
 import { useTheme } from "@/components/ThemeProvider";
-import { getUserTier, getTierDisplayInfo, SubscriptionTier } from "@/lib/subscription";
+import { verifySubscriptionTier, getTierDisplayInfo, SubscriptionTier } from "@/lib/subscription";
 import {
   StudySchedule,
   ScheduleConfig,
@@ -560,11 +560,12 @@ export default function SchedulePage() {
     return () => unsubscribe();
   }, []);
 
-  // Get user's subscription tier
+  // Get user's subscription tier (uses secure server verification)
   useEffect(() => {
     if (user) {
-      const tier = getUserTier(user);
-      setUserTier(tier);
+      verifySubscriptionTier(user).then((tier) => {
+        setUserTier(tier);
+      });
     } else {
       setUserTier("free");
     }

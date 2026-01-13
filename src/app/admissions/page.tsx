@@ -41,7 +41,7 @@ import {
   loadAdmissionsProfile,
 } from "@/lib/admissions-calculator";
 import { onAuthChange, User as FirebaseUser } from "@/lib/firebase";
-import { getUserTier, SubscriptionTier } from "@/lib/subscription";
+import { verifySubscriptionTier, SubscriptionTier } from "@/lib/subscription";
 
 type SortBy = "ranking" | "chance" | "lsat" | "gpa" | "tuition";
 
@@ -82,10 +82,12 @@ export default function AdmissionsPage() {
     return () => unsubscribe();
   }, []);
 
+  // Get user's subscription tier (uses secure server verification)
   useEffect(() => {
     if (user) {
-      const tier = getUserTier(user);
-      setSubscription(tier);
+      verifySubscriptionTier(user).then((tier) => {
+        setSubscription(tier);
+      });
     }
   }, [user]);
 

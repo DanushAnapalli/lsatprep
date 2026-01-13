@@ -16,6 +16,7 @@ function SuccessContent() {
   const [isTrialStart, setIsTrialStart] = useState(false);
   const [trialEndDate, setTrialEndDate] = useState<string>("");
   const [authReady, setAuthReady] = useState(false);
+  const [billingPeriod, setBillingPeriod] = useState<"monthly" | "yearly">("monthly");
 
   // Wait for Firebase auth to be ready
   useEffect(() => {
@@ -64,6 +65,11 @@ function SuccessContent() {
             currentPeriodEnd: data.currentPeriodEnd,
             cancelAtPeriodEnd: false,
           });
+
+          // Set billing period from response
+          if (data.billingPeriod === "yearly") {
+            setBillingPeriod("yearly");
+          }
 
           // Check if this is a trial subscription
           if (data.isTrialing) {
@@ -151,7 +157,7 @@ function SuccessContent() {
               </span>
             </div>
             <p className="text-xs text-amber-600 dark:text-amber-400">
-              You&apos;ll be charged $25/month after your trial ends. Cancel anytime.
+              You&apos;ll be charged {billingPeriod === "yearly" ? "$225/year" : "$25/month"} after your trial ends. Cancel anytime.
             </p>
           </div>
 

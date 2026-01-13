@@ -12,7 +12,7 @@ import {
 } from "@/lib/logic-games-types";
 import { getAllGames } from "@/lib/logic-games-questions";
 import { onAuthChange, User as FirebaseUser } from "@/lib/firebase";
-import { getUserTier, SubscriptionTier } from "@/lib/subscription";
+import { verifySubscriptionTier, SubscriptionTier } from "@/lib/subscription";
 
 // Dynamic import to avoid SSR issues with dnd-kit
 const GameBoard = dynamic(
@@ -64,11 +64,12 @@ export default function GamesPage() {
     return () => unsubscribe();
   }, []);
 
-  // Load subscription status
+  // Load subscription status (uses secure server verification)
   useEffect(() => {
     if (user) {
-      const tier = getUserTier(user);
-      setSubscription(tier);
+      verifySubscriptionTier(user).then((tier) => {
+        setSubscription(tier);
+      });
     }
   }, [user]);
 

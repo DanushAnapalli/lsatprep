@@ -61,6 +61,7 @@ import { getUserTier, TIER_LIMITS, SubscriptionTier } from "@/lib/subscription";
 import { authenticatedFetch } from "@/lib/auth-client";
 import BlindReviewPhase from "@/components/BlindReviewPhase";
 import { BlindReviewResult } from "@/lib/blind-review";
+import HamburgerMenu from "@/components/HamburgerMenu";
 
 const cx = (...classes: (string | false | null | undefined)[]) =>
   classes.filter(Boolean).join(" ");
@@ -1545,6 +1546,7 @@ function PracticeContent() {
       <header className="sticky top-0 z-50 border-b-2 border-stone-200 bg-white dark:border-stone-700 dark:bg-stone-900">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-3 py-2 sm:px-6 sm:py-3">
           <div className="flex items-center gap-2 sm:gap-4">
+            <HamburgerMenu />
             <Link
               href="/dashboard"
               className="flex items-center gap-1 text-sm font-semibold text-stone-600 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100 sm:gap-2"

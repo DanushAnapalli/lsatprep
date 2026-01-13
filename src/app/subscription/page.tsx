@@ -387,12 +387,18 @@ export default function SubscriptionPage() {
                 </li>
               ))}
             </ul>
-            <button
-              disabled
-              className="w-full py-2.5 px-4 rounded-md text-sm font-medium bg-stone-100 dark:bg-stone-800 text-stone-500 cursor-not-allowed"
-            >
-              Current Plan
-            </button>
+            {currentTier === "free" ? (
+              <button
+                disabled
+                className="w-full py-2.5 px-4 rounded-md text-sm font-medium bg-stone-100 dark:bg-stone-800 text-stone-500 cursor-not-allowed"
+              >
+                Current Plan
+              </button>
+            ) : (
+              <div className="w-full py-2.5 px-4 rounded-md text-sm font-medium bg-stone-50 dark:bg-stone-800/50 text-stone-400 text-center">
+                Free Tier
+              </div>
+            )}
           </div>
 
           {/* Pro Plan */}

@@ -70,6 +70,7 @@ export async function POST(request: NextRequest) {
         trialEnd,
         subscriptionStatus: subscription?.status,
         currentPeriodEnd,
+        billingPeriod: session.metadata?.billingPeriod || "monthly",
       });
     }
 
