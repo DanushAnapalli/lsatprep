@@ -16,7 +16,6 @@ import {
   FileText,
   Camera,
 } from "lucide-react";
-import HamburgerMenu from "@/components/HamburgerMenu";
 
 function cx(...classes: (string | boolean | undefined)[]) {
   return classes.filter(Boolean).join(" ");
@@ -146,13 +145,12 @@ export default function BugReportPage() {
       <header className="border-b-2 border-stone-200 bg-white dark:border-stone-800 dark:bg-stone-900">
         <div className="mx-auto flex max-w-4xl items-center justify-between px-6 py-4">
           <div className="flex items-center gap-4">
-            <HamburgerMenu />
             <Link
-              href="/dashboard"
-              className="flex items-center gap-2 text-stone-600 transition hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100"
+              href="/menu"
+              className="flex items-center gap-2 rounded-sm border-2 border-stone-200 bg-stone-50 px-3 py-2 text-sm font-medium text-stone-700 transition hover:border-[#1a365d] hover:bg-stone-100 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-300 dark:hover:border-amber-500 dark:hover:bg-stone-700"
             >
-              <ArrowLeft size={20} />
-              <span className="text-sm font-medium">Dashboard</span>
+              <ArrowLeft size={18} className="text-stone-500 dark:text-stone-400" />
+              <span>Menu</span>
             </Link>
           </div>
           <Link href="/" className="flex items-center gap-2">
@@ -208,7 +206,7 @@ export default function BugReportPage() {
                 Report Another Bug
               </button>
               <Link
-                href="/dashboard"
+                href="/menu"
                 className="rounded-sm border-2 border-stone-300 px-6 py-2 font-semibold text-stone-700 transition hover:bg-stone-100 dark:border-stone-600 dark:text-stone-300 dark:hover:bg-stone-800"
               >
                 Back to Dashboard
