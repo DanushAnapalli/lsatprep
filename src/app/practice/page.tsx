@@ -1114,12 +1114,9 @@ function PracticeContent() {
 
   // Save results when test completes
   useEffect(() => {
-    console.log("[Achievement Debug] useEffect triggered:", { testCompleted, hasProgress: !!progress, sectionResultsLength: sectionResults.length });
     if (!testCompleted || !progress || sectionResults.length === 0) {
-      console.log("[Achievement Debug] Early return - conditions not met");
       return;
     }
-    console.log("[Achievement Debug] Processing test completion...");
 
     const totalTimeUsed = Math.floor((Date.now() - testStartTime) / 1000);
     let totalRaw = 0;
@@ -1286,7 +1283,6 @@ function PracticeContent() {
     }
 
     // Check for newly unlocked achievements
-    console.log("[Achievement Debug] Calling checkAndUnlockAchievements with stats:", { testsCompleted, questionsAnswered, correctAnswers, currentStreak: newStreak });
     const newlyUnlocked = checkAndUnlockAchievements(user?.uid, {
       testsCompleted,
       questionsAnswered,
@@ -1301,12 +1297,8 @@ function PracticeContent() {
       allScaledScores: [...allScaledScores, scaledScore],
     });
 
-    console.log("[Achievement Debug] newlyUnlocked:", newlyUnlocked);
     if (newlyUnlocked.length > 0) {
-      console.log("[Achievement Debug] Setting newlyUnlockedAchievements state");
       setNewlyUnlockedAchievements(newlyUnlocked);
-    } else {
-      console.log("[Achievement Debug] No new achievements to set");
     }
   }, [testCompleted, user, testType]); // Only run when test completes
 
