@@ -29,6 +29,7 @@ import {
   ChevronDown,
   Settings,
   X,
+  LayoutGrid,
 } from "lucide-react";
 import {
   loadUserProgress,
@@ -51,6 +52,7 @@ import { LR_TYPE_DESCRIPTIONS, RC_TYPE_DESCRIPTIONS } from "@/lib/lsat-types";
 import { onAuthChange, logOut, resendVerificationEmail, User as FirebaseUser } from "@/lib/firebase";
 import { Mail, AlertTriangle } from "lucide-react";
 import { useTheme } from "@/components/ThemeProvider";
+import HamburgerMenu from "@/components/HamburgerMenu";
 import { getUserTier, verifySubscriptionTier, getTierDisplayInfo, canAccessFeature, SubscriptionTier, getTrialInfo, getSubscriptionInfo, saveSubscriptionInfo, syncSubscriptionFromStripe } from "@/lib/subscription";
 
 function cx(...classes: (string | boolean | undefined)[]) {
@@ -1115,7 +1117,17 @@ export default function DashboardPage() {
       {/* Header */}
       <header className="border-b-2 border-stone-200 bg-white dark:border-stone-800 dark:bg-stone-900">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <Link href="/" className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
+            <HamburgerMenu />
+            <Link
+              href="/menu"
+              className="hidden items-center gap-2 rounded-sm border-2 border-stone-200 bg-stone-50 px-3 py-2 text-sm font-medium text-stone-700 transition hover:border-[#1a365d] hover:bg-stone-100 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-300 dark:hover:border-amber-500 dark:hover:bg-stone-700 sm:flex"
+              aria-label="Open full navigation menu"
+            >
+              <LayoutGrid size={18} className="text-stone-500 dark:text-stone-400" />
+              <span>Menu</span>
+            </Link>
+            <Link href="/" className="flex items-center gap-3">
             <div className="rounded-sm border-2 border-[#1a365d] bg-[#1a365d] p-2 dark:border-amber-500 dark:bg-amber-500">
               <Scale size={20} className="text-white dark:text-stone-900" />
             </div>
@@ -1123,6 +1135,7 @@ export default function DashboardPage() {
               LSATprep
             </span>
           </Link>
+          </div>
           <div className="flex items-center gap-3">
             {/* Theme Toggle */}
             <button
