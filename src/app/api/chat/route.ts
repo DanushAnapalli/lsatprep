@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { logicalReasoningQuestions, readingComprehensionQuestions } from "@/lib/sample-questions";
 import { authenticateRequest, unauthorizedResponse } from "@/lib/auth-middleware";
-import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limiter";
 
 // Lazy initialization of Anthropic client to avoid build-time errors
 let anthropicClient: Anthropic | null = null;
@@ -10,7 +9,7 @@ let anthropicClient: Anthropic | null = null;
 function getAnthropicClient(): Anthropic {
   if (!anthropicClient) {
     anthropicClient = new Anthropic({
-      apiKey: process.env.ANTHROPIC_API_KEY,
+      apiKey: process.env.ANTHROPIC_API_KEY || "",
     });
   }
   return anthropicClient;
@@ -87,10 +86,6 @@ export async function POST(request: NextRequest) {
       return unauthorizedResponse("Authentication required to use chat");
     }
 
-    // NOTE: Rate limiting temporarily disabled for Vercel serverless deployment
-    // In-memory rate limiting doesn't work across serverless function instances
-    // TODO: Implement Redis-based or database-backed rate limiting for production
-
     const { messages, userProgress } = await request.json();
 
     if (!messages || !Array.isArray(messages)) {
@@ -139,7 +134,8 @@ Explanation: ${question.explanation}`;
 
     // Create a streaming response
     const anthropic = getAnthropicClient();
-    const stream = await anthropic.messages.stream({
+
+    const stream = anthropic.messages.stream({
       model: "claude-sonnet-4-20250514",
       max_tokens: 1024,
       system: finalSystemPrompt,
