@@ -164,8 +164,14 @@ ${userProgress.wrongAnswers?.filter((wa: any) => !wa.masteredAt).slice(0, 20).ma
 
     return NextResponse.json({ response });
   } catch (error: unknown) {
+    // Log the full error for debugging
+    console.error('[CHAT API] Error details:', error);
+
     // Check for specific Anthropic errors
     if (error instanceof Error) {
+      console.error('[CHAT API] Error message:', error.message);
+      console.error('[CHAT API] Error stack:', error.stack);
+
       const errorMessage = error.message.toLowerCase();
 
       if (errorMessage.includes("api key") || errorMessage.includes("unauthorized") || errorMessage.includes("invalid") || errorMessage.includes("authentication")) {
@@ -175,9 +181,9 @@ ${userProgress.wrongAnswers?.filter((wa: any) => !wa.masteredAt).slice(0, 20).ma
         );
       }
 
-      if (errorMessage.includes("rate limit")) {
+      if (errorMessage.includes("rate limit") || errorMessage.includes("429")) {
         return NextResponse.json(
-          { error: "Too many requests. Please wait a moment and try again." },
+          { error: "Anthropic API rate limit reached. Please wait and try again." },
           { status: 429 }
         );
       }
@@ -188,6 +194,12 @@ ${userProgress.wrongAnswers?.filter((wa: any) => !wa.masteredAt).slice(0, 20).ma
           { status: 402 }
         );
       }
+
+      // Return the actual error message for debugging
+      return NextResponse.json(
+        { error: `Chat error: ${error.message}` },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json(
