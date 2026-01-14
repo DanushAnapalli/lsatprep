@@ -7,6 +7,7 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 import { TimerProvider } from "@/components/TimerProvider";
 import StudyTimer from "@/components/StudyTimer";
 import TimerAlert from "@/components/TimerAlert";
+import FloatingChatWidget from "@/components/FloatingChatWidget";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
 
@@ -107,6 +108,7 @@ export default function RootLayout({
               {children}
             </ErrorBoundary>
             <StudyTimer />
+            <FloatingChatWidget />
           </TimerProvider>
           <SpeedInsights />
           <Analytics />
