@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { MessageCircle, X } from "lucide-react";
+import { MessageCircle, X, Scale } from "lucide-react";
 import JurisChatbot from "@/components/JurisChatbot";
 import { loadUserProgress, UserProgress, setCurrentUserId } from "@/lib/user-progress";
 import { onAuthChange, User as FirebaseUser } from "@/lib/firebase";
@@ -33,10 +33,15 @@ export default function FloatingChatWidget() {
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-[#1a365d] text-white shadow-lg transition hover:bg-[#2d4a7c] hover:scale-110 dark:bg-amber-500 dark:text-stone-900 dark:hover:bg-amber-400"
-          aria-label="Open chat with Juris"
+          className="fixed bottom-6 right-6 z-50 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-[#1a365d] to-[#2d4a7c] text-white shadow-xl transition-all duration-300 hover:scale-110 hover:shadow-2xl dark:from-amber-500 dark:to-amber-600 dark:text-stone-900"
+          aria-label="Open chat with Juris AI"
         >
-          <MessageCircle size={24} />
+          <div className="relative">
+            <Scale size={28} className="relative z-10" />
+            <div className="absolute inset-0 animate-ping opacity-20">
+              <Scale size={28} />
+            </div>
+          </div>
         </button>
       )}
 

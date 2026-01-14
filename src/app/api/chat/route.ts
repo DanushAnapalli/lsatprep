@@ -108,14 +108,47 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Add user context if available
+    // Add comprehensive user context if available
     let contextMessage = "";
     if (userProgress) {
-      contextMessage = `\n\nUser's current progress: ${userProgress.totalQuestionsAnswered} questions answered, ${userProgress.totalCorrect} correct (${
-        userProgress.totalQuestionsAnswered > 0
-          ? Math.round((userProgress.totalCorrect / userProgress.totalQuestionsAnswered) * 100)
-          : 0
-      }% accuracy). Tests completed: ${userProgress.completedTests?.length || 0}.`;
+      const accuracy = userProgress.totalQuestionsAnswered > 0
+        ? Math.round((userProgress.totalCorrect / userProgress.totalQuestionsAnswered) * 100)
+        : 0;
+
+      contextMessage = `\n\n## User's Account Data:
+
+### Overall Statistics:
+- Total questions answered: ${userProgress.totalQuestionsAnswered}
+- Total correct: ${userProgress.totalCorrect} (${accuracy}% accuracy)
+- Tests completed: ${userProgress.completedTests?.length || 0}
+- Average score: ${userProgress.averageScore || 'N/A'}
+- Highest score: ${userProgress.highestScore || 'N/A'}
+
+### Test History (Most Recent First):
+${userProgress.completedTests?.slice(-5).reverse().map((test: any, idx: number) => `
+${idx + 1}. **${test.testName}** (Test ID: ${test.id})
+   - Score: ${test.scaledScore} (${test.percentile}th percentile)
+   - Completed: ${new Date(test.completedAt).toLocaleDateString()}
+   - Performance: ${test.correctAnswers}/${test.totalQuestions} correct
+   - Sections: ${test.sections.map((s: any) => `${s.type}: ${s.correctCount}/${s.totalCount}`).join(', ')}
+   - Questions answered: ${test.sections.flatMap((s: any) => s.questions).map((q: any) =>
+     `Q${q.questionId}: ${q.isCorrect ? '✓' : '✗'} (selected: ${q.selectedAnswer || 'skipped'}, correct: ${q.correctAnswer})`
+   ).join(', ')}`).join('\n') || 'No test history available.'}
+
+### Wrong Answers (Unmastered):
+${userProgress.wrongAnswers?.filter((wa: any) => !wa.masteredAt).slice(0, 20).map((wa: any) => `
+- Question ${wa.questionId} (${wa.sectionType}, ${wa.questionType})
+  - Your answer: ${wa.selectedAnswer || 'skipped'}
+  - Correct answer: ${wa.correctAnswer}
+  - From test: ${wa.testId}
+  - Date: ${new Date(wa.timestamp).toLocaleDateString()}
+  ${wa.userNotes ? `- Your notes: "${wa.userNotes}"` : ''}`).join('\n') || 'No unmastered wrong answers.'}
+
+**IMPORTANT**: When the user asks about a specific question (e.g., "Why did I get question 14 wrong on my most recent test?"), look up the question in their test history above, find it in the questions database, and explain:
+1. What they selected vs. the correct answer
+2. Why the correct answer is right
+3. Why their selected answer is wrong
+4. Common mistakes for this question type`;
     }
 
     // Convert messages to Anthropic format
