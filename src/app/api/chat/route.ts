@@ -8,32 +8,23 @@ const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
-// Build context about the questions for Juris
-function buildQuestionsContext() {
-  const lrSummary = logicalReasoningQuestions.map((q) => ({
-    id: q.id,
-    type: q.type,
-    stimulus: q.stimulus.substring(0, 200) + "...",
-    question: q.questionStem,
-    correctAnswer: q.correctAnswer,
-    explanation: q.explanation,
-  }));
-
-  const rcSummary = readingComprehensionQuestions.map((q) => ({
-    id: q.id,
-    type: q.type,
-    stimulus: q.stimulus.substring(0, 200) + "...",
-    question: q.questionStem,
-    correctAnswer: q.correctAnswer,
-    explanation: q.explanation,
-  }));
-
-  return { lrQuestions: lrSummary, rcQuestions: rcSummary };
+// Helper function to find a specific question by ID
+function findQuestionById(questionId: string) {
+  const allQuestions = [...logicalReasoningQuestions, ...readingComprehensionQuestions];
+  return allQuestions.find(q => q.id === questionId);
 }
 
-const questionsContext = buildQuestionsContext();
+// Helper to detect if user is asking about a specific question
+function extractQuestionId(messages: Array<{ role: string; content: string }>): string | null {
+  const lastUserMessage = messages.filter(m => m.role === 'user').pop();
+  if (!lastUserMessage) return null;
 
-const SYSTEM_PROMPT = `You are Juris, an AI legal assistant specialized in law and LSAT preparation. You are warm, knowledgeable, and encouraging.
+  // Look for patterns like "question 1", "Q1", "question ID 1", etc.
+  const match = lastUserMessage.content.match(/\b(?:question|q|id)\s*#?(\d+)\b/i);
+  return match ? match[1] : null;
+}
+
+const BASE_SYSTEM_PROMPT = `You are Juris, an AI legal assistant specialized in law and LSAT preparation. You maintain a professional, knowledgeable, and encouraging demeanor.
 
 ## Your Expertise:
 - LSAT Logical Reasoning: argument analysis, flaw identification, assumptions, strengthening/weakening arguments
@@ -41,20 +32,18 @@ const SYSTEM_PROMPT = `You are Juris, an AI legal assistant specialized in law a
 - General law topics: constitutional law, criminal law, civil procedure, contracts, torts, property law, legal reasoning
 - Legal careers: law school admissions, bar exam preparation, legal career paths
 
-## Your Personality:
-- Friendly and encouraging, but professional
+## Your Communication Style:
+- Professional and academic, yet approachable
 - Patient when explaining complex legal concepts
 - Use analogies and examples to make concepts clear
-- Celebrate student progress and provide constructive feedback
+- Provide constructive feedback on student progress
+- NEVER use emojis or emoticons in your responses
+- Maintain a formal but supportive tone
 
-## Available LSAT Questions Database:
-You have access to the following questions from the platform. When users ask about specific questions, use this context:
-
-### Logical Reasoning Questions:
-${JSON.stringify(questionsContext.lrQuestions, null, 2)}
-
-### Reading Comprehension Questions:
-${JSON.stringify(questionsContext.rcQuestions, null, 2)}
+## Available Resources:
+- You have access to a database of LSAT questions (Logical Reasoning and Reading Comprehension)
+- When users ask about specific questions by ID, I will provide you with the full question details
+- You can reference questions generally, and request specific details when needed
 
 ## Guidelines:
 1. When users ask about a specific question (by ID or description), provide detailed explanations
@@ -64,6 +53,7 @@ ${JSON.stringify(questionsContext.rcQuestions, null, 2)}
 5. If asked about something outside law/LSAT, politely redirect to your expertise
 6. Keep responses concise but thorough
 7. Use formatting (bullet points, numbered lists) when helpful
+8. Never use emojis, emoticons, or overly casual language
 
 ## Response Format:
 - Be conversational but informative
@@ -102,31 +92,36 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Add concise user context if available
-    let contextMessage = "";
-    if (userProgress) {
-      const accuracy = userProgress.totalQuestionsAnswered > 0
-        ? Math.round((userProgress.totalCorrect / userProgress.totalQuestionsAnswered) * 100)
-        : 0;
+    // Check if user is asking about a specific question
+    const questionId = extractQuestionId(messages);
+    let questionContext = "";
 
-      // Get most recent test
+    if (questionId) {
+      const question = findQuestionById(questionId);
+      if (question) {
+        questionContext = `\n\n## Question ${questionId} Details:
+Type: ${question.type}
+Stimulus: ${question.stimulus}
+Question: ${question.questionStem}
+Options: ${JSON.stringify(question.options)}
+Correct Answer: ${question.correctAnswer}
+Explanation: ${question.explanation}`;
+      }
+    }
+
+    // Add minimal user context if available
+    let userContext = "";
+    if (userProgress && userProgress.totalQuestionsAnswered > 0) {
+      const accuracy = Math.round((userProgress.totalCorrect / userProgress.totalQuestionsAnswered) * 100);
       const recentTest = userProgress.completedTests?.[userProgress.completedTests.length - 1];
 
-      // Get recent wrong answers (limit to 10 for token efficiency)
-      const recentWrongAnswers = userProgress.wrongAnswers
-        ?.filter((wa: any) => !wa.masteredAt)
-        .slice(-10)
-        .map((wa: any) => `Q${wa.questionId} (${wa.questionType}): selected ${wa.selectedAnswer || 'none'}, correct ${wa.correctAnswer}`)
-        .join('; ') || 'None';
-
-      contextMessage = `\n\n## User Context:
-- Overall: ${userProgress.totalCorrect}/${userProgress.totalQuestionsAnswered} correct (${accuracy}%)
-- Tests: ${userProgress.completedTests?.length || 0} completed
-- Most recent test: ${recentTest ? `${recentTest.testName} - Score ${recentTest.scaledScore}, ${recentTest.correctAnswers}/${recentTest.totalQuestions} correct` : 'None'}
-- Recent wrong answers: ${recentWrongAnswers}
-
-When asked about specific questions, look them up in the questions database and explain the correct reasoning.`;
+      userContext = `\n\n## User Stats:
+- Accuracy: ${accuracy}% (${userProgress.totalCorrect}/${userProgress.totalQuestionsAnswered})
+- Recent test: ${recentTest ? `${recentTest.testName} - ${recentTest.scaledScore}` : 'None'}`;
     }
+
+    // Build final system prompt
+    const finalSystemPrompt = BASE_SYSTEM_PROMPT + questionContext + userContext;
 
     // Convert messages to Anthropic format
     const anthropicMessages = messages.map((msg: { role: string; content: string }) => ({
@@ -134,18 +129,44 @@ When asked about specific questions, look them up in the questions database and 
       content: msg.content,
     }));
 
-    const completion = await anthropic.messages.create({
+    // Create a streaming response
+    const stream = await anthropic.messages.stream({
       model: "claude-sonnet-4-20250514",
       max_tokens: 1024,
-      system: SYSTEM_PROMPT + contextMessage,
+      system: finalSystemPrompt,
       messages: anthropicMessages,
     });
 
-    const response = completion.content[0]?.type === "text"
-      ? completion.content[0].text
-      : "I apologize, but I couldn't generate a response. Please try again.";
+    // Create a ReadableStream for the response
+    const encoder = new TextEncoder();
+    const readableStream = new ReadableStream({
+      async start(controller) {
+        try {
+          for await (const chunk of stream) {
+            if (chunk.type === 'content_block_delta' &&
+                chunk.delta.type === 'text_delta') {
+              // Send each text chunk as it arrives
+              const text = chunk.delta.text;
+              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text })}\n\n`));
+            }
+          }
+          // Send done signal
+          controller.enqueue(encoder.encode('data: {"done": true}\n\n'));
+          controller.close();
+        } catch (error) {
+          console.error('[CHAT API] Streaming error:', error);
+          controller.error(error);
+        }
+      },
+    });
 
-    return NextResponse.json({ response });
+    return new Response(readableStream, {
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+      },
+    });
   } catch (error: unknown) {
     // Log the full error for debugging
     console.error('[CHAT API] Error details:', error);

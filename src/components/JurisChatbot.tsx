@@ -173,6 +173,17 @@ How can I help you today?`,
     setInput("");
     setIsLoading(true);
 
+    // Create a placeholder message for streaming
+    const assistantMessageId = (Date.now() + 1).toString();
+    const assistantMessage: Message = {
+      id: assistantMessageId,
+      role: "assistant",
+      content: "",
+      timestamp: new Date(),
+    };
+
+    setMessages((prev) => [...prev, assistantMessage]);
+
     try {
       const response = await authenticatedFetch("/api/chat", {
         method: "POST",
@@ -185,28 +196,77 @@ How can I help you today?`,
         }),
       });
 
-      const data = await response.json();
-
-      if (data.error) {
-        throw new Error(data.error);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: "assistant",
-        content: data.response,
-        timestamp: new Date(),
-      };
+      // Handle streaming response
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
 
-      setMessages((prev) => [...prev, assistantMessage]);
-    } catch {
-      const errorMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: "assistant",
-        content: "I apologize, but I'm having trouble connecting right now. Please try again in a moment.",
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, errorMessage]);
+      if (!reader) {
+        throw new Error("No response body");
+      }
+
+      let accumulatedContent = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+
+        if (done) break;
+
+        const chunk = decoder.decode(value);
+        const lines = chunk.split('\n');
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const data = line.slice(6);
+            try {
+              const parsed = JSON.parse(data);
+
+              if (parsed.done) {
+                // Streaming complete
+                break;
+              }
+
+              if (parsed.text) {
+                accumulatedContent += parsed.text;
+
+                // Update the message with accumulated content
+                setMessages((prev) =>
+                  prev.map((msg) =>
+                    msg.id === assistantMessageId
+                      ? { ...msg, content: accumulatedContent }
+                      : msg
+                  )
+                );
+              }
+            } catch (e) {
+              // Ignore JSON parse errors for incomplete chunks
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error('[Juris] Error sending message:', error);
+
+      // Extract error message if available
+      let errorContent = "I apologize, but I'm having trouble connecting right now. Please try again in a moment.";
+
+      if (error instanceof Error) {
+        console.error('[Juris] Error details:', error.message);
+        // Show the actual error message to help with debugging
+        errorContent = `Error: ${error.message}`;
+      }
+
+      // Update the placeholder message with error
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === assistantMessageId
+            ? { ...msg, content: errorContent }
+            : msg
+        )
+      );
     } finally {
       setIsLoading(false);
     }
