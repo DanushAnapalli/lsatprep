@@ -1,15 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { getAdminDb } from "@/lib/firebase-admin";
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
-const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+import { getStripeServer, STRIPE_WEBHOOK_SECRET } from "@/lib/stripe-server";
 
 export async function POST(request: NextRequest) {
   const body = await request.text();
   const signature = request.headers.get("stripe-signature");
 
-  if (!signature || !webhookSecret) {
+  if (!signature || !STRIPE_WEBHOOK_SECRET) {
     return NextResponse.json(
       { error: "Missing signature or webhook secret" },
       { status: 400 }
@@ -19,7 +17,8 @@ export async function POST(request: NextRequest) {
   let event: Stripe.Event;
 
   try {
-    event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
+    const stripe = getStripeServer();
+    event = stripe.webhooks.constructEvent(body, signature, STRIPE_WEBHOOK_SECRET);
   } catch {
     return NextResponse.json(
       { error: "Invalid signature" },
@@ -28,6 +27,7 @@ export async function POST(request: NextRequest) {
   }
 
   const db = getAdminDb();
+  const stripe = getStripeServer();
 
   // Handle the event
   switch (event.type) {

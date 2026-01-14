@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
+import { getStripeServer } from "@/lib/stripe-server";
 import { authenticateRequest, unauthorizedResponse } from "@/lib/auth-middleware";
 import { isFounderEmail } from "@/lib/subscription-server";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
-
 export async function POST(request: NextRequest) {
   try {
+    const stripe = getStripeServer();
     // Authenticate the request
     const authResult = await authenticateRequest(request);
 

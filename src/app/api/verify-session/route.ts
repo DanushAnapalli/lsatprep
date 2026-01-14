@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
+import { getStripeServer } from "@/lib/stripe-server";
 import { authenticateRequest, unauthorizedResponse } from "@/lib/auth-middleware";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+// const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!); // Replaced with lazy initialization
 
 export async function POST(request: NextRequest) {
   try {
+    const stripe = getStripeServer();
     // Authenticate the request
     const authResult = await authenticateRequest(request);
 

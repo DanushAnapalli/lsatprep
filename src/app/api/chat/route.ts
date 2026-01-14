@@ -4,9 +4,17 @@ import { logicalReasoningQuestions, readingComprehensionQuestions } from "@/lib/
 import { authenticateRequest, unauthorizedResponse } from "@/lib/auth-middleware";
 import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limiter";
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
+// Lazy initialization of Anthropic client to avoid build-time errors
+let anthropicClient: Anthropic | null = null;
+
+function getAnthropicClient(): Anthropic {
+  if (!anthropicClient) {
+    anthropicClient = new Anthropic({
+      apiKey: process.env.ANTHROPIC_API_KEY,
+    });
+  }
+  return anthropicClient;
+}
 
 // Helper function to find a specific question by ID
 function findQuestionById(questionId: string) {
@@ -103,7 +111,7 @@ export async function POST(request: NextRequest) {
 Type: ${question.type}
 Stimulus: ${question.stimulus}
 Question: ${question.questionStem}
-Options: ${JSON.stringify(question.options)}
+Answer Choices: ${question.answerChoices.map(choice => `${choice.letter}. ${choice.text}`).join('; ')}
 Correct Answer: ${question.correctAnswer}
 Explanation: ${question.explanation}`;
       }
@@ -130,6 +138,7 @@ Explanation: ${question.explanation}`;
     }));
 
     // Create a streaming response
+    const anthropic = getAnthropicClient();
     const stream = await anthropic.messages.stream({
       model: "claude-sonnet-4-20250514",
       max_tokens: 1024,
