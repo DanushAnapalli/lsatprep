@@ -89,30 +89,9 @@ export async function POST(request: NextRequest) {
       return unauthorizedResponse("Authentication required to use chat");
     }
 
-    // Skip rate limiting in production for now (in-memory rate limiter doesn't work well in serverless)
-    // TODO: Implement Redis-based rate limiting for production
-    const isProduction = process.env.VERCEL_ENV === 'production';
-
-    if (!isProduction) {
-      // Rate limit by user ID (only in dev)
-      const rateLimitResult = checkRateLimit(
-        `chat:${authResult.user.uid}`,
-        RATE_LIMITS.chat
-      );
-
-      if (!rateLimitResult.allowed) {
-        return NextResponse.json(
-          { error: "Too many requests. Please wait before sending more messages." },
-          {
-            status: 429,
-            headers: {
-              "X-RateLimit-Remaining": "0",
-              "X-RateLimit-Reset": rateLimitResult.resetTime.toString(),
-            }
-          }
-        );
-      }
-    }
+    // NOTE: Rate limiting temporarily disabled for Vercel serverless deployment
+    // In-memory rate limiting doesn't work across serverless function instances
+    // TODO: Implement Redis-based or database-backed rate limiting for production
 
     const { messages, userProgress } = await request.json();
 
