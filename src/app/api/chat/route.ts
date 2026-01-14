@@ -73,6 +73,15 @@ ${JSON.stringify(questionsContext.rcQuestions, null, 2)}
 
 export async function POST(request: NextRequest) {
   try {
+    // Verify API key is present
+    if (!process.env.ANTHROPIC_API_KEY) {
+      console.error('[CHAT API] ANTHROPIC_API_KEY is not set in environment variables');
+      return NextResponse.json(
+        { error: "Chat service is not properly configured. Please contact support." },
+        { status: 500 }
+      );
+    }
+
     // Authenticate the request
     const authResult = await authenticateRequest(request);
 
@@ -80,23 +89,29 @@ export async function POST(request: NextRequest) {
       return unauthorizedResponse("Authentication required to use chat");
     }
 
-    // Rate limit by user ID
-    const rateLimitResult = checkRateLimit(
-      `chat:${authResult.user.uid}`,
-      RATE_LIMITS.chat
-    );
+    // Skip rate limiting in production for now (in-memory rate limiter doesn't work well in serverless)
+    // TODO: Implement Redis-based rate limiting for production
+    const isProduction = process.env.VERCEL_ENV === 'production';
 
-    if (!rateLimitResult.allowed) {
-      return NextResponse.json(
-        { error: "Too many requests. Please wait before sending more messages." },
-        {
-          status: 429,
-          headers: {
-            "X-RateLimit-Remaining": "0",
-            "X-RateLimit-Reset": rateLimitResult.resetTime.toString(),
-          }
-        }
+    if (!isProduction) {
+      // Rate limit by user ID (only in dev)
+      const rateLimitResult = checkRateLimit(
+        `chat:${authResult.user.uid}`,
+        RATE_LIMITS.chat
       );
+
+      if (!rateLimitResult.allowed) {
+        return NextResponse.json(
+          { error: "Too many requests. Please wait before sending more messages." },
+          {
+            status: 429,
+            headers: {
+              "X-RateLimit-Remaining": "0",
+              "X-RateLimit-Reset": rateLimitResult.resetTime.toString(),
+            }
+          }
+        );
+      }
     }
 
     const { messages, userProgress } = await request.json();
