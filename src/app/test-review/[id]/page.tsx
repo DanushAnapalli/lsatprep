@@ -19,10 +19,14 @@ import {
 } from "lucide-react";
 import {
   loadUserProgress,
+  saveUserProgress,
   CompletedTest,
   CompletedSection,
   AnsweredQuestion,
   setCurrentUserId,
+  UserProgress,
+  updateWrongAnswerNotes,
+  deleteWrongAnswerNotes,
 } from "@/lib/user-progress";
 import {
   logicalReasoningQuestions,
@@ -30,6 +34,7 @@ import {
 } from "@/lib/sample-questions";
 import { Question } from "@/lib/lsat-types";
 import { onAuthChange, User as FirebaseUser } from "@/lib/firebase";
+import QuestionNotes from "@/components/QuestionNotes";
 
 const cx = (...classes: (string | false | null | undefined)[]) =>
   classes.filter(Boolean).join(" ");
@@ -89,6 +94,9 @@ function QuestionReviewCard({
   sectionType,
   averageTime,
   previousPassageId,
+  progress,
+  onSaveNotes,
+  onDeleteNotes,
 }: {
   answeredQuestion: AnsweredQuestion;
   questionNumber: number;
@@ -97,6 +105,9 @@ function QuestionReviewCard({
   sectionType: "logical-reasoning" | "reading-comprehension";
   averageTime: number;
   previousPassageId?: string;
+  progress: UserProgress;
+  onSaveNotes: (questionId: string, notes: string) => void;
+  onDeleteNotes: (questionId: string) => void;
 }) {
   const question = getQuestionById(answeredQuestion.questionId);
 
@@ -242,6 +253,16 @@ function QuestionReviewCard({
             </div>
           </div>
 
+          {/* Question Notes - only show if user got it wrong */}
+          {!isCorrect && (
+            <QuestionNotes
+              questionId={question.id}
+              wrongAnswer={progress.wrongAnswers.find(wa => wa.questionId === question.id)}
+              onSave={(notes) => onSaveNotes(question.id, notes)}
+              onDelete={() => onDeleteNotes(question.id)}
+            />
+          )}
+
         </div>
       )}
     </div>
@@ -254,6 +275,7 @@ export default function TestReviewPage() {
   const testId = params.id as string;
 
   const [test, setTest] = useState<CompletedTest | null>(null);
+  const [progress, setProgress] = useState<UserProgress>(loadUserProgress());
   const [isLoading, setIsLoading] = useState(true);
   const [expandedQuestions, setExpandedQuestions] = useState<Record<string, boolean>>({});
   const [filter, setFilter] = useState<"all" | "correct" | "incorrect">("all");
@@ -273,8 +295,9 @@ export default function TestReviewPage() {
   // Load test when auth is determined
   useEffect(() => {
     if (authLoading) return;
-    const progress = loadUserProgress(user?.uid);
-    const foundTest = progress.completedTests.find((t) => t.id === testId);
+    const loadedProgress = loadUserProgress(user?.uid);
+    setProgress(loadedProgress);
+    const foundTest = loadedProgress.completedTests.find((t) => t.id === testId);
     setTest(foundTest || null);
     setIsLoading(false);
   }, [testId, user, authLoading]);
@@ -301,6 +324,18 @@ export default function TestReviewPage() {
 
   const collapseAll = () => {
     setExpandedQuestions({});
+  };
+
+  const handleSaveNotes = (questionId: string, notes: string) => {
+    const updatedProgress = updateWrongAnswerNotes(progress, questionId, notes);
+    setProgress(updatedProgress);
+    saveUserProgress(updatedProgress);
+  };
+
+  const handleDeleteNotes = (questionId: string) => {
+    const updatedProgress = deleteWrongAnswerNotes(progress, questionId);
+    setProgress(updatedProgress);
+    saveUserProgress(updatedProgress);
   };
 
   if (isLoading) {
@@ -588,6 +623,9 @@ export default function TestReviewPage() {
                     sectionType={question.sectionType as "logical-reasoning" | "reading-comprehension"}
                     averageTime={avgTime}
                     previousPassageId={previousPassageId}
+                    progress={progress}
+                    onSaveNotes={handleSaveNotes}
+                    onDeleteNotes={handleDeleteNotes}
                   />
                 );
               });

@@ -55,6 +55,8 @@ import {
   loadInProgressTest,
   clearInProgressTest,
   InProgressTest,
+  updateWrongAnswerNotes,
+  deleteWrongAnswerNotes,
 } from "@/lib/user-progress";
 import { onAuthChange, User as FirebaseUser } from "@/lib/firebase";
 import { getUserTier, TIER_LIMITS, SubscriptionTier } from "@/lib/subscription";
@@ -64,6 +66,7 @@ import { BlindReviewResult } from "@/lib/blind-review";
 import HamburgerMenu from "@/components/HamburgerMenu";
 import AchievementNotification from "@/components/AchievementNotification";
 import { checkAndUnlockAchievements, updateStreak, getUserAchievements } from "@/lib/achievements";
+import QuestionNotes from "@/components/QuestionNotes";
 
 const cx = (...classes: (string | false | null | undefined)[]) =>
   classes.filter(Boolean).join(" ");
@@ -1875,6 +1878,26 @@ function PracticeContent() {
                     </motion.div>
                   )}
                 </AnimatePresence>
+
+                {/* Question Notes - only show if user got it wrong */}
+                {currentAnswer?.selectedAnswer !== currentQuestion.correctAnswer && progress && (
+                  <QuestionNotes
+                    questionId={currentQuestion.id}
+                    wrongAnswer={progress.wrongAnswers.find(wa => wa.questionId === currentQuestion.id)}
+                    onSave={(notes) => {
+                      if (!progress) return;
+                      const updatedProgress = updateWrongAnswerNotes(progress, currentQuestion.id, notes);
+                      setProgress(updatedProgress);
+                      saveUserProgress(updatedProgress);
+                    }}
+                    onDelete={() => {
+                      if (!progress) return;
+                      const updatedProgress = deleteWrongAnswerNotes(progress, currentQuestion.id);
+                      setProgress(updatedProgress);
+                      saveUserProgress(updatedProgress);
+                    }}
+                  />
+                )}
               </div>
             )}
 
