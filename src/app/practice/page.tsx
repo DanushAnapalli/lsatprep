@@ -1925,6 +1925,17 @@ function PracticeContent() {
                   <ChevronRight size={18} className="sm:hidden" />
                   <ChevronRight size={20} className="hidden sm:block" />
                 </button>
+              ) : currentSectionIndex < sections.length - 1 ? (
+                <button
+                  onClick={handleSectionComplete}
+                  type="button"
+                  className="flex items-center gap-1 rounded-sm border-2 border-green-600 bg-green-600 px-2 py-2 text-sm font-semibold text-white transition hover:bg-green-700 sm:gap-2 sm:px-4"
+                >
+                  <CheckCircle2 size={16} className="sm:hidden" />
+                  <CheckCircle2 size={20} className="hidden sm:block" />
+                  <span className="hidden sm:inline">Next Section</span>
+                  <span className="sm:hidden">Next</span>
+                </button>
               ) : !isReviewMode ? (
                 <button
                   onClick={handleSectionComplete}
@@ -1933,7 +1944,7 @@ function PracticeContent() {
                 >
                   <CheckCircle2 size={16} className="sm:hidden" />
                   <CheckCircle2 size={20} className="hidden sm:block" />
-                  <span className="hidden sm:inline">{currentSectionIndex < sections.length - 1 ? "Next Section" : "Finish"}</span>
+                  <span className="hidden sm:inline">Finish</span>
                   <span className="sm:hidden">Done</span>
                 </button>
               ) : (

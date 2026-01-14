@@ -62,6 +62,12 @@ export interface WrongAnswer {
   timestamp: Date;
   reviewed: boolean; // Has user reviewed this in improvement test?
   masteredAt?: Date; // When user got it right in improvement test
+
+  // User annotations for personalized learning (all optional for backward compatibility)
+  userNotes?: string;        // User's personal notes about why they got this wrong
+  notesAddedAt?: Date;       // When notes were last updated
+  lastReviewedAt?: Date;     // Last time user reviewed this question (not just reviewed in test)
+  reviewCount?: number;      // Number of times user has reviewed this question
 }
 
 export interface TestConfig {
@@ -492,6 +498,78 @@ export function recordImprovementTest(
   return {
     ...updatedProgress,
     improvementTestsTaken: progress.improvementTestsTaken + 1,
+    lastActiveAt: new Date(),
+  };
+}
+
+// ============================================
+// USER NOTES & ANNOTATIONS
+// ============================================
+
+export function updateWrongAnswerNotes(
+  progress: UserProgress,
+  questionId: string,
+  notes: string
+): UserProgress {
+  return {
+    ...progress,
+    wrongAnswers: progress.wrongAnswers.map((wa) =>
+      wa.questionId === questionId
+        ? {
+            ...wa,
+            userNotes: notes,
+            notesAddedAt: new Date(),
+            lastReviewedAt: new Date(),
+            reviewCount: (wa.reviewCount || 0) + 1,
+          }
+        : wa
+    ),
+    lastActiveAt: new Date(),
+  };
+}
+
+export function getNotesForQuestion(
+  progress: UserProgress,
+  questionId: string
+): string | undefined {
+  const wrongAnswer = progress.wrongAnswers.find((wa) => wa.questionId === questionId);
+  return wrongAnswer?.userNotes;
+}
+
+export function deleteWrongAnswerNotes(
+  progress: UserProgress,
+  questionId: string
+): UserProgress {
+  return {
+    ...progress,
+    wrongAnswers: progress.wrongAnswers.map((wa) =>
+      wa.questionId === questionId
+        ? {
+            ...wa,
+            userNotes: undefined,
+            notesAddedAt: undefined,
+          }
+        : wa
+    ),
+    lastActiveAt: new Date(),
+  };
+}
+
+export function incrementReviewCount(
+  progress: UserProgress,
+  questionId: string
+): UserProgress {
+  return {
+    ...progress,
+    wrongAnswers: progress.wrongAnswers.map((wa) =>
+      wa.questionId === questionId
+        ? {
+            ...wa,
+            lastReviewedAt: new Date(),
+            reviewCount: (wa.reviewCount || 0) + 1,
+          }
+        : wa
+    ),
     lastActiveAt: new Date(),
   };
 }

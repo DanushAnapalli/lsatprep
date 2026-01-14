@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LSATprep Ad - AI Tutor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
+            padding: 60px;
+            width: 1400px;
+            height: 900px;
+        }
+
+        .container {
+            display: flex;
+            gap: 40px;
+            height: 100%;
+        }
+
+        .left-section {
+            flex: 0 0 380px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 40px;
+        }
+
+        .logo-icon {
+            width: 48px;
+            height: 48px;
+            background: #1e3a8a;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .logo-text {
+            font-size: 32px;
+            font-weight: 600;
+            color: #1e3a8a;
+        }
+
+        h1 {
+            font-size: 68px;
+            font-weight: 700;
+            line-height: 1.1;
+            color: #0f172a;
+            margin-bottom: 24px;
+        }
+
+        .highlight {
+            color: #7c3aed;
+        }
+
+        .subtitle {
+            font-size: 20px;
+            color: #475569;
+            line-height: 1.6;
+            margin-bottom: 48px;
+        }
+
+        .stats {
+            display: flex;
+            gap: 24px;
+            margin-bottom: 48px;
+        }
+
+        .stat-box {
+            flex: 1;
+            padding: 20px;
+            background: white;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .stat-value {
+            font-size: 36px;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 4px;
+        }
+
+        .stat-value.green {
+            color: #059669;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 500;
+        }
+
+        .cta-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            background: #1e3a8a;
+            color: white;
+            padding: 18px 36px;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s;
+            margin-bottom: 16px;
+        }
+
+        .cta-button:hover {
+            background: #1e40af;
+        }
+
+        .arrow {
+            font-size: 20px;
+        }
+
+        .fine-print {
+            color: #64748b;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .checkmark {
+            color: #059669;
+            font-weight: bold;
+        }
+
+        .right-section {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .dashboard {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.12);
+            padding: 32px;
+            width: 100%;
+            max-width: 900px;
+        }
+
+        .dashboard-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 32px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .window-dots {
+            display: flex;
+            gap: 8px;
+        }
+
+        .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .dot.red { background: #ef4444; }
+        .dot.yellow { background: #eab308; }
+        .dot.green { background: #22c55e; }
+
+        .dashboard-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: #0f172a;
+            flex: 1;
+            text-align: center;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 24px;
+            font-size: 14px;
+            color: #64748b;
+        }
+
+        .tab {
+            opacity: 0.5;
+        }
+
+        .tab.active {
+            opacity: 1;
+            font-weight: 600;
+            color: #0f172a;
+        }
+
+        .chat-container {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 24px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .chat-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .ai-avatar {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #7c3aed, #a78bfa);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .chat-title {
+            flex: 1;
+        }
+
+        .chat-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: #0f172a;
+        }
+
+        .chat-status {
+            font-size: 12px;
+            color: #64748b;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .online-dot {
+            width: 6px;
+            height: 6px;
+            background: #22c55e;
+            border-radius: 50%;
+        }
+
+        .chat-messages {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .message {
+            display: flex;
+            gap: 12px;
+        }
+
+        .message.user {
+            flex-direction: row-reverse;
+        }
+
+        .message-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        .message.user .message-avatar {
+            background: #dbeafe;
+        }
+
+        .message.ai .message-avatar {
+            background: linear-gradient(135deg, #7c3aed, #a78bfa);
+        }
+
+        .message-content {
+            background: white;
+            padding: 16px;
+            border-radius: 12px;
+            max-width: 85%;
+            border: 1px solid #e2e8f0;
+        }
+
+        .message.user .message-content {
+            background: #eff6ff;
+            border-color: #bfdbfe;
+        }
+
+        .message-text {
+            font-size: 14px;
+            color: #0f172a;
+            line-height: 1.6;
+        }
+
+        .explanation-box {
+            background: #faf5ff;
+            border: 1px solid #e9d5ff;
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 12px;
+        }
+
+        .explanation-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #6b21a8;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .explanation-text {
+            font-size: 13px;
+            color: #581c87;
+            line-height: 1.6;
+        }
+
+        .trap-highlight {
+            background: #fee2e2;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 500;
+            color: #991b1b;
+        }
+
+        .correct-highlight {
+            background: #d1fae5;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 500;
+            color: #065f46;
+        }
+
+        .typing-indicator {
+            display: flex;
+            gap: 4px;
+            padding: 12px;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background: #94a3b8;
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing {
+            0%, 60%, 100% {
+                transform: translateY(0);
+            }
+            30% {
+                transform: translateY(-8px);
+            }
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-top: 24px;
+        }
+
+        .feature-card {
+            background: white;
+            padding: 16px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            text-align: center;
+        }
+
+        .feature-icon {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+
+        .feature-label {
+            font-size: 12px;
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        .ai-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: linear-gradient(135deg, #7c3aed, #a78bfa);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .sparkle {
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="left-section">
+            <div class="logo">
+                <div class="logo-icon">▷</div>
+                <div class="logo-text">LSATprep</div>
+            </div>
+
+            <h1>Never wonder <span class="highlight">"why was I wrong?"</span> again</h1>
+
+            <p class="subtitle">Get instant AI explanations for every question. Juris breaks down your mistakes and teaches you to recognize patterns.</p>
+
+            <div class="stats">
+                <div class="stat-box">
+                    <div class="stat-value">24/7</div>
+                    <div class="stat-label">AI Tutor</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value">500+</div>
+                    <div class="stat-label">Questions</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value green">Free</div>
+                    <div class="stat-label">To Start</div>
+                </div>
+            </div>
+
+            <a href="#" class="cta-button">
+                <span>Start Free Practice</span>
+                <span class="arrow">→</span>
+            </a>
+
+            <div class="fine-print">
+                <span class="checkmark">✓</span>
+                <span>No credit card required</span>
+            </div>
+        </div>
+
+        <div class="right-section">
+            <div class="dashboard">
+                <div class="dashboard-header">
+                    <div class="window-dots">
+                        <div class="dot red"></div>
+                        <div class="dot yellow"></div>
+                        <div class="dot green"></div>
+                    </div>
+                    <div class="dashboard-title">Juris AI Assistant</div>
+                    <div class="tabs">
+                        <span class="tab">Practice</span>
+                        <span class="tab">Analytics</span>
+                        <span class="tab active">Review</span>
+                    </div>
+                </div>
+
+                <div class="chat-container">
+                    <div class="chat-header">
+                        <div class="ai-avatar">🤖</div>
+                        <div class="chat-title">
+                            <div class="chat-name">Juris AI</div>
+                            <div class="chat-status">
+                                <span class="online-dot"></span>
+                                <span>Always available</span>
+                            </div>
+                        </div>
+                        <div class="ai-badge">
+                            <span class="sparkle">✨</span>
+                            <span>Powered by Claude</span>
+                        </div>
+                    </div>
+
+                    <div class="chat-messages">
+                        <div class="message user">
+                            <div class="message-avatar">👤</div>
+                            <div class="message-content">
+                                <div class="message-text">
+                                    I got question 12 wrong again. Why does answer choice (D) seem right but it's actually (B)?
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="message ai">
+                            <div class="message-avatar">🤖</div>
+                            <div class="message-content">
+                                <div class="message-text">
+                                    Great question! This is a classic <strong>Strengthen</strong> question trap. Let me break down why (D) is tempting but wrong:
+                                </div>
+
+                                <div class="explanation-box">
+                                    <div class="explanation-title">
+                                        <span>💡</span>
+                                        <span>The Trap in Answer (D)</span>
+                                    </div>
+                                    <div class="explanation-text">
+                                        Answer (D) feels relevant because it mentions the study's subject matter. But it <span class="trap-highlight">doesn't address the gap</span> between the premise (correlation) and conclusion (causation).
+                                        <br><br>
+                                        <strong>The argument's flaw:</strong> Assumes correlation = causation without ruling out alternative explanations.
+                                    </div>
+                                </div>
+
+                                <div class="explanation-box" style="background: #ecfdf5; border-color: #6ee7b7;">
+                                    <div class="explanation-title" style="color: #065f46;">
+                                        <span>✓</span>
+                                        <span>Why (B) Is Correct</span>
+                                    </div>
+                                    <div class="explanation-text" style="color: #047857;">
+                                        Answer (B) <span class="correct-highlight">eliminates a confounding variable</span> (reverse causation). This directly strengthens the causal claim by showing the effect came after the cause.
+                                        <br><br>
+                                        <strong>Pattern to remember:</strong> Strengthen questions often require eliminating alternative explanations, not just adding supporting facts.
+                                    </div>
+                                </div>
+
+                                <div class="message-text" style="margin-top: 12px;">
+                                    You've missed 3 similar questions this week. Want me to generate a drill focused on <strong>causation vs. correlation</strong> patterns?
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="message user">
+                            <div class="message-avatar">👤</div>
+                            <div class="message-content">
+                                <div class="message-text">
+                                    Yes please! That would be super helpful.
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="message ai">
+                            <div class="message-avatar">🤖</div>
+                            <div class="message-content">
+                                <div class="typing-indicator">
+                                    <div class="typing-dot"></div>
+                                    <div class="typing-dot"></div>
+                                    <div class="typing-dot"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="features-grid">
+                        <div class="feature-card">
+                            <div class="feature-icon">🎯</div>
+                            <div class="feature-label">Explains every question</div>
+                        </div>
+                        <div class="feature-card">
+                            <div class="feature-icon">🔍</div>
+                            <div class="feature-label">Identifies patterns</div>
+                        </div>
+                        <div class="feature-card">
+                            <div class="feature-icon">📚</div>
+                            <div class="feature-label">Creates custom drills</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

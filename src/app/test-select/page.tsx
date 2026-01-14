@@ -183,6 +183,11 @@ function TestSelectContent() {
   const [lrCompleted, setLrCompleted] = useState<number>(0);
   const [rcCompleted, setRcCompleted] = useState<number>(0);
 
+  // Improvement test filters
+  const [sectionFilter, setSectionFilter] = useState<"all" | "logical-reasoning" | "reading-comprehension">("all");
+  const [questionTypeFilters, setQuestionTypeFilters] = useState<string[]>([]);
+  const [showReviewedOnly, setShowReviewedOnly] = useState(false);
+
   // Listen to auth state
   useEffect(() => {
     const unsubscribe = onAuthChange((firebaseUser) => {
@@ -277,6 +282,30 @@ function TestSelectContent() {
   const anyLimitReached = lrBlocked || rcBlocked;
 
   const wrongAnswerIds = getWrongAnswerQuestionIds(progress);
+
+  // Apply filters to wrong answers for improvement tests
+  const filteredWrongAnswers = progress.wrongAnswers.filter(wa => {
+    // Exclude mastered questions
+    if (wa.masteredAt) return false;
+
+    // Apply section type filter
+    if (sectionFilter !== "all" && wa.sectionType !== sectionFilter) return false;
+
+    // Apply question type filters (if any selected)
+    if (questionTypeFilters.length > 0 && !questionTypeFilters.includes(wa.questionType)) return false;
+
+    // Apply reviewed status filter
+    if (showReviewedOnly && !wa.reviewed) return false;
+
+    return true;
+  });
+
+  const filteredWrongAnswerIds = [...new Set(filteredWrongAnswers.map(wa => wa.questionId))];
+
+  // Count wrong answers by section for filter display
+  const lrWrongCount = progress.wrongAnswers.filter(wa => !wa.masteredAt && wa.sectionType === "logical-reasoning").length;
+  const rcWrongCount = progress.wrongAnswers.filter(wa => !wa.masteredAt && wa.sectionType === "reading-comprehension").length;
+
   const weakTopics = getWeakTopics(progress);
   const allQuestionIds = [
     ...logicalReasoningQuestions.map((q) => q.id),
@@ -358,14 +387,16 @@ function TestSelectContent() {
     id: "improvement",
     title: "Review Missed Questions",
     description:
-      wrongAnswerIds.length > 0
-        ? `Retry the ${wrongAnswerIds.length} question${wrongAnswerIds.length > 1 ? "s" : ""} you previously got wrong. Master them to mark as complete.`
+      filteredWrongAnswerIds.length > 0
+        ? `Retry the ${filteredWrongAnswerIds.length} question${filteredWrongAnswerIds.length > 1 ? "s" : ""} you previously got wrong. Master them to mark as complete.`
+        : wrongAnswerIds.length > 0
+        ? "No questions match your current filters. Try adjusting your filter settings."
         : "Complete some practice tests first. Questions you miss will appear here for review.",
     icon: RotateCcw,
     sections: "Custom",
     time: "Varies",
-    questionCount: wrongAnswerIds.length,
-    available: wrongAnswerIds.length > 0,
+    questionCount: filteredWrongAnswerIds.length,
+    available: filteredWrongAnswerIds.length > 0,
   };
 
   // Filter options based on navigation mode
@@ -399,7 +430,7 @@ function TestSelectContent() {
     }
 
     if (selectedType === "improvement") {
-      params.set("questionIds", wrongAnswerIds.join(","));
+      params.set("questionIds", filteredWrongAnswerIds.join(","));
     }
 
     if (selectedType === "targeted") {
@@ -509,6 +540,63 @@ function TestSelectContent() {
             />
           ))}
         </div>
+
+        {/* Improvement Test Filters - only shown when type=improvement */}
+        {preselectedType === "improvement" && wrongAnswerIds.length > 0 && (
+          <div className="mt-6 space-y-4">
+            {/* Section Type Filter */}
+            <div className="rounded-sm border-2 border-stone-200 bg-white p-4 dark:border-stone-700 dark:bg-stone-900">
+              <div className="mb-3">
+                <div className="font-medium text-stone-900 dark:text-stone-100">Filter by Section</div>
+                <p className="text-sm text-stone-500">Show questions from specific sections</p>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setSectionFilter("all")}
+                  className={cx(
+                    "flex-1 rounded-sm px-4 py-2 text-sm font-medium transition",
+                    sectionFilter === "all"
+                      ? "bg-[#1a365d] text-white dark:bg-amber-500 dark:text-stone-900"
+                      : "bg-stone-100 text-stone-600 hover:bg-stone-200 dark:bg-stone-800 dark:text-stone-400"
+                  )}
+                >
+                  All ({wrongAnswerIds.length})
+                </button>
+                <button
+                  onClick={() => setSectionFilter("logical-reasoning")}
+                  className={cx(
+                    "flex-1 rounded-sm px-4 py-2 text-sm font-medium transition",
+                    sectionFilter === "logical-reasoning"
+                      ? "bg-[#1a365d] text-white dark:bg-amber-500 dark:text-stone-900"
+                      : "bg-stone-100 text-stone-600 hover:bg-stone-200 dark:bg-stone-800 dark:text-stone-400"
+                  )}
+                >
+                  LR ({lrWrongCount})
+                </button>
+                <button
+                  onClick={() => setSectionFilter("reading-comprehension")}
+                  className={cx(
+                    "flex-1 rounded-sm px-4 py-2 text-sm font-medium transition",
+                    sectionFilter === "reading-comprehension"
+                      ? "bg-[#1a365d] text-white dark:bg-amber-500 dark:text-stone-900"
+                      : "bg-stone-100 text-stone-600 hover:bg-stone-200 dark:bg-stone-800 dark:text-stone-400"
+                  )}
+                >
+                  RC ({rcWrongCount})
+                </button>
+              </div>
+            </div>
+
+            {/* Filtered Question Count Display */}
+            {filteredWrongAnswerIds.length !== wrongAnswerIds.length && (
+              <div className="rounded-sm border-2 border-amber-200 bg-amber-50 p-3 dark:border-amber-900/50 dark:bg-amber-900/20">
+                <p className="text-sm font-medium text-amber-900 dark:text-amber-200">
+                  {filteredWrongAnswerIds.length} of {wrongAnswerIds.length} questions match your filters
+                </p>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Question Mode Toggle - shown for all modes */}
         {selectedType && (

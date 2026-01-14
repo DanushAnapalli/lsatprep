@@ -217,6 +217,13 @@ export interface Question {
   difficulty: "easy" | "medium" | "hard";
   passageId?: string;         // For RC questions linked to a passage
   source?: string;            // Where question came from (for tracking)
+
+  // Enhanced explanation fields for better learning (all optional for backward compatibility)
+  commonMistakes?: string[];  // Top 3-5 common errors students make on this question
+  whyChosen?: Record<string, string>; // Map of answer letter → why students choose it (psychology, not just logic)
+  strategyTip?: string;       // Strategic approach specific to this question instance
+  thinkingSteps?: string[];   // Step-by-step walkthrough of correct reasoning process
+  keyTerm?: string;           // Core LSAT concept being tested (e.g., "Correlation vs. Causation")
 }
 
 export interface AnswerChoice {
