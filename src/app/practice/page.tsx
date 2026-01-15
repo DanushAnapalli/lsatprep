@@ -621,7 +621,67 @@ function PracticeContent() {
 
             // If server returned an error flag, use client-side fallback
             if (limitResult.error) {
-              // Use client-side count check as fallback
+              // Check user's subscription tier from client-side
+              const clientTier = getUserTier(user);
+
+              // If user is Pro, allow the test (don't apply free tier limits)
+              if (clientTier === "pro" || clientTier === "founder") {
+                setUserTier(clientTier);
+              } else {
+                // Use client-side count check as fallback for free users
+                const completedLRTests = loadedProgress.completedTests.filter(
+                  (test) => test.sections.some((s) => s.type === "logical-reasoning")
+                ).length;
+                const completedRCTests = loadedProgress.completedTests.filter(
+                  (test) => test.sections.some((s) => s.type === "reading-comprehension")
+                ).length;
+
+                const tierLimits = TIER_LIMITS.free;
+
+                if (testType === "lr-only" && completedLRTests >= tierLimits.lrSetsAllowed) {
+                  setTierBlocked("You've reached your free limit of 3 LR practice sets. Upgrade to Pro for unlimited practice!");
+                  setIsLoading(false);
+                  setInitialized(true);
+                  return;
+                }
+
+                if (testType === "rc-only" && completedRCTests >= tierLimits.rcSetsAllowed) {
+                  setTierBlocked("You've reached your free limit of 3 RC practice sets. Upgrade to Pro for unlimited practice!");
+                  setIsLoading(false);
+                  setInitialized(true);
+                  return;
+                }
+
+                if (testType === "full" && (completedLRTests >= tierLimits.lrSetsAllowed || completedRCTests >= tierLimits.rcSetsAllowed)) {
+                  setTierBlocked("You've reached your free practice limit. Upgrade to Pro for unlimited full practice tests!");
+                  setIsLoading(false);
+                  setInitialized(true);
+                  return;
+                }
+
+                // If we got here, allow the test
+                setUserTier(clientTier);
+              }
+            } else {
+              setUserTier(limitResult.tier);
+              setServerLimitsChecked(true);
+
+              if (!limitResult.canStart) {
+                setTierBlocked(limitResult.reason || "You've reached your free limit. Upgrade to Pro for unlimited practice!");
+                setIsLoading(false);
+                setInitialized(true);
+                return;
+              }
+            }
+          } else {
+            // Server returned an error - use client-side check as fallback
+            const clientTier = getUserTier(user);
+
+            // If user is Pro, allow the test (don't apply free tier limits)
+            if (clientTier === "pro" || clientTier === "founder") {
+              setUserTier(clientTier);
+            } else {
+              // Use client-side count check as fallback for free users
               const completedLRTests = loadedProgress.completedTests.filter(
                 (test) => test.sections.some((s) => s.type === "logical-reasoning")
               ).length;
@@ -652,21 +712,19 @@ function PracticeContent() {
                 return;
               }
 
-              // If we got here, allow the test
-              setUserTier(getUserTier(user));
-            } else {
-              setUserTier(limitResult.tier);
-              setServerLimitsChecked(true);
-
-              if (!limitResult.canStart) {
-                setTierBlocked(limitResult.reason || "You've reached your free limit. Upgrade to Pro for unlimited practice!");
-                setIsLoading(false);
-                setInitialized(true);
-                return;
-              }
+              // If we got here, allow the test (user hasn't hit local limit)
+              setUserTier(clientTier);
             }
+          }
+        } catch {
+          // On network error, use client-side check as fallback
+          const clientTier = getUserTier(user);
+
+          // If user is Pro, allow the test (don't apply free tier limits)
+          if (clientTier === "pro" || clientTier === "founder") {
+            setUserTier(clientTier);
           } else {
-            // Server returned an error - use client-side count check as fallback
+            // Use client-side count check as fallback for free users
             const completedLRTests = loadedProgress.completedTests.filter(
               (test) => test.sections.some((s) => s.type === "logical-reasoning")
             ).length;
@@ -697,43 +755,9 @@ function PracticeContent() {
               return;
             }
 
-            // If we got here, allow the test (user hasn't hit local limit)
-            setUserTier(getUserTier(user));
+            // If we got here, allow the test
+            setUserTier(clientTier);
           }
-        } catch {
-          // On network error, use client-side count check as secure fallback
-          const completedLRTests = loadedProgress.completedTests.filter(
-            (test) => test.sections.some((s) => s.type === "logical-reasoning")
-          ).length;
-          const completedRCTests = loadedProgress.completedTests.filter(
-            (test) => test.sections.some((s) => s.type === "reading-comprehension")
-          ).length;
-
-          const tierLimits = TIER_LIMITS.free;
-
-          if (testType === "lr-only" && completedLRTests >= tierLimits.lrSetsAllowed) {
-            setTierBlocked("You've reached your free limit of 3 LR practice sets. Upgrade to Pro for unlimited practice!");
-            setIsLoading(false);
-            setInitialized(true);
-            return;
-          }
-
-          if (testType === "rc-only" && completedRCTests >= tierLimits.rcSetsAllowed) {
-            setTierBlocked("You've reached your free limit of 3 RC practice sets. Upgrade to Pro for unlimited practice!");
-            setIsLoading(false);
-            setInitialized(true);
-            return;
-          }
-
-          if (testType === "full" && (completedLRTests >= tierLimits.lrSetsAllowed || completedRCTests >= tierLimits.rcSetsAllowed)) {
-            setTierBlocked("You've reached your free practice limit. Upgrade to Pro for unlimited full practice tests!");
-            setIsLoading(false);
-            setInitialized(true);
-            return;
-          }
-
-          // If we got here, allow the test
-          setUserTier(getUserTier(user));
         }
       } else if (isGuest) {
         // For guests, use client-side localStorage count (they can't bypass since they have no account)

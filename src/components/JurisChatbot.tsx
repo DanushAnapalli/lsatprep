@@ -334,18 +334,19 @@ How can I help you today?`,
             >
               <div
                 className={cx(
-                  "max-w-[85%] rounded-lg px-4 py-2",
+                  "max-w-[85%] rounded-lg px-4 py-2 break-words overflow-wrap-anywhere",
                   message.role === "user"
                     ? "bg-[#1a365d] text-white dark:bg-amber-500 dark:text-stone-900"
                     : "bg-stone-100 text-stone-800 dark:bg-stone-800 dark:text-stone-200"
                 )}
+                style={{ overflowWrap: "anywhere", wordBreak: "break-word" }}
               >
                 {message.role === "assistant" ? (
-                  <div className="prose prose-sm dark:prose-invert max-w-none">
+                  <div className="prose prose-sm dark:prose-invert max-w-none break-words" style={{ overflowWrap: "anywhere", wordBreak: "break-word" }}>
                     {formatMessage(message.content)}
                   </div>
                 ) : (
-                  <p>{message.content}</p>
+                  <p className="break-words" style={{ overflowWrap: "anywhere", wordBreak: "break-word" }}>{message.content}</p>
                 )}
               </div>
             </div>

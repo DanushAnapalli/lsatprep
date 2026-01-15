@@ -11,7 +11,6 @@ import {
   Crown,
   Shield,
   ExternalLink,
-  AlertCircle,
   CheckCircle2,
   Moon,
   Sun,
@@ -29,11 +28,7 @@ import {
   SubscriptionTier,
   SubscriptionInfo,
   TrialInfo,
-  saveSubscriptionInfo,
-  clearSubscriptionInfo,
-  setSubscriptionTier,
 } from "@/lib/subscription";
-import { authenticatedFetch } from "@/lib/auth-client";
 import HamburgerMenu from "@/components/HamburgerMenu";
 
 function cx(...classes: (string | boolean | undefined)[]) {
@@ -48,8 +43,6 @@ export default function ProfilePage() {
   const [userTier, setUserTier] = useState<SubscriptionTier>("free");
   const [subscriptionInfo, setSubscriptionInfoState] = useState<SubscriptionInfo | null>(null);
   const [trialInfo, setTrialInfo] = useState<TrialInfo | null>(null);
-  const [isCancelling, setIsCancelling] = useState(false);
-  const [cancelError, setCancelError] = useState<string | null>(null);
 
   // Listen to auth state
   useEffect(() => {
@@ -81,36 +74,6 @@ export default function ProfilePage() {
       router.push("/");
     } catch {
       // Silent fail - user can retry
-    }
-  };
-
-  const handleCancelSubscription = async () => {
-    if (!subscriptionInfo?.subscriptionId) return;
-
-    setIsCancelling(true);
-    setCancelError(null);
-
-    try {
-      const response = await authenticatedFetch("/api/cancel-subscription", {
-        method: "POST",
-        body: JSON.stringify({ subscriptionId: subscriptionInfo.subscriptionId }),
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        saveSubscriptionInfo({
-          cancelAtPeriodEnd: true,
-          currentPeriodEnd: data.subscription.currentPeriodEnd,
-        });
-        setSubscriptionInfoState(getSubscriptionInfo());
-      } else {
-        setCancelError(data.error || "Failed to cancel subscription");
-      }
-    } catch {
-      setCancelError("An error occurred. Please try again.");
-    } finally {
-      setIsCancelling(false);
     }
   };
 
@@ -314,35 +277,6 @@ export default function ProfilePage() {
                 </div>
               )}
 
-              {/* Cancel Subscription */}
-              {userTier === "pro" && subscriptionInfo?.subscriptionId && !subscriptionInfo.cancelAtPeriodEnd && (
-                <div className="rounded-sm border border-red-200 bg-red-50 p-4 dark:border-red-800 dark:bg-red-900/20">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="font-medium text-red-900 dark:text-red-100">
-                        Cancel Subscription
-                      </div>
-                      <p className="mt-1 text-sm text-red-700 dark:text-red-400">
-                        You'll retain access until the end of your billing period
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={handleCancelSubscription}
-                      disabled={isCancelling}
-                      className="rounded-sm border-2 border-red-300 bg-white px-4 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-100 disabled:opacity-50 dark:border-red-700 dark:bg-transparent dark:text-red-400 dark:hover:bg-red-900/30"
-                    >
-                      {isCancelling ? "Cancelling..." : "Cancel Subscription"}
-                    </button>
-                  </div>
-                  {cancelError && (
-                    <div className="mt-2 flex items-center gap-2 text-sm text-red-600 dark:text-red-400">
-                      <AlertCircle size={14} />
-                      {cancelError}
-                    </div>
-                  )}
-                </div>
-              )}
 
               {/* Subscription Cancelled Notice */}
               {subscriptionInfo?.cancelAtPeriodEnd && (
