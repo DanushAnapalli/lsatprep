@@ -172,7 +172,8 @@ export default function SubscriptionPage() {
     try {
       const restored = await syncSubscriptionFromStripe();
       if (restored) {
-        setCurrentTier(getUserTier(user));
+        const tier = await verifySubscriptionTier(user);
+        setCurrentTier(tier);
         setSubscriptionInfo(getSubscriptionInfo());
 
         // Fetch accurate trial info from Stripe
