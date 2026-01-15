@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import { getUserTier, getTierDisplayInfo, getSubscriptionInfo, saveSubscriptionInfo, SubscriptionInfo, syncSubscriptionFromStripe } from "@/lib/subscription";
+import { getTierDisplayInfo, getSubscriptionInfo, saveSubscriptionInfo, SubscriptionInfo, syncSubscriptionFromStripe, verifySubscriptionTier } from "@/lib/subscription";
 import { authenticatedFetch } from "@/lib/auth-client";
 import { Check, Crown, Loader2, ArrowLeft, Calendar, CreditCard, ExternalLink, RefreshCw } from "lucide-react";
 
@@ -24,67 +24,75 @@ export default function SubscriptionPage() {
   const [billingPeriod, setBillingPeriod] = useState<"monthly" | "yearly">("monthly");
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      setUser(user);
-      if (user) {
-        const tier = getUserTier(user);
-        setCurrentTier(tier);
+    const unsubscribe = onAuthStateChanged(auth, async (nextUser) => {
+      setUser(nextUser);
 
-        // For Pro users, sync subscription info from Stripe to get accurate dates
-        if ((tier === "pro" || tier === "founder")) {
-          try {
-            const response = await authenticatedFetch("/api/check-subscription", {
-              method: "POST",
-            });
+      if (!nextUser) {
+        setSubscriptionInfo(getSubscriptionInfo());
+        setTrialInfo({ isTrialing: false, daysLeft: 0, trialEndDate: null });
+        setLoading(false);
+        return;
+      }
 
-            if (response.ok) {
-              const data = await response.json();
-              if (data.hasActiveSubscription) {
-                const updatedInfo: SubscriptionInfo = {
-                  subscriptionId: data.subscriptionId,
-                  customerId: data.customerId,
-                  status: data.status,
-                  currentPeriodEnd: data.currentPeriodEnd,
-                  cancelAtPeriodEnd: data.cancelAtPeriodEnd || false,
-                };
-                saveSubscriptionInfo(updatedInfo);
-                setSubscriptionInfo(updatedInfo);
+      setLoading(true);
+      const tier = await verifySubscriptionTier(nextUser);
+      setCurrentTier(tier);
 
-                // Calculate accurate trial info from Stripe data
-                if (data.isTrialing && data.trialEnd) {
-                  const trialEndDate = new Date(data.trialEnd);
-                  const now = new Date();
-                  // Use date-only comparison to get accurate day count
-                  // This ensures Jan 3 → Jan 7 = 4 days, not 5
-                  const endDay = new Date(trialEndDate.getFullYear(), trialEndDate.getMonth(), trialEndDate.getDate());
-                  const todayDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-                  const msPerDay = 1000 * 60 * 60 * 24;
-                  const daysLeft = Math.max(0, Math.round((endDay.getTime() - todayDay.getTime()) / msPerDay));
-                  setTrialInfo({
-                    isTrialing: true,
-                    daysLeft,
-                    trialEndDate: data.trialEnd,
-                  });
-                } else {
-                  setTrialInfo({ isTrialing: false, daysLeft: 0, trialEndDate: null });
-                }
+      // For Pro users, sync subscription info from Stripe to get accurate dates
+      if (tier === "pro" || tier === "founder") {
+        try {
+          const response = await authenticatedFetch("/api/check-subscription", {
+            method: "POST",
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            if (data.hasActiveSubscription) {
+              const updatedInfo: SubscriptionInfo = {
+                subscriptionId: data.subscriptionId,
+                customerId: data.customerId,
+                status: data.status,
+                currentPeriodEnd: data.currentPeriodEnd,
+                cancelAtPeriodEnd: data.cancelAtPeriodEnd || false,
+              };
+              saveSubscriptionInfo(updatedInfo);
+              setSubscriptionInfo(updatedInfo);
+
+              // Calculate accurate trial info from Stripe data
+              if (data.isTrialing && data.trialEnd) {
+                const trialEndDate = new Date(data.trialEnd);
+                const now = new Date();
+                // Use date-only comparison to get accurate day count
+                // This ensures Jan 3 → Jan 7 = 4 days, not 5
+                const endDay = new Date(trialEndDate.getFullYear(), trialEndDate.getMonth(), trialEndDate.getDate());
+                const todayDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                const msPerDay = 1000 * 60 * 60 * 24;
+                const daysLeft = Math.max(0, Math.round((endDay.getTime() - todayDay.getTime()) / msPerDay));
+                setTrialInfo({
+                  isTrialing: true,
+                  daysLeft,
+                  trialEndDate: data.trialEnd,
+                });
               } else {
-                setSubscriptionInfo(getSubscriptionInfo());
                 setTrialInfo({ isTrialing: false, daysLeft: 0, trialEndDate: null });
               }
             } else {
               setSubscriptionInfo(getSubscriptionInfo());
               setTrialInfo({ isTrialing: false, daysLeft: 0, trialEndDate: null });
             }
-          } catch {
+          } else {
             setSubscriptionInfo(getSubscriptionInfo());
             setTrialInfo({ isTrialing: false, daysLeft: 0, trialEndDate: null });
           }
-        } else {
+        } catch {
           setSubscriptionInfo(getSubscriptionInfo());
           setTrialInfo({ isTrialing: false, daysLeft: 0, trialEndDate: null });
         }
+      } else {
+        setSubscriptionInfo(getSubscriptionInfo());
+        setTrialInfo({ isTrialing: false, daysLeft: 0, trialEndDate: null });
       }
+
       setLoading(false);
     });
 
