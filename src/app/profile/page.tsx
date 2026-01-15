@@ -61,6 +61,9 @@ export default function ProfilePage() {
 
   // Get subscription info (uses secure server verification)
   useEffect(() => {
+    // Reset verification state when user changes
+    setTierVerified(false);
+
     if (user) {
       verifySubscriptionTier(user).then((tier) => {
         setUserTier(tier);

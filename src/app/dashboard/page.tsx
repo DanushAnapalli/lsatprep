@@ -910,13 +910,9 @@ export default function DashboardPage() {
       }
 
       // Sync subscription status from Stripe (restores access if localStorage was cleared)
+      // Note: We don't update userTier here - wait for verifySubscriptionTier to complete
       if (firebaseUser) {
-        syncSubscriptionFromStripe().then((restored) => {
-          if (restored) {
-            // Update tier state after sync
-            setUserTier(getUserTier(firebaseUser));
-          }
-        }).catch(() => {});
+        syncSubscriptionFromStripe().catch(() => {});
       }
     });
     return () => unsubscribe();
@@ -925,6 +921,9 @@ export default function DashboardPage() {
   // Get user's subscription tier (guests are treated as free tier)
   // Uses secure server verification to prevent localStorage tampering
   useEffect(() => {
+    // Reset verification state when user changes
+    setTierVerified(false);
+
     if (user) {
       verifySubscriptionTier(user).then((tier) => {
         setUserTier(tier);
