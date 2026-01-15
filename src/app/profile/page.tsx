@@ -42,6 +42,7 @@ export default function ProfilePage() {
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [userTier, setUserTier] = useState<SubscriptionTier>("free");
+  const [tierVerified, setTierVerified] = useState(false);
   const [subscriptionInfo, setSubscriptionInfoState] = useState<SubscriptionInfo | null>(null);
   const [trialInfo, setTrialInfo] = useState<TrialInfo | null>(null);
 
@@ -63,6 +64,7 @@ export default function ProfilePage() {
     if (user) {
       verifySubscriptionTier(user).then((tier) => {
         setUserTier(tier);
+        setTierVerified(true);
       });
       setSubscriptionInfoState(getSubscriptionInfo());
       setTrialInfo(getTrialInfo());
@@ -78,7 +80,7 @@ export default function ProfilePage() {
     }
   };
 
-  if (authLoading) {
+  if (authLoading || !tierVerified) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-stone-100 dark:bg-stone-950">
         <div className="text-center">

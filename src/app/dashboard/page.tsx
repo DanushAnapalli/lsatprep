@@ -999,7 +999,7 @@ export default function DashboardPage() {
   // Check if user needs to verify email (signed in via email/password and not verified)
   const needsEmailVerification = user && !user.emailVerified && user.providerData?.[0]?.providerId === "password";
 
-  if (authLoading || isLoading || !progress) {
+  if (authLoading || isLoading || !progress || !tierVerified) {
     return (
       <div className="min-h-screen bg-stone-50 dark:bg-stone-950">
         <div className="flex min-h-screen items-center justify-center">
