@@ -17,6 +17,7 @@ import {
   LogOut,
   Calendar,
   Clock,
+  AlertCircle,
 } from "lucide-react";
 import { onAuthChange, logOut, User as FirebaseUser } from "@/lib/firebase";
 import { useTheme } from "@/components/ThemeProvider";
