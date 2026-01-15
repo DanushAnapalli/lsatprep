@@ -222,17 +222,25 @@ function UsernameInput({ userId }: { userId: string }) {
 function UserDropdown({
   user,
   userTier,
+  tierVerified,
   onSignOut,
 }: {
   user: FirebaseUser;
   userTier: SubscriptionTier;
+  tierVerified: boolean;
   onSignOut: () => void;
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const tierInfo = getTierDisplayInfo(userTier);
+  const tierInfo = tierVerified ? getTierDisplayInfo(userTier) : null;
   const trialInfo = getTrialInfo();
   const subscriptionInfo = getSubscriptionInfo();
+  const subscriptionLabel = !tierVerified
+    ? "Subscription"
+    : userTier === "free"
+    ? "Upgrade to Pro"
+    : "Manage Subscription";
+  const showUpgradeBadge = tierVerified && userTier === "free";
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -313,15 +321,17 @@ function UserDropdown({
               </div>
             </div>
             <div className="mt-2 flex items-center gap-2">
-              <span className={cx("rounded-sm px-2 py-0.5 text-xs font-semibold", tierInfo.bgColor, tierInfo.color)}>
-                {tierInfo.name}
-              </span>
-              {userTier === "pro" && trialInfo.isTrialing && (
+              {tierInfo && (
+                <span className={cx("rounded-sm px-2 py-0.5 text-xs font-semibold", tierInfo.bgColor, tierInfo.color)}>
+                  {tierInfo.name}
+                </span>
+              )}
+              {tierVerified && userTier === "pro" && trialInfo.isTrialing && (
                 <span className="rounded-sm bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
                   {trialInfo.daysLeft}d left
                 </span>
               )}
-              {subscriptionInfo?.cancelAtPeriodEnd && (
+              {tierVerified && subscriptionInfo?.cancelAtPeriodEnd && (
                 <span className="rounded-sm bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700 dark:bg-red-900/30 dark:text-red-400">
                   Cancels soon
                 </span>
@@ -345,8 +355,8 @@ function UserDropdown({
               className="flex items-center gap-3 rounded-sm px-3 py-2 text-sm text-stone-700 transition hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-700"
             >
               <CreditCard size={16} className="text-stone-400" />
-              {userTier === "free" ? "Upgrade to Pro" : "Manage Subscription"}
-              {userTier === "free" && (
+              {subscriptionLabel}
+              {showUpgradeBadge && (
                 <span className="ml-auto rounded-sm bg-amber-100 px-1.5 py-0.5 text-xs font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
                   Upgrade
                 </span>
@@ -1007,7 +1017,7 @@ export default function DashboardPage() {
   }
 
   // Check if guest has exhausted free tests (1 LR + 1 RC allowed)
-  const isGuest = !user;
+  const isGuest = !user && !authLoading;
   const guestCompletedLRTests = progress.completedTests.filter(
     (test) => test.sections.some((s) => s.type === "logical-reasoning")
   ).length;
@@ -1081,7 +1091,12 @@ export default function DashboardPage() {
 
             {/* User Profile or Sign In Button */}
             {user ? (
-              <UserDropdown user={user} userTier={userTier} onSignOut={handleSignOut} />
+              <UserDropdown
+                user={user}
+                userTier={userTier}
+                tierVerified={tierVerified}
+                onSignOut={handleSignOut}
+              />
             ) : (
               <Link
                 href="/"
@@ -1208,7 +1223,7 @@ export default function DashboardPage() {
         )}
 
         {/* Free Tier Upgrade Banner - only for signed in free users */}
-        {user && userTier === "free" && (
+        {user && tierVerified && userTier === "free" && (
           <div className="mb-8 rounded-sm border-2 border-amber-400 bg-gradient-to-r from-amber-50 to-orange-50 p-6 dark:border-amber-500/50 dark:from-amber-900/20 dark:to-orange-900/20">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">

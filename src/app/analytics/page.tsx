@@ -28,7 +28,6 @@ import {
   User,
   CreditCard,
   X,
-  Loader2,
   Sparkles,
   Activity,
   Info,
@@ -36,7 +35,7 @@ import {
 import { loadUserProgress, UserProgress, setCurrentUserId } from "@/lib/user-progress";
 import { onAuthChange, logOut, User as FirebaseUser } from "@/lib/firebase";
 import { useTheme } from "@/components/ThemeProvider";
-import { getUserTier, verifySubscriptionTier, getTierDisplayInfo, SubscriptionTier, getTrialInfo, getSubscriptionInfo, saveSubscriptionInfo } from "@/lib/subscription";
+import { getUserTier, verifySubscriptionTier, getTierDisplayInfo, SubscriptionTier, getTrialInfo, getSubscriptionInfo } from "@/lib/subscription";
 import {
   getDetailedQuestionTypeStats,
   getTopWeaknesses,
@@ -1423,20 +1422,15 @@ function UserDropdown({
   onSignOut: () => void;
 }) {
   const [isOpen, setIsOpen] = useState(false);
-  const [isCancelling, setIsCancelling] = useState(false);
-  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const tierInfo = getTierDisplayInfo(userTier);
   const trialInfo = getTrialInfo();
   const subscriptionInfo = getSubscriptionInfo();
 
-  const canCancel = userTier === "pro" && subscriptionInfo?.subscriptionId && !subscriptionInfo?.cancelAtPeriodEnd;
-
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsOpen(false);
-        setShowCancelConfirm(false);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
@@ -1447,40 +1441,11 @@ function UserDropdown({
     function handleEscape(event: KeyboardEvent) {
       if (event.key === "Escape") {
         setIsOpen(false);
-        setShowCancelConfirm(false);
       }
     }
     document.addEventListener("keydown", handleEscape);
     return () => document.removeEventListener("keydown", handleEscape);
   }, []);
-
-  const handleCancelSubscription = async () => {
-    if (!subscriptionInfo?.subscriptionId) return;
-    setIsCancelling(true);
-    try {
-      const response = await fetch("/api/cancel-subscription", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ subscriptionId: subscriptionInfo.subscriptionId }),
-      });
-      const data = await response.json();
-      if (data.success) {
-        saveSubscriptionInfo({
-          cancelAtPeriodEnd: true,
-          currentPeriodEnd: data.subscription.currentPeriodEnd,
-        });
-        setShowCancelConfirm(false);
-        setIsOpen(false);
-        window.location.reload();
-      } else {
-        alert(data.error || "Failed to cancel subscription");
-      }
-    } catch {
-      alert("An error occurred. Please try again.");
-    } finally {
-      setIsCancelling(false);
-    }
-  };
 
   return (
     <div ref={dropdownRef} className="relative z-50">
@@ -1557,42 +1522,6 @@ function UserDropdown({
               <CreditCard size={16} />
               Manage Subscription
             </Link>
-
-            {canCancel && !showCancelConfirm && (
-              <button
-                type="button"
-                onClick={() => setShowCancelConfirm(true)}
-                className="flex w-full items-center gap-3 rounded-sm px-3 py-2 text-left text-sm text-red-600 transition hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
-              >
-                <X size={16} />
-                Cancel Subscription
-              </button>
-            )}
-
-            {showCancelConfirm && (
-              <div className="mx-2 my-2 rounded-sm border border-red-200 bg-red-50 p-3 dark:border-red-800 dark:bg-red-900/20">
-                <p className="mb-3 text-xs text-red-700 dark:text-red-300">
-                  Are you sure? You&apos;ll keep access until the billing period ends.
-                </p>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={handleCancelSubscription}
-                    disabled={isCancelling}
-                    className="flex-1 rounded-sm bg-red-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-red-700 disabled:opacity-50"
-                  >
-                    {isCancelling ? <Loader2 size={14} className="mx-auto animate-spin" /> : "Yes, Cancel"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowCancelConfirm(false)}
-                    className="flex-1 rounded-sm bg-stone-200 px-3 py-1.5 text-xs font-semibold text-stone-700 transition hover:bg-stone-300 dark:bg-stone-600 dark:text-stone-200 dark:hover:bg-stone-500"
-                  >
-                    Keep It
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
 
           <div className="border-t border-stone-200 p-2 dark:border-stone-700">

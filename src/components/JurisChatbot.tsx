@@ -149,7 +149,7 @@ How can I help you today?`,
   const [isLoading, setIsLoading] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -158,6 +158,17 @@ How can I help you today?`,
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  const resizeInput = (el: HTMLTextAreaElement | null) => {
+    if (!el) return;
+    el.style.height = "auto";
+    const nextHeight = Math.min(el.scrollHeight, 160);
+    el.style.height = `${nextHeight}px`;
+  };
+
+  useEffect(() => {
+    resizeInput(inputRef.current);
+  }, [input]);
 
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
@@ -386,14 +397,17 @@ How can I help you today?`,
       {/* Input */}
       <div className="border-t-2 border-stone-200 p-4 dark:border-stone-700">
         <div className="flex items-center gap-2">
-          <input
+          <textarea
             ref={inputRef}
-            type="text"
             value={input}
-            onChange={(e) => setInput(e.target.value)}
+            onChange={(e) => {
+              setInput(e.target.value);
+              resizeInput(e.currentTarget);
+            }}
             onKeyDown={handleKeyDown}
             placeholder="Ask Juris about law or LSAT..."
-            className="flex-1 rounded-sm border-2 border-stone-300 bg-white px-4 py-2 text-sm text-stone-900 placeholder-stone-400 transition focus:border-[#1a365d] focus:outline-none dark:border-stone-600 dark:bg-stone-800 dark:text-stone-100 dark:placeholder-stone-500 dark:focus:border-amber-500"
+            rows={1}
+            className="flex-1 resize-none rounded-sm border-2 border-stone-300 bg-white px-4 py-2 text-sm leading-5 text-stone-900 placeholder-stone-400 transition focus:border-[#1a365d] focus:outline-none dark:border-stone-600 dark:bg-stone-800 dark:text-stone-100 dark:placeholder-stone-500 dark:focus:border-amber-500"
             disabled={isLoading}
           />
           <button
