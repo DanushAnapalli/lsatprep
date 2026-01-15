@@ -1453,7 +1453,7 @@ export default function DashboardPage() {
                       <span className="text-lg font-bold text-purple-900 dark:text-purple-100">
                         Advanced Insights
                       </span>
-                      {userTier === "free" && (
+                      {tierVerified && userTier === "free" && (
                         <span className="flex items-center gap-1 rounded-full bg-gradient-to-r from-amber-400 to-orange-400 px-2 py-0.5 text-xs font-bold text-white shadow-sm">
                           <Crown size={10} />
                           PRO
